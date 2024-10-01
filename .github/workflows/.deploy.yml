@@ -1,0 +1,111 @@
+name: .Deploys
+
+on:
+  workflow_call:
+    inputs:
+      ### Required
+      # Nothing! Only `secrets: inherit` is required
+
+      ### Typical / recommended
+      environment:
+        description: GitHub/OpenShift environment; usually PR number, test or prod
+        default: ''
+        required: false
+        type: string
+      tag:
+        description: Container tag; usually PR number
+        default: ${{ github.event.number }}
+        required: false
+        type: string
+      target:
+        description: Deployment target; usually PR number, test or prod
+        default: ${{ github.event.number }}
+        required: false
+        type: string
+
+    outputs:
+      run_tests:
+        description: Run Cypress tests if the core apps have changed (excludes sync)
+        value: ${{ jobs.init.outputs.deploy_core }}
+
+jobs:
+  init:
+    name: Deploy (init)
+    environment: ${{ inputs.environment }}
+    outputs:
+      fam-modded-zone: ${{ steps.fam-modded-zone.outputs.fam-modded-zone }}
+      deploy_sync: ${{ steps.triggers.outputs.sync }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check sync triggers
+        uses: bcgov-nr/action-diff-triggers@v0.2.0
+        id: check_sync
+        with:
+          triggers: ('common/' 'sync/')
+
+      # Simplify triggers
+      - name: Simplify triggers
+        id: triggers
+        run: |
+          echo "sync=${{ github.event_name != 'pull_request' || steps.check_sync.outputs.triggered == 'true' }}" >> $GITHUB_OUTPUT
+
+      - name: OpenShift Init
+        if: steps.triggers.outputs.core == 'true' || steps.triggers.outputs.sync == 'true'
+        uses: bcgov-nr/action-deployer-openshift@v3.0.1
+        with:
+          oc_namespace: ${{ vars.OC_NAMESPACE }}
+          oc_server: ${{ vars.OC_SERVER }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          file: common/openshift.init.yml
+          overwrite: true
+          parameters:
+            -p ZONE=${{ inputs.target }}
+            -p DB_PASSWORD='${{ secrets.DB_PASSWORD }}'
+            -p ORACLE_SERVICE='${{ vars.ORACLE_SERVICE }}'
+            -p ORACLE_SYNC_USER='${{ vars.ORACLE_SYNC_USER }}'
+            -p ORACLE_SYNC_PASSWORD='${{ secrets.ORACLE_SYNC_PASSWORD }}'
+            -p ORACLE_HOST='${{ vars.ORACLE_HOST }}'
+
+      - name: Database
+        if: steps.triggers.outputs.core == 'true' || steps.triggers.outputs.sync == 'true'
+        uses: bcgov-nr/action-deployer-openshift@v3.0.1
+        with:
+          oc_namespace: ${{ vars.OC_NAMESPACE }}
+          oc_server: ${{ vars.OC_SERVER }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          file: common/openshift.database.yml
+          overwrite: false
+          parameters:
+            -p ZONE=${{ inputs.target }}
+            ${{ github.event_name == 'pull_request' && '-p DB_PVC_SIZE=192Mi' || '' }}
+            ${{ github.event_name == 'pull_request' && '-p MEMORY_REQUEST=100Mi' || '' }}
+            ${{ github.event_name == 'pull_request' && '-p MEMORY_LIMIT=200Mi' || '' }}
+
+  # ETL testing will only run on Pull Requests if the sync/ directory is modified
+  sync:
+    name: Deploy
+    environment: ${{ inputs.environment }}
+    if: needs.init.outputs.deploy_sync == 'true'
+    needs: [init]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy (sync)
+        uses: bcgov-nr/action-deployer-openshift@v3.0.1
+        with:
+          file: sync/openshift.deploy.yml
+          oc_namespace: ${{ vars.OC_NAMESPACE }}
+          oc_server: ${{ vars.OC_SERVER }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          overwrite: true
+          parameters:
+            -p TAG=${{ inputs.tag }}
+            -p ZONE=${{ inputs.target }}
+            ${{ github.event_name == 'pull_request' && '-p TEST_MODE=true' || '' }}
+
+      - uses: redhat-actions/openshift-tools-installer@v1
+        with:        
+          oc: "4"
+
+      - name: Run sync ETL
+        if: github.event_name == 'pull_request'
+        run: ./sync/oc_run.sh ${{ inputs.tag }} ${{ secrets.oc_token }}
