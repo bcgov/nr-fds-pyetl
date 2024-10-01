@@ -9,6 +9,7 @@
         - "1521:1521"
       # Provide passwords and other environment variables to the container
       environment:
+        ORACLE_PASSWORD: sys_user_password
         APP_USER: my_user
         APP_USER_PASSWORD: password_i_should_change
       # Customize healthcheck script options for startup
