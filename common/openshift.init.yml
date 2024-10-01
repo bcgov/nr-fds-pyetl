@@ -10,8 +10,6 @@ parameters:
   - name: DB_PASSWORD
     description: Password for the PostgreSQL connection user
     required: true
-  - name: FORESTCLIENTAPI_KEY
-    required: true
   - name: ORACLE_HOST
     description: Oracle database host
     value: nrcdb03.bcgov
@@ -19,24 +17,12 @@ parameters:
   - name: ORACLE_SERVICE
     description: Oracle service name
     value: dbq01.nrs.bcgov
-  - name: ORACLE_PASSWORD
-    description: Oracle database password for API
-    required: true
-  - name: ORACLE_USER
-    description: Oracle database username for API
-    value: proxy_fsa_spar_read_only_user
-  - name: ORACLE_CERT_SECRET
-    description: Oracle database keystore secret
-    required: true
   - name: ORACLE_SYNC_PASSWORD
     description: Oracle database password for Sync
     required: true
   - name: ORACLE_SYNC_USER
     description: Oracle database username for Sync
     value: proxy_fsa_spar_sync_user
-  - name: VITE_USER_POOLS_WEB_CLIENT_ID
-    description: Cognito user pools web client ID
-    required: true
 objects:
   - apiVersion: v1
     kind: Secret
@@ -52,18 +38,6 @@ objects:
   - apiVersion: v1
     kind: Secret
     metadata:
-      name: ${NAME}-${ZONE}-oracle-api
-      labels:
-        app: ${NAME}-${ZONE}
-    stringData:
-      oracle-host: ${ORACLE_HOST}
-      oracle-password: ${ORACLE_PASSWORD}
-      oracle-service: ${ORACLE_SERVICE}
-      oracle-user: ${ORACLE_USER}
-      oracle-secret: ${ORACLE_CERT_SECRET}
-  - apiVersion: v1
-    kind: Secret
-    metadata:
       name: ${NAME}-${ZONE}-sync
       labels:
         app: ${NAME}-${ZONE}
@@ -72,22 +46,6 @@ objects:
       oracle-service: ${ORACLE_SERVICE}
       oracle-sync-password: ${ORACLE_SYNC_PASSWORD}
       oracle-sync-user: ${ORACLE_SYNC_USER}
-  - apiVersion: v1
-    kind: Secret
-    metadata:
-      name: ${NAME}-${ZONE}-backend
-      labels:
-        app: ${NAME}-${ZONE}
-    stringData:
-      forest-client-api-key: ${FORESTCLIENTAPI_KEY}
-  - apiVersion: v1
-    kind: Secret
-    metadata:
-      name: ${NAME}-${ZONE}-frontend
-      labels:
-        app: ${NAME}-${ZONE}
-    stringData:
-      vite-user-pools-web-client-id: ${VITE_USER_POOLS_WEB_CLIENT_ID}
   - apiVersion: networking.k8s.io/v1
     kind: NetworkPolicy
     metadata:
