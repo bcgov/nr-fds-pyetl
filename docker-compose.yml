@@ -1,0 +1,66 @@
+x-postgres-vars: &postgres-vars
+  POSTGRES_DB: spar
+  POSTGRES_HOST: database
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: default
+  POSTGRES_PORT: 5432
+
+x-oracle-vars: &oracle-vars
+  DUMPVAR: dummy
+  ORACLE_DATABASE: DBDOCK_01
+  ORACLE_PASSWORD: default
+  APP_USER: the
+  APP_USER_PASSWORD: default
+  FLYWAY_URL: jdbc:oracle:thin:@//database:1521/DBDOCK_01
+
+services:
+  # Name of the Docker Compose service
+  oracle:
+    # Docker Hub image (feel free to change the tag "latest" to any other available one)
+    image: gvenzl/oracle-free:latest
+    # Forward Oracle port to localhost
+    ports:
+      - "1521:1521"
+    # Provide passwords and other environment variables to the container
+    environment:
+      <<: *oracle-vars    
+    # Customize healthcheck script options for startup
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # Mount a local SQL file to initialize your schema at startup
+    # volumes:
+    #   - my-init.sql:/container-entrypoint-initdb.d/my-init.sql:ro
+  oracle-migrations:
+    image: flyway/flyway:10-alpine
+    container_name: migrations
+    command: info migrate info
+    volumes: ["./migrations/sql:/flyway/sql:ro"]
+    environment:
+      <<: *oracle-vars
+      TMP: ${ORACLE_DATABASE}
+      # FLYWAY_URL: "jdbc:oracle:thin:@//database:1521/DBDOCK_01"
+      FLYWAY_USER: "${APP_USER}"
+      FLYWAY_PASSWORD: ${APP_USER_PASSWORD}
+      FLYWAY_BASELINE_ON_MIGRATE: true
+      FLYWAY_DEFAULT_SCHEMA: ${APP_USER}
+      
+    depends_on:
+      oracle:
+        condition: service_healthy
+  # debug service
+  echoit:
+    image: functions/alpine:health
+    environment:
+      <<: *oracle-vars
+      FLYWAY_USER: "${APP_USER}"
+      FLYWAY_PASSWORD: "${APP_USER_PASSWORD}"
+      FLYWAY_BASELINE_ON_MIGRATE: true
+      FLYWAY_DEFAULT_SCHEMA: "${APP_USER}"
+      fprocess: "cat"
+      no_proxy: "gateway"
+      https_proxy: $https_proxy
+    entrypoint: ["/bin/sh", "-c", "export && echo oradb is ${DUMPVAR} &&  exec $fprocess"]
+
