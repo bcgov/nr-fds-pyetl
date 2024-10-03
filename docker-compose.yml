@@ -48,7 +48,8 @@ services:
     depends_on:
       oracle:
         condition: service_healthy
-  # debug service
+
+  # debug service, useful for understanding how environment variables work
   echoit:
     image: functions/alpine:health
     environment:
