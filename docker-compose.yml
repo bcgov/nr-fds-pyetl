@@ -11,7 +11,7 @@ x-oracle-vars: &oracle-vars
   ORACLE_PASSWORD: default
   APP_USER: the
   APP_USER_PASSWORD: default
-  FLYWAY_URL: jdbc:oracle:thin:@//database:1521/DBDOCK_01
+  FLYWAY_URL: jdbc:oracle:thin:@//oracle:1521/DBDOCK_01
 
 services:
   # Name of the Docker Compose service
@@ -26,13 +26,14 @@ services:
       <<: *oracle-vars    
     # Customize healthcheck script options for startup
     healthcheck:
-      test: ["CMD", "healthcheck.sh"]
+      test: ["CMD", "/opt/oracle/healthcheck.sh"]
       interval: 10s
       timeout: 5s
       retries: 10
     # Mount a local SQL file to initialize your schema at startup
-    # volumes:
-    #   - my-init.sql:/container-entrypoint-initdb.d/my-init.sql:ro
+    volumes:
+      - ./oradb/db_init.sql:/container-entrypoint-initdb.d/my-init.sql:ro
+
   oracle-migrations:
     image: flyway/flyway:10-alpine
     container_name: migrations
@@ -40,13 +41,10 @@ services:
     volumes: ["./migrations/sql:/flyway/sql:ro"]
     environment:
       <<: *oracle-vars
-      TMP: ${ORACLE_DATABASE}
-      # FLYWAY_URL: "jdbc:oracle:thin:@//database:1521/DBDOCK_01"
-      FLYWAY_USER: "${APP_USER}"
-      FLYWAY_PASSWORD: ${APP_USER_PASSWORD}
+      FLYWAY_USER: THE
+      FLYWAY_PASSWORD: default
+      FLYWAY_DEFAULT_SCHEMA: THE
       FLYWAY_BASELINE_ON_MIGRATE: true
-      FLYWAY_DEFAULT_SCHEMA: ${APP_USER}
-      
     depends_on:
       oracle:
         condition: service_healthy
@@ -59,8 +57,5 @@ services:
       FLYWAY_PASSWORD: "${APP_USER_PASSWORD}"
       FLYWAY_BASELINE_ON_MIGRATE: true
       FLYWAY_DEFAULT_SCHEMA: "${APP_USER}"
-      fprocess: "cat"
-      no_proxy: "gateway"
-      https_proxy: $https_proxy
-    entrypoint: ["/bin/sh", "-c", "export && echo oradb is ${DUMPVAR} &&  exec $fprocess"]
+    entrypoint: ["/bin/sh", "-c", "export && echo \"oradb is ${FLYWAY_USER}\" &&  exec $fprocess"]
 
