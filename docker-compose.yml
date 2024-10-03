@@ -32,6 +32,7 @@ services:
       retries: 10
     # Mount a local SQL file to initialize your schema at startup
     volumes:
+      - oracle-data:/opt/oracle/oradata  # Mount the volume to the Oracle data directory
       - ./oradb/db_init.sql:/container-entrypoint-initdb.d/my-init.sql:ro
 
   oracle-migrations:
@@ -60,3 +61,5 @@ services:
       FLYWAY_DEFAULT_SCHEMA: "${APP_USER}"
     entrypoint: ["/bin/sh", "-c", "export && echo \"oradb is ${FLYWAY_USER}\" &&  exec $fprocess"]
 
+volumes:
+  oracle-data:
