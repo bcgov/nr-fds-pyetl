@@ -22,17 +22,20 @@ jobs:
           tag_fallback: latest
           triggers: ('sync/')
 
-  deploys:
-    name: Deploys (${{ github.event.number }})
-    needs: [builds]
-    secrets: inherit
-    uses: ./.github/workflows/.deploy.yml
+  # Will address this when move the actual sync job to this repository.
+  # deploys:
+  #   name: Deploys (${{ github.event.number }})
+  #   needs: [builds]
+  #   secrets: inherit
+  #   uses: ./.github/workflows/.deploy.yml
 
   results:
     name: PR Results
     if: always()
     # Include all needs that could have failures!
-    needs: [builds, deploys]
+    # remove deploys until got the actual sync job running in this repo
+    # [builds, deploys]
+    needs: [builds]
     runs-on: ubuntu-24.04
     steps:
       - run: |
