@@ -1,4 +1,5 @@
-"""Wrapper to oracle functions.
+"""
+Wrapper to oracle functions.
 
 Assumptions:
 
@@ -18,12 +19,53 @@ import logging
 import logging.config
 import os
 import pathlib
+from dataclasses import dataclass
 
 import oracledb
 import pandas as pd
 import sqlalchemy
+from oracledb.exceptions import DatabaseError
 
 LOGGER = logging.getLogger(__name__)
+
+
+@dataclass
+class ConnectionParameters:
+    """
+    Data class for database connection parameters.
+
+    * username: the username to connect to the database with
+    * password: the password for the username
+    * host: the host for the database
+    * port: the port for the database
+    * service_name: the service name for the database
+
+    :param NamedTuple: inherits from typing.NamedTuple
+    :type NamedTuple: typing.NamedTuple
+    """
+
+    username: str | None = None
+    password: str | None = None
+    host: str | None = None
+    port: str | None = None
+    service_name: str | None = None
+
+
+@dataclass
+class TableConstraints:
+    """
+    Data class for storing constraints.
+
+    Model / types for storing database constraints when queried from the
+    database.
+    """
+
+    constraint_name: str
+    table_name: str
+    column_name: str
+    r_constraint_name: str
+    referenced_table: str
+    referenced_column: str
 
 
 class OracleDatabase:
@@ -42,21 +84,36 @@ class OracleDatabase:
 
     def __init__(
         self,
-        username: str | None = None,
-        password: str | None = None,
-        host: str | None = None,
-        port: str | None = None,
-        service_name: str | None = None,
-        schema_to_sync: str | None = None,
+        connection_params: ConnectionParameters | None = None,
+        schema_to_sync: None | str = None,
     ) -> None:
-        self.username = username
-        self.password = password
-        self.host = host
-        self.port = port
-        self.service_name = service_name
+        """
+        Construct for the OracleDatabase class.
+
+        Recieves a ConnectionParameters object and a schema to sync.  Extracts
+        parameters from the ConnectionParameters, then if they are empty or null
+        checks for the parameters in the environment.
+
+        :param connection_params: Parameters that define connection to database,
+            defaults to None
+        :type connection_params: ConnectionParameters | None, optional
+        :param schema_to_sync: The schema that contains the objects that are to
+            be extracted or loaded to.  If the property is not populated the
+            script will look in the env var: ORACLE_SCHEMA_TO_SYNC,
+            defaults to None
+        :type schema_to_sync: None | str, optional
+        """
+        if connection_params is None:
+            connection_params = ConnectionParameters()
+        self.username = connection_params.username
+        self.password = connection_params.password
+        self.host = connection_params.host
+        self.port = connection_params.port
+        self.service_name = connection_params.service_name
         self.schema2Sync = schema_to_sync
 
-        # if the parameters are not supplied attempt to get them from the environment
+        # if the parameters are not supplied attempt to get them from the
+        # environment
         if self.username is None:
             self.username = os.getenv("ORACLE_USER")
         if self.password is None:
@@ -81,6 +138,7 @@ class OracleDatabase:
         populated by the object constructor.
         """
         if self.connection is None:
+            LOGGER.info("connecting the oracle database: %s", self.service_name)
             self.connection = oracledb.connect(
                 user=self.username,
                 password=self.password,
@@ -90,7 +148,7 @@ class OracleDatabase:
             )
             LOGGER.debug("connected to database")
 
-    def get_sqlalchemy_engine(self):
+    def get_sqlalchemy_engine(self) -> None:
         """
         Populate the sqlalchemy engine.
 
@@ -124,8 +182,6 @@ class OracleDatabase:
         :return: a list of table names for the given schema
         :rtype: list[str]
         """
-        # TODO: Get the correct order to load the data, starting with outer tables and
-        #       working inwards
         if omit_tables is None:
             omit_tables = []
         if omit_tables:
@@ -141,7 +197,7 @@ class OracleDatabase:
             if row[0].upper() not in omit_tables
         ]
         cursor.close()
-        LOGGER.debug(f"tables: {tables}")
+        LOGGER.debug("tables: %s", tables)
         return tables
 
     def get_table_object(self, table_name: str) -> sqlalchemy.Table:
@@ -156,11 +212,12 @@ class OracleDatabase:
         """
         self.get_sqlalchemy_engine()
         metadata = sqlalchemy.MetaData()
+        LOGGER.debug("schema2Sync is: %s", self.schema2Sync)
         return sqlalchemy.Table(
-            table_name,
+            table_name.lower(),
             metadata,
             autoload_with=self.sql_alchemy_engine,
-            schema=self.schema2Sync,
+            schema=self.schema2Sync.lower(),
         )
 
     def extract_data(self, table: str, export_file: str) -> None:
@@ -177,7 +234,6 @@ class OracleDatabase:
         table_obj = self.get_table_object(table)
         select_obj = sqlalchemy.select(table_obj)
 
-        # data_query_sql = f"select * from {self.schema2Sync}.{table}"  # noqa: ERA001
         LOGGER.debug("data_query_sql: %s", select_obj)
         LOGGER.debug("reading the %s", table)
         self.get_sqlalchemy_engine()
@@ -193,7 +249,7 @@ class OracleDatabase:
         :return: the temporary file name
         :rtype: str
         """
-        tmp_file_name = "tmp_file"
+        tmp_file_name = pathlib.Path("tmp_file")
         if pathlib.Path.exists(tmp_file_name):
             pathlib.Path(tmp_file_name).unlink()
         return tmp_file_name
@@ -206,6 +262,7 @@ class OracleDatabase:
         """
         self.get_connection()
         cursor = self.connection.cursor()
+        LOGGER.debug("truncating table: %s", table)
         cursor.execute(f"truncate table {self.schema2Sync}.{table}")
         self.connection.commit()
         cursor.close()
@@ -245,3 +302,221 @@ class OracleDatabase:
             if_exists="append",
             index=False,
         )
+
+    def load_data_retry(
+        self,
+        table_list: list[str],
+        data_dir: pathlib.Path,
+        retries: int = 1,
+        max_retries: int = 6,
+        *,
+        purge: bool = False,
+    ) -> None:
+        """
+        Load data defined in table_list.
+
+        Gets a list of tables in the table_list parameter, and attempts to load
+        the data defined in the data directory to that table.  The load process
+        will do the following steps:
+            1. Disable foreign key constraints
+            1. Truncate the data from all the tables
+            1. Load the data from the parquet file to the table
+            1. If there is an integrity error, truncate the table and retry
+                after the rest of the tables have been loaded.
+            1. Enable the constraints
+
+        :param table_list: List of tables to be loaded
+        :type table_list: list[str]
+        :param data_dir: the directory where the parquet files are stored
+        :type data_dir: pathlib.Path
+        :param retries: the number of retries that have been attempted,
+            defaults to 1
+        :type retries: int, optional
+        :param max_retries: The maximum number of times the script should
+            attempt to load data, if this number is exceeded the integrity
+            constraint error will be raised, defaults to 6
+        :type max_retries: int, optional
+        :param purge: If set to true the script will truncate the table before
+            it attempt a load, defaults to False
+        :type purge: bool, optional
+        :raises sqlalchemy.exc.IntegrityError: If unable to resolve instegrity
+            constraints the method will raise this error
+        """
+        if max_retries is None:
+            max_retries = len(table_list) - 1
+
+        cons_list = self.get_fk_constraints()
+        self.disable_fk_constraints(cons_list)
+
+        failed_tables = []
+        LOGGER.debug("table list: %s", table_list)
+        LOGGER.debug("retries: %s", retries)
+        for table in table_list:
+            spaces = " " * retries * 2
+            import_file = pathlib.Path(data_dir, f"{table}.parquet")
+            LOGGER.info("Importing table %s %s", spaces, table)
+            try:
+                self.load_data(table, import_file, purge=purge)
+            except (
+                sqlalchemy.exc.IntegrityError,
+                DatabaseError,
+            ) as e:
+
+                LOGGER.exception(
+                    "%s loading table %s",
+                    e.__class__.__qualname__,
+                    table,
+                )
+                LOGGER.info("Adding %s to failed tables", table)
+                failed_tables.append(table)
+                LOGGER.info("truncating failed load table: %s", table)
+                self.truncate_table(table.lower())
+
+        if failed_tables:
+            if retries < max_retries:
+                LOGGER.info("Retrying failed tables")
+                retries += 1
+                self.load_data_retry(
+                    failed_tables,
+                    data_dir,
+                    retries=retries,
+                    max_retries=max_retries,
+                )
+            else:
+                LOGGER.error("Max retries reached for table %s", table)
+                self.enable_constraints(cons_list)
+                raise sqlalchemy.exc.IntegrityError
+        else:
+            self.enable_constraints(cons_list)
+
+    def purge_data(
+        self,
+        table_list: list[str],
+        retries: int = 1,
+        max_retries: int = 6,
+    ) -> None:
+        """
+        Purge the data from the tables in the list.
+
+        :param table_list: the list of tables to delete the data from
+        :type table_list: list[str]
+        """
+        self.get_connection()
+        failed_tables = []
+        for table in table_list:
+            try:
+                self.truncate_table(table)
+                LOGGER.info("purged table %s", table)
+            except (  # noqa: PERF203
+                sqlalchemy.exc.IntegrityError,
+                DatabaseError,
+            ) as e:
+                LOGGER.exception(
+                    "%s purging table %s",
+                    e.__class__.__qualname__,
+                    table,
+                )
+                failed_tables.append(table)
+        if failed_tables:
+            if retries < max_retries:
+                retries += 1
+                self.purge_data(failed_tables, retries=retries)
+            else:
+                LOGGER.error("Max retries reached for table %s", table)
+                raise sqlalchemy.exc.IntegrityError
+
+    def get_fk_constraints(self) -> list[TableConstraints]:
+        """
+        Return the foreign key constraints for the schema.
+
+        Queries the schema for all the foreign key constraints and returns a
+        list of TableConstraints objects.
+
+        :return: a list of TableConstraints objects that are used to store the
+            results of the foreign key constraint query
+        :rtype: list[TableConstraints]
+        """
+
+        self.get_connection()
+        query = """SELECT
+                    ac.constraint_name,
+                    ac.table_name,
+                    acc.column_name,
+                    ac.r_constraint_name,
+                    arc.table_name AS referenced_table,
+                    arcc.column_name AS referenced_column
+                FROM
+                    all_constraints ac
+                    JOIN all_cons_columns acc ON ac.constraint_name =
+                        acc.constraint_name
+                    JOIN all_constraints arc ON ac.r_constraint_name =
+                        arc.constraint_name
+                    JOIN all_cons_columns arcc ON arc.constraint_name =
+                        arcc.constraint_name
+                WHERE
+                    ac.constraint_type = 'R'
+                    AND ac.owner = :schema
+                    AND arc.owner = :schema
+                ORDER BY
+                    ac.table_name,
+                    ac.constraint_name,
+                    acc.POSITION"""
+        self.get_connection()
+        cursor = self.connection.cursor()
+        cursor.execute(query, schema=self.schema2Sync)
+        constraint_list = []
+        for row in cursor:
+            LOGGER.debug(row)
+            tab_con = TableConstraints(*row)
+            constraint_list.append(tab_con)
+        return constraint_list
+
+    def disable_fk_constraints(
+        self,
+        constraint_list: list[TableConstraints],
+    ) -> None:
+        """
+        Disable all foreign key constraints.
+
+        Iterates through the list of constraints and disables them.
+
+        :param constraint_list: a list of constraints that are to be disabled
+            by this method
+        :type constraint_list: list[TableConstraints]
+        """
+        self.get_connection()
+        cursor = self.connection.cursor()
+
+        for cons in constraint_list:
+            LOGGER.info("disabling constraint %s", cons.constraint_name)
+            query = (
+                f"ALTER TABLE {self.schema2Sync}.{cons.table_name} "
+                f"DISABLE CONSTRAINT {cons.constraint_name}"
+            )
+
+            cursor.execute(query)
+        cursor.close()
+
+    def enable_constraints(
+        self,
+        constraint_list: list[TableConstraints],
+    ) -> None:
+        """
+        Enable all foreign key constraints.
+
+        Iterates through the list of constraints and enables them.
+
+        :param constraint_list: list of constraints that are to be enabled
+        :type constraint_list: list[TableConstraints]
+        """
+        self.get_connection()
+        cursor = self.connection.cursor()
+
+        for cons in constraint_list:
+            LOGGER.info("enabling constraint %s", cons.constraint_name)
+            query = (
+                f"ALTER TABLE {self.schema2Sync}.{cons.table_name} "
+                f"ENABLE CONSTRAINT {cons.constraint_name}"
+            )
+            cursor.execute(query)
+        cursor.close()
