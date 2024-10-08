@@ -6,7 +6,6 @@ x-postgres-vars: &postgres-vars
   POSTGRES_PORT: 5432
 
 x-oracle-vars: &oracle-vars
-  DUMPVAR: dummy
   ORACLE_DATABASE: DBDOCK_01
   ORACLE_PASSWORD: default
   APP_USER: the
