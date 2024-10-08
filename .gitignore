@@ -160,3 +160,4 @@ migrations/sql/junk.txt
 out.parquet
 tmp_file
 data_prep/data/
+junk.txt
