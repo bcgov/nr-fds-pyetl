@@ -10,6 +10,9 @@
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter",
         "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        },
         "black-formatter.args":
             ["--line-length=80"],
     },
@@ -18,7 +21,7 @@
     },
     "ruff.lint.run": "onType",
     "ruff.organizeImports": false,
-    "isort.args":["--profile", "black"],
+    "isort.args": ["--profile", "black"],
     "autoDocstring.docstringFormat": "sphinx",
     "files.trimTrailingWhitespace": true,
     "ruff.lint.args": [
