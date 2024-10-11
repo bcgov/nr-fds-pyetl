@@ -161,3 +161,4 @@ out.parquet
 tmp_file
 data_prep/data/
 junk.txt
+data/**
