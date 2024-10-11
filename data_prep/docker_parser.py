@@ -9,9 +9,10 @@ docker compose file.
 from __future__ import annotations
 
 import logging
+import os
 import pathlib
 
-import oradb_lib
+import env_config
 import yaml
 
 LOGGER = logging.getLogger(__name__)
@@ -42,12 +43,13 @@ class ReadDockerCompose:
         self.compose_file_path = compose_file_path
 
         if self.compose_file_path is None:
-            self.compose_file_path = "docker-compose.yml"
+            self.compose_file_path = "./docker-compose.yml"
+        LOGGER.debug("docker compose file is: %s", self.compose_file_path)
 
         with pathlib.Path(self.compose_file_path).open("r") as fh:
             self.docker_comp = yaml.safe_load(fh)
 
-    def get_ora_conn_params(self) -> oradb_lib.ConnectionParameters:
+    def get_ora_conn_params(self) -> env_config.ConnectionParameters:
         """
         Return oracle connection parameters.
 
@@ -58,12 +60,15 @@ class ReadDockerCompose:
             parameters
         :rtype: oradb_lib.ConnectionTuple
         """
-        conn_tuple = oradb_lib.ConnectionParameters()
+        conn_tuple = env_config.ConnectionParameters
         conn_tuple.username = self.docker_comp["x-oracle-vars"]["APP_USER"]
         conn_tuple.password = self.docker_comp["x-oracle-vars"][
             "APP_USER_PASSWORD"
         ]
-        conn_tuple.host = "localhost"
+        # if running via docker compose the host should come from ORACLE_HOST
+        # otherwise just use localhost
+        conn_tuple.host = os.getenv("ORACLE_HOST", "localhost")
+
         conn_tuple.port = self.docker_comp["services"]["oracle"]["ports"][
             0
         ].split(":")[0]
