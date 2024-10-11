@@ -21,34 +21,14 @@ import os
 import pathlib
 from dataclasses import dataclass
 
+import constants
 import oracledb
 import pandas as pd
 import sqlalchemy
+from env_config import ConnectionParameters
 from oracledb.exceptions import DatabaseError
 
 LOGGER = logging.getLogger(__name__)
-
-
-@dataclass
-class ConnectionParameters:
-    """
-    Data class for database connection parameters.
-
-    * username: the username to connect to the database with
-    * password: the password for the username
-    * host: the host for the database
-    * port: the port for the database
-    * service_name: the service name for the database
-
-    :param NamedTuple: inherits from typing.NamedTuple
-    :type NamedTuple: typing.NamedTuple
-    """
-
-    username: str | None = None
-    password: str | None = None
-    host: str | None = None
-    port: str | None = None
-    service_name: str | None = None
 
 
 @dataclass
@@ -85,7 +65,6 @@ class OracleDatabase:
     def __init__(
         self,
         connection_params: ConnectionParameters | None = None,
-        schema_to_sync: None | str = None,
     ) -> None:
         """
         Construct for the OracleDatabase class.
@@ -104,13 +83,13 @@ class OracleDatabase:
         :type schema_to_sync: None | str, optional
         """
         if connection_params is None:
-            connection_params = ConnectionParameters()
+            connection_params = ConnectionParameters
         self.username = connection_params.username
         self.password = connection_params.password
         self.host = connection_params.host
         self.port = connection_params.port
         self.service_name = connection_params.service_name
-        self.schema2Sync = schema_to_sync
+        self.schema2Sync = connection_params.schema_to_sync
 
         # if the parameters are not supplied attempt to get them from the
         # environment
@@ -124,8 +103,8 @@ class OracleDatabase:
             self.port = os.getenv("ORACLE_PORT")
         if self.service_name is None:
             self.service_name = os.getenv("ORACLE_SERVICE")
-        if self.schema2Sync is None:
-            self.schema2Sync = os.getenv("ORACLE_SCHEMA_TO_SYNC")
+        # if self.schema2Sync is None:
+        #     self.schema2Sync = os.getenv("ORACLE_SCHEMA_TO_SYNC")
 
         self.connection = None
         self.sql_alchemy_engine = None
@@ -188,6 +167,7 @@ class OracleDatabase:
             omit_tables = [table.upper() for table in omit_tables]
         self.get_connection()
         cursor = self.connection.cursor()
+        LOGGER.debug("schema to sync: %s", schema)
         query = "select table_name from all_tables where owner = :schema"
         LOGGER.debug("query: %s", query)
         cursor.execute(query, schema=schema.upper())
@@ -220,7 +200,13 @@ class OracleDatabase:
             schema=self.schema2Sync.lower(),
         )
 
-    def extract_data(self, table: str, export_file: str) -> None:
+    def extract_data(
+        self,
+        table: str,
+        export_file: pathlib.Path,
+        *,
+        overwrite: bool = False,
+    ) -> bool:
         """
         Extract a table from the database to a parquet file.
 
@@ -230,17 +216,32 @@ class OracleDatabase:
         :param export_file: the full path to the file that will be created, and
             populated with the data from the table.
         :type export_file: str
+        :param overwrite: if True the file will be overwritten if it exists,
+        :return: True if the file was created, False if it was not
+        :rtype: bool
         """
+        file_created = False
         table_obj = self.get_table_object(table)
         select_obj = sqlalchemy.select(table_obj)
 
-        LOGGER.debug("data_query_sql: %s", select_obj)
-        LOGGER.debug("reading the %s", table)
-        self.get_sqlalchemy_engine()
-        df_orders = pd.read_sql(select_obj, self.sql_alchemy_engine)
+        # check that the directory for export file exists
+        export_file.parent.mkdir(parents=True, exist_ok=True)
 
-        LOGGER.debug("writing to parquet file: %s ", export_file)
-        df_orders.to_parquet(export_file)
+        if not export_file.exists() or overwrite:
+            if export_file.exists():
+                export_file.unlink()
+                # delete the file if it exists
+            LOGGER.debug("data_query_sql: %s", select_obj)
+            LOGGER.debug("reading the %s", table)
+            self.get_sqlalchemy_engine()
+            df_orders = pd.read_sql(select_obj, self.sql_alchemy_engine)
+
+            LOGGER.debug("writing to parquet file: %s ", export_file)
+            df_orders.to_parquet(export_file)
+            file_created = True
+        else:
+            LOGGER.info("file exists: %s, not re-exporting", export_file)
+        return file_created
 
     def get_tmp_file(self) -> str:
         """
@@ -306,7 +307,8 @@ class OracleDatabase:
     def load_data_retry(
         self,
         table_list: list[str],
-        data_dir: pathlib.Path,
+        data_dir: pathlib.Path,  # TODO(guyLafleur): get rid of this parameter if not required, which I suspect it is not
+        env_str: str,
         retries: int = 1,
         max_retries: int = 6,
         *,
@@ -336,6 +338,8 @@ class OracleDatabase:
             attempt to load data, if this number is exceeded the integrity
             constraint error will be raised, defaults to 6
         :type max_retries: int, optional
+        :param env_str: The environment string, used for path calculations,
+            defaults to "TEST"
         :param purge: If set to true the script will truncate the table before
             it attempt a load, defaults to False
         :type purge: bool, optional
@@ -353,7 +357,7 @@ class OracleDatabase:
         LOGGER.debug("retries: %s", retries)
         for table in table_list:
             spaces = " " * retries * 2
-            import_file = pathlib.Path(data_dir, f"{table}.parquet")
+            import_file = constants.get_parquet_file_path(table, env_str)
             LOGGER.info("Importing table %s %s", spaces, table)
             try:
                 self.load_data(table, import_file, purge=purge)

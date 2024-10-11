@@ -44,17 +44,28 @@ reference: https://www.andrewvillazon.com/quickly-load-data-db-python/
 import logging
 import logging.config
 import pathlib
+import sys
 from concurrent import futures  # noqa: F401
 
+import constants
 import docker_parser
+import env_config
+import object_store
 import oradb_lib
 
 LOGGER = logging.getLogger(__name__)
 
 
 if __name__ == "__main__":
+    # dealing with args
+    # NOTE: if this gets more complex use a CLI framework
+    env_str = "TEST"
+    if len(sys.argv) > 1:
+        env_str = sys.argv[1]
+    env_obj = env_config.Env(env_str)
+
     curdir = pathlib.Path(__file__).parents[0]
-    datadir = pathlib.Path(curdir, "data")
+    datadir = pathlib.Path(curdir, constants.DATA_DIR)
     if not datadir.exists():
         datadir.mkdir(parents=True)
 
@@ -69,19 +80,30 @@ if __name__ == "__main__":
     # connect to docker compose database to get a table list
     dcr = docker_parser.ReadDockerCompose()
     local_ora_params = dcr.get_ora_conn_params()
+    local_ora_params.schema_to_sync = env_obj.get_schema_to_sync()
+    LOGGER.debug("schema to sync: %s", local_ora_params.schema_to_sync)
     local_docker_db = oradb_lib.OracleDatabase(local_ora_params)
     tables_to_export = local_docker_db.get_tables(
         local_docker_db.schema2Sync,
         omit_tables=["FLYWAY_SCHEMA_HISTORY"],
     )
 
+    # configure the object store connection
+    ostore_params = env_obj.get_ostore_constants()
+    ostore = object_store.OStore(conn_params=ostore_params)
+
     # connect to the remote database and dump the data to object store
-    remote_ora_db = (
-        oradb_lib.OracleDatabase()
+    ora_params = env_obj.get_db_env_constants()
+    remote_ora_db = oradb_lib.OracleDatabase(
+        ora_params,
     )  # use the environment variables for connection parameters
     remote_ora_db.get_connection()
     for table in tables_to_export:
         LOGGER.info("Exporting table %s", table)
-        export_file = pathlib.Path(datadir, f"{table}.parquet")
+        export_file = constants.get_parquet_file_path(table, env_obj.env)
         LOGGER.debug("export_file: %s", export_file)
-        remote_ora_db.extract_data(table, export_file)
+        file_created = remote_ora_db.extract_data(table, export_file)
+
+        if file_created:
+            # push the file to object store
+            ostore.put_data_files([export_file], env_obj.env)

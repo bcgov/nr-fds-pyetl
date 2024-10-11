@@ -16,10 +16,12 @@ PyYAML = "^6.0.2"
 pandas = "^2.2.3"
 pyarrow = "^17.0.0"
 pypika = "^0.48.9"
+boto3 = {extras = ["s3"], version = "^1.35.37"}
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
 ruff = "^0.6.9"
+mypy-boto3 = "^1.35.38"
 
 [build-system]
 requires = ["poetry-core"]
