@@ -42,13 +42,6 @@ class OStore:
             aws_secret_access_key=self.conn_params.secret,
             endpoint_url=f"https://{self.conn_params.host}",
         )
-        LOGGER.debug(
-            "%s %s %s %s",
-            conn_params.user_id,
-            conn_params.bucket,
-            conn_params.host,
-            conn_params.secret,
-        )
 
     def get_data_files(self, tables: list[str], env_str: str) -> None:
         """
