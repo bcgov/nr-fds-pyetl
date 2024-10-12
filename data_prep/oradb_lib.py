@@ -381,8 +381,8 @@ class OracleDatabase:
                 LOGGER.info("Retrying failed tables")
                 retries += 1
                 self.load_data_retry(
-                    failed_tables,
-                    data_dir,
+                    table_list=failed_tables,
+                    data_dir=data_dir,
                     retries=retries,
                     max_retries=max_retries,
                 )
