@@ -385,6 +385,7 @@ class OracleDatabase:
                     data_dir=data_dir,
                     retries=retries,
                     max_retries=max_retries,
+                    purge=purge,
                 )
             else:
                 LOGGER.error("Max retries reached for table %s", table)
