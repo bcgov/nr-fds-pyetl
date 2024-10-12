@@ -7,5 +7,5 @@ poetry install
 source $(poetry env info --path)/bin/activate
 # echo "activate the venv"
 # source /venv/bin/activate
-echo "run the data injestion"
-python3 ./main_injest.py TEST
+echo "run the data ingestion"
+python3 ./main_ingest.py TEST
