@@ -311,7 +311,6 @@ class OracleDatabase:
         env_str: str,
         retries: int = 1,
         max_retries: int = 6,
-        *,
         purge: bool = False,
     ) -> None:
         """
