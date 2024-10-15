@@ -8,4 +8,4 @@ source $(poetry env info --path)/bin/activate
 # echo "activate the venv"
 # source /venv/bin/activate
 echo "run the data ingestion"
-python3 ./main_ingest.py TEST
+python3 ./main_ora_ingest.py TEST
