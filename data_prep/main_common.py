@@ -61,7 +61,7 @@ class Utility:
         LOGGER.debug("schema to sync: %s", local_ora_params.schema_to_sync)
         local_docker_db = oradb_lib.OracleDatabase(local_ora_params)
         tables_to_export = local_docker_db.get_tables(
-            local_docker_db.schema2Sync,
+            local_docker_db.schema_2_sync,
             omit_tables=["FLYWAY_SCHEMA_HISTORY"],
         )
         LOGGER.debug("tables retrieved: %s", tables_to_export)

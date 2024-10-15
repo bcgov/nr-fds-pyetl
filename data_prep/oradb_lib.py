@@ -89,7 +89,7 @@ class OracleDatabase:
         self.host = connection_params.host
         self.port = connection_params.port
         self.service_name = connection_params.service_name
-        self.schema2Sync = connection_params.schema_to_sync
+        self.schema_2_sync = connection_params.schema_to_sync
 
         # if the parameters are not supplied attempt to get them from the
         # environment
@@ -103,8 +103,6 @@ class OracleDatabase:
             self.port = os.getenv("ORACLE_PORT")
         if self.service_name is None:
             self.service_name = os.getenv("ORACLE_SERVICE")
-        # if self.schema2Sync is None:
-        #     self.schema2Sync = os.getenv("ORACLE_SCHEMA_TO_SYNC")
 
         self.connection = None
         self.sql_alchemy_engine = None
@@ -192,12 +190,12 @@ class OracleDatabase:
         """
         self.get_sqlalchemy_engine()
         metadata = sqlalchemy.MetaData()
-        LOGGER.debug("schema2Sync is: %s", self.schema2Sync)
+        LOGGER.debug("schema2Sync is: %s", self.schema_2_sync)
         return sqlalchemy.Table(
             table_name.lower(),
             metadata,
             autoload_with=self.sql_alchemy_engine,
-            schema=self.schema2Sync.lower(),
+            schema=self.schema_2_sync.lower(),
         )
 
     def extract_data(
@@ -243,7 +241,7 @@ class OracleDatabase:
             LOGGER.info("file exists: %s, not re-exporting", export_file)
         return file_created
 
-    def get_tmp_file(self) -> str:
+    def get_tmp_file(self) -> pathlib.Path:
         """
         Return a temporary file name.
 
@@ -264,7 +262,7 @@ class OracleDatabase:
         self.get_connection()
         cursor = self.connection.cursor()
         LOGGER.debug("truncating table: %s", table)
-        cursor.execute(f"truncate table {self.schema2Sync}.{table}")
+        cursor.execute(f"truncate table {self.schema_2_sync}.{table}")
         self.connection.commit()
         cursor.close()
 
@@ -289,7 +287,7 @@ class OracleDatabase:
         pandas_df = pd.read_parquet(import_file)
         tmp_file = self.get_tmp_file()
         LOGGER.debug("tmp_file: %s", str(tmp_file))
-        pandas_df.to_csv(tmp_file, sep="|", index_label=None)
+        pandas_df.to_csv(str(tmp_file), sep="|", index_label=None)
 
         LOGGER.debug("table: %s", table)
 
@@ -382,6 +380,7 @@ class OracleDatabase:
                 self.load_data_retry(
                     table_list=failed_tables,
                     data_dir=data_dir,
+                    env_str=env_str,
                     retries=retries,
                     max_retries=max_retries,
                     purge=purge,
@@ -467,7 +466,7 @@ class OracleDatabase:
                     acc.POSITION"""
         self.get_connection()
         cursor = self.connection.cursor()
-        cursor.execute(query, schema=self.schema2Sync)
+        cursor.execute(query, schema=self.schema_2_sync)
         constraint_list = []
         for row in cursor:
             LOGGER.debug(row)
@@ -494,7 +493,7 @@ class OracleDatabase:
         for cons in constraint_list:
             LOGGER.info("disabling constraint %s", cons.constraint_name)
             query = (
-                f"ALTER TABLE {self.schema2Sync}.{cons.table_name} "
+                f"ALTER TABLE {self.schema_2_sync}.{cons.table_name} "
                 f"DISABLE CONSTRAINT {cons.constraint_name}"
             )
 
@@ -519,7 +518,7 @@ class OracleDatabase:
         for cons in constraint_list:
             LOGGER.info("enabling constraint %s", cons.constraint_name)
             query = (
-                f"ALTER TABLE {self.schema2Sync}.{cons.table_name} "
+                f"ALTER TABLE {self.schema_2_sync}.{cons.table_name} "
                 f"ENABLE CONSTRAINT {cons.constraint_name}"
             )
             cursor.execute(query)
