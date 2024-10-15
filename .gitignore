@@ -157,3 +157,8 @@ cython_debug/
 junk/
 junk.yml
 migrations/sql/junk.txt
+out.parquet
+tmp_file
+data_prep/data/
+junk.txt
+data/**

@@ -6,12 +6,12 @@ x-postgres-vars: &postgres-vars
   POSTGRES_PORT: 5432
 
 x-oracle-vars: &oracle-vars
-  DUMPVAR: dummy
   ORACLE_DATABASE: DBDOCK_01
   ORACLE_PASSWORD: default
   APP_USER: the
   APP_USER_PASSWORD: default
   FLYWAY_URL: jdbc:oracle:thin:@//oracle:1521/DBDOCK_01
+
 
 services:
   # Name of the Docker Compose service
@@ -23,7 +23,7 @@ services:
       - "1521:1521"
     # Provide passwords and other environment variables to the container
     environment:
-      <<: *oracle-vars    
+      <<: *oracle-vars
     # Customize healthcheck script options for startup
     healthcheck:
       test: ["CMD", "/opt/oracle/healthcheck.sh"]
@@ -39,7 +39,8 @@ services:
     image: flyway/flyway:10-alpine
     container_name: migrations
     command: info migrate info
-    volumes: ["./migrations/sql:/flyway/sql:ro"]
+    volumes:
+      - "./migrations/sql:/flyway/sql:ro"
     environment:
       <<: *oracle-vars
       FLYWAY_USER: THE
@@ -49,6 +50,29 @@ services:
     depends_on:
       oracle:
         condition: service_healthy
+
+  oracle-data-load:
+    profiles: ["python", "all"]
+    image: python:3.12
+    container_name: oracle-data-loader
+    entrypoint: bash /application/docker_run_TEST.bash
+    #entrypoint: sleep 500000
+    working_dir:    /application
+    volumes:
+      -  "./.venv:/venv"
+      - "./data_prep:/application"
+      - "./poetry.lock:/application/poetry.lock"
+      - "./pyproject.toml:/application/pyproject.toml"
+      - "./docker-compose.yml:/application/docker-compose.yml"
+      - "./data:/application/data"
+    environment:
+      <<: [*oracle-vars]
+      ORACLE_HOST: oracle
+    env_file:
+      - ".env"
+    depends_on:
+      oracle-migrations:
+        condition: service_completed_successfully
 
   # debug service, useful for understanding how environment variables work
   echoit:

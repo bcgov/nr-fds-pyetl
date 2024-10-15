@@ -1,0 +1,37 @@
+[tool.poetry]
+name = "nr-fds-pyetl"
+version = "0.1.0"
+description = "Data sync tooling to keep legacy and new environments in sync"
+authors = ["Your Name <you@example.com>"]
+license = "Apache License 2.0"
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.11"
+oracledb = "^2.4.1"
+numpy = "^2.1.1"
+SQLAlchemy = "^2.0.35"
+PyYAML = "^6.0.2"
+pandas = "^2.2.3"
+pyarrow = "^17.0.0"
+pypika = "^0.48.9"
+boto3 = {extras = ["s3"], version = "^1.35.37"}
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.8.0"
+ruff = "^0.6.9"
+mypy-boto3 = "^1.35.38"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff.lint]
+select = ["ALL"]
+
+[tool.ruff]
+line-length = 80
+
+[tool.black]
+line-length = 80
