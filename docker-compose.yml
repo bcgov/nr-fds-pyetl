@@ -53,7 +53,7 @@ services:
 
   oracle-data-load:
     profiles: ["python", "all"]
-    image: python:3.12
+    image: python:3.13
     container_name: oracle-data-loader
     entrypoint: bash /application/docker_run_TEST.bash
     #entrypoint: sleep 500000
