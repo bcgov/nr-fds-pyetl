@@ -1,9 +1,24 @@
+
+x-var:
+  - &POSTGRES_USER
+    postgres
+  - &POSTGRES_PASSWORD
+    default
+  - &POSTGRES_DATABASE
+    postgres
+  - &FLYWAY_URL_POSTGRES
+    jdbc:postgresql://spar-db:5432/spar
+
+
+
 x-postgres-vars: &postgres-vars
   POSTGRES_DB: spar
   POSTGRES_HOST: database
-  POSTGRES_USER: postgres
-  POSTGRES_PASSWORD: default
+  POSTGRES_USER: *POSTGRES_USER
+  POSTGRES_PASSWORD: *POSTGRES_PASSWORD
   POSTGRES_PORT: 5432
+  FLYWAY_URL_POSTGRES: jdbc:postgresql://spar-db:5432/spar
+
 
 x-oracle-vars: &oracle-vars
   ORACLE_DATABASE: DBDOCK_01
@@ -14,6 +29,35 @@ x-oracle-vars: &oracle-vars
 
 
 services:
+
+  spar-db:
+    image: postgres:15
+    container_name: database
+    environment:
+      <<: *postgres-vars
+    volumes:
+    - ./migrations_spar/init.sql:/initdb/init.sql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", postgres]
+    ports: ["5432:5432"]
+
+  spar-db-migrations:
+    image: flyway/flyway:10-alpine
+    container_name: migrations_spar
+    command: info migrate info
+    volumes: ["./migrations_spar/sql:/flyway/sql:ro"]
+    environment:
+      FLYWAY_URL: *FLYWAY_URL_POSTGRES
+      FLYWAY_USER: *POSTGRES_USER
+      FLYWAY_PASSWORD: *POSTGRES_PASSWORD
+      FLYWAY_BASELINE_ON_MIGRATE: true
+      FLYWAY_DEFAULT_SCHEMA: spar
+    depends_on:
+      spar-db:
+        condition: service_healthy
+
+
+
   # Name of the Docker Compose service
   oracle:
     # Docker Hub image (feel free to change the tag "latest" to any other available one)
@@ -37,10 +81,10 @@ services:
 
   oracle-migrations:
     image: flyway/flyway:10-alpine
-    container_name: migrations
+    container_name: migrations_ora
     command: info migrate info
     volumes:
-      - "./migrations/sql:/flyway/sql:ro"
+      - "./migrations_ora/sql:/flyway/sql:ro"
     environment:
       <<: *oracle-vars
       FLYWAY_USER: THE
@@ -53,7 +97,7 @@ services:
 
   oracle-data-load:
     profiles: ["python", "all"]
-    image: python:3.12
+    image: python:3.11
     container_name: oracle-data-loader
     entrypoint: bash /application/docker_run_TEST.bash
     #entrypoint: sleep 500000
