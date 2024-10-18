@@ -204,5 +204,5 @@ if __name__ == "__main__":
     ostore = OStore(ostore_creds)
 
     table = "BEC_VERSION_CONTROL"
-    ostore.put_data_files([table], env.env)
-    ostore.get_data_files([table], env.env)
+    ostore.put_data_files([table], env.current_env)
+    ostore.get_data_files([table], env.current_env)

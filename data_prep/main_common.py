@@ -99,14 +99,14 @@ class Utility:
             LOGGER.info("Exporting table %s", table)
             export_file = constants.get_parquet_file_path(
                 table,
-                self.env_obj.env,
+                self.env_obj.current_env,
             )
             LOGGER.debug("export_file: %s", export_file)
             file_created = remote_ora_db.extract_data(table, export_file)
 
             if file_created:
                 # push the file to object store
-                ostore.put_data_files([export_file], self.env_obj.env)
+                ostore.put_data_files([export_file], self.env_obj.current_env)
 
     def run_injest(self) -> None:
         """
@@ -121,13 +121,13 @@ class Utility:
         local_ora_params.schema_to_sync = self.env_obj.get_schema_to_sync()
         local_docker_db = oradb_lib.OracleDatabase(local_ora_params)
 
-        ostore.get_data_files(tables_to_import, self.env_obj.env)
+        ostore.get_data_files(tables_to_import, self.env_obj.current_env)
 
         local_docker_db.purge_data(table_list=tables_to_import)
 
         local_docker_db.load_data_retry(
             data_dir=self.datadir,
             table_list=tables_to_import,
-            env_str=self.env_obj.env,
+            env_str=self.env_obj.current_env,
             purge=False,
         )

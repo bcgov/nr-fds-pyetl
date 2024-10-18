@@ -19,6 +19,21 @@ LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
+class OCParams:
+    """
+    Data class for OC connection parameters.
+
+    * host: the host for the OC service
+    * token: the token used to validate api requests
+
+    """
+
+    host: str | None
+    token: str | None
+    namespace: str | None
+
+
+@dataclass
 class ConnectionParameters:
     """
     Data class for database connection parameters.
@@ -104,7 +119,7 @@ class Env:
         :type env_str: str
         """
         self.validate(env_str)
-        self.env = env_str
+        self.current_env = env_str
 
     def validate(self, proposed_env_str: str) -> None:
         """
@@ -132,8 +147,8 @@ class Env:
         different location than the environment.  In that situation will still
         need to pull in this value from the environment.
         """
-        LOGGER.debug("env for schema retrieval: %s", self.env)
-        return os.getenv(f"ORACLE_SCHEMA_TO_SYNC_{self.env}")
+        LOGGER.debug("env for schema retrieval: %s", self.current_env)
+        return os.getenv(f"ORACLE_SCHEMA_TO_SYNC_{self.current_env}")
 
     def get_ostore_constants(self) -> ObjectStoreParameters:
         """
@@ -147,10 +162,18 @@ class Env:
         """
         obj_store_const = ObjectStoreParameters
 
-        obj_store_const.bucket = os.getenv(f"OBJECT_STORE_BUCKET_{self.env}")
-        obj_store_const.host = os.getenv(f"OBJECT_STORE_HOST_{self.env}")
-        obj_store_const.secret = os.getenv(f"OBJECT_STORE_SECRET_{self.env}")
-        obj_store_const.user_id = os.getenv(f"OBJECT_STORE_USER_{self.env}")
+        obj_store_const.bucket = os.getenv(
+            f"OBJECT_STORE_BUCKET_{self.current_env}",
+        )
+        obj_store_const.host = os.getenv(
+            f"OBJECT_STORE_HOST_{self.current_env}",
+        )
+        obj_store_const.secret = os.getenv(
+            f"OBJECT_STORE_SECRET_{self.current_env}",
+        )
+        obj_store_const.user_id = os.getenv(
+            f"OBJECT_STORE_USER_{self.current_env}",
+        )
         return obj_store_const
 
     def get_db_env_constants(self) -> ConnectionParameters:
@@ -170,15 +193,39 @@ class Env:
         """
         database_const = ConnectionParameters
 
-        database_const.host = os.getenv(f"ORACLE_HOST_{self.env}")
-        database_const.port = os.getenv(f"ORACLE_PORT_{self.env}")
-        database_const.service_name = os.getenv(f"ORACLE_SERVICE_{self.env}")
-        database_const.username = os.getenv(f"ORACLE_USER_{self.env}")
-        database_const.password = os.getenv(f"ORACLE_PASSWORD_{self.env}")
+        database_const.host = os.getenv(f"ORACLE_HOST_{self.current_env}")
+        database_const.port = os.getenv(f"ORACLE_PORT_{self.current_env}")
+        database_const.service_name = os.getenv(
+            f"ORACLE_SERVICE_{self.current_env}",
+        )
+        database_const.username = os.getenv(f"ORACLE_USER_{self.current_env}")
+        database_const.password = os.getenv(
+            f"ORACLE_PASSWORD_{self.current_env}",
+        )
 
         database_const.schema_to_sync = self.get_schema_to_sync()
         LOGGER.debug("schema to sync: %s", database_const.schema_to_sync)
         return database_const
+
+    def get_oc_constants(self) -> OCParams:
+        """
+        Get the OC parameters required to connect.
+
+        Returns the OC parameters necessary to communicate with object
+        store.
+
+        :return: _description_
+        :rtype: AppConstants
+        """
+        oc_const = OCParams
+
+        oc_const.host = os.getenv(
+            "OC_URL",
+            "https://api.silver.devops.gov.bc.ca:6443",
+        )
+        oc_const.token = os.getenv(f"OC_TOKEN_{self.current_env}")
+        oc_const.namespace = os.getenv(f"OC_LICENSE_PLATE_{self.current_env}")
+        return oc_const
 
 
 if __name__ == "__main__":
