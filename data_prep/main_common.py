@@ -29,14 +29,22 @@ class Utility:
         self.env_str = env_str
         self.env_obj = env_config.Env(env_str)
         self.curdir = pathlib.Path(__file__).parents[0]
-        self.datadir = pathlib.Path(self.curdir, constants.DATA_DIR)
+        self.datadir = pathlib.Path(
+            self.curdir,
+            "..",
+            constants.DATA_DIR,
+        ).resolve()
 
     def make_dirs(self) -> None:
         """
         Make necessary directories.
         """
+        LOGGER.debug("datadir: %s", self.datadir)
         if not self.datadir.exists():
             self.datadir.mkdir(parents=True)
+        env_path = pathlib.Path(self.datadir, self.env_obj.env)
+        if not env_path.exists():
+            env_path.mkdir()
 
     def configure_logging(self) -> None:
         """

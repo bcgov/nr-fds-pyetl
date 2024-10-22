@@ -62,7 +62,7 @@ class OStore:
                     # with open(local_data_file, "wb") as f:
                     self.s3_client.download_fileobj(
                         self.conn_params.bucket,
-                        remote_data_file,
+                        str(remote_data_file),
                         f,
                     )
 
