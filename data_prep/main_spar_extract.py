@@ -27,6 +27,11 @@ if __name__ == "__main__":
     logger_name = pathlib.Path(__file__).stem
     LOGGER = logging.getLogger(logger_name)
 
+    # new stuff
+    util = main_common.Utility(env_str, db_type)
+    util.run_extract()
+    sys.exit()
+
     # query kubernetes to get parameters necessary to build the tunnel
     # to create the tunnel need to know:
     # 1. the pod name
@@ -69,16 +74,16 @@ if __name__ == "__main__":
     db_conn_params = env_config.ConnectionParameters
     db_conn_params.host = "localhost"
     db_conn_params.port = base64.b64decode(
-        db_secret.data["database-port"]
+        db_secret.data["database-port"],
     ).decode("utf-8")
     db_conn_params.service_name = base64.b64decode(
-        db_secret.data["database-name"]
+        db_secret.data["database-name"],
     ).decode("utf-8")
     db_conn_params.username = base64.b64decode(
-        db_secret.data["database-user"]
+        db_secret.data["database-user"],
     ).decode("utf-8")
     db_conn_params.password = base64.b64decode(
-        db_secret.data["database-password"]
+        db_secret.data["database-password"],
     ).decode("utf-8")
 
     # create the tunnel

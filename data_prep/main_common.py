@@ -61,6 +61,41 @@ class Utility:
         LOGGER = logging.getLogger(__name__)
         LOGGER.debug("test debug message")
 
+    def connect_ostore(self) -> object_store.OStore:
+        """
+        Connect to object store.
+        """
+        ostore_params = self.env_obj.get_ostore_constants()
+        return object_store.OStore(conn_params=ostore_params)
+
+    def get_db_connection_params(self):
+        """
+        Get database connection object.
+
+        Determines what the database type is and uses different methods to
+        retrieve database connecti
+        """
+
+    def get_tables(self) -> list[str]:
+        tables = []
+        if self.db_type == constants.DBType.ORA:
+            tables = self.get_tables_from_local_docker()
+        elif self.db_type == constants.DBType.SPAR:
+            tables = self.get_tables_from_spar()
+        return tables
+
+    def get_tables_from_spar(self):
+        oc_params = self.env_obj.get_oc_constants()
+
+        db_pod = self.get_kubnernetes_db_pod()
+        db_params = self.get_dbparams_from_kubernetes()
+        self.open_port_forward(
+            db_pod.metadata.name,
+            oc_params.namespace,
+            constants.DB_LOCAL_PORT,
+            db_params.port,
+        )
+
     def get_tables_from_local_docker(self) -> list[str]:
         """
         Get tables from local docker.
@@ -77,33 +112,14 @@ class Utility:
         LOGGER.debug("tables retrieved: %s", tables_to_export)
         return tables_to_export
 
-    def connect_ostore(self) -> object_store.OStore:
-        """
-        Connect to object store.
-        """
-        ostore_params = self.env_obj.get_ostore_constants()
-        return object_store.OStore(conn_params=ostore_params)
-
-    def get_tables(self):
-        if self.db_type == constants.DBType.ORA:
-            self.get_tables_from_local_docker()
-        elif self.db_type == constants.DBType.SPAR:
-            self.get_tables_from_spar()
-
-    def get_tables_from_spar(self):
-        oc_params = self.env_obj.get_oc_constants()
-
-        db_pod = self.get_kubnernetes_db_pod()
-        db_params = self.get_dbparams_from_kubernetes()
-        self.open_port_forward(
-            db_pod.metadata.name,
-            oc_params.namespace,
-            constants.DB_LOCAL_PORT,
-            db_params.port,
-        )
-
     def get_kubernetes_client(self):
+        """
+        This method is called any time a method is called that requires the
+        kube_client property
+        """
         if self.kube_client == None:
+            oc_params = self.env_obj.get_oc_constants()
+            self.kube_client = kubernetes_wrapper.KubeClient(oc_params)
 
     def open_port_forward_sync(
         self,
@@ -128,10 +144,11 @@ class Utility:
         :param remote_port: the remote port for the port-forward
         :type remote_port: str
         """
-        oc_params = self.env_obj.get_oc_constants()
-        kubernetes_client = kubernetes_wrapper.KubeClient(oc_params)
+        self.get_kubernetes_client()
+        # oc_params = self.env_obj.get_oc_constants()
+        # kubernetes_client = kubernetes_wrapper.KubeClient(oc_params)
 
-        kubernetes_client.open_port_forward(
+        self.kube_client.open_port_forward(
             pod_name=pod_name,
             namespace=namespace,
             local_port=local_port,
@@ -155,14 +172,17 @@ class Utility:
                 sock.close()
 
     def get_kubnernetes_db_pod(self) -> str:
-        oc_params = self.env_obj.get_oc_constants()
-        kubernetes_client = kubernetes_wrapper.KubeClient(oc_params)
+        self.get_kubernetes_client()
+
+        # oc_params = self.env_obj.get_oc_constants()
+        # kube_client = kubernetes_wrapper.KubeClient(oc_params)
 
         db_filter_string = constants.db_filter_string.format(
             env_str=self.env_str.lower()
         )
-        pods = kubernetes_client.get_pods(
-            filter_str=db_filter_string, exclude_strs=["backup"]
+        pods = self.kube_client.get_pods(
+            filter_str=db_filter_string,
+            exclude_strs=["backup"],
         )
         if len(pods) > 1:
             pod_names = ", ".join([pod.metadata.name for pod in pods])
@@ -182,13 +202,12 @@ class Utility:
 
     def get_dbparams_from_kubernetes(self) -> env_config.ConnectionParameters:
         oc_params = self.env_obj.get_oc_constants()
-        kubernetes_client = kubernetes_wrapper.KubeClient(oc_params)
 
         db_filter_string = constants.db_filter_string.format(
             env_str=self.env_str.lower(),
         )
 
-        secrets = kubernetes_client.get_secrets(
+        secrets = self.kube_client.get_secrets(
             namespace=oc_params.namespace,
             filter_str=db_filter_string,
         )
@@ -226,7 +245,8 @@ class Utility:
         Run the extract process.
         """
         self.make_dirs()
-        tables_to_export = self.get_tables_from_local_docker()
+        tables_to_export = self.get_tables()
+        # tables_to_export = self.get_tables_from_local_docker()
         ostore = self.connect_ostore()
 
         ora_params = self.env_obj.get_db_env_constants()
