@@ -99,15 +99,13 @@ class KubeClient:
 
         """
         LOGGER.debug("Opening port forward for the pod: %s", pod_name)
-        pod = Pod.get(pod_name)
+        pod = Pod.get(name=pod_name, namespace=namespace)
         self.pf = pod.portforward(
-            remote_port=5432,
-            local_port=5432,
-            # address=["127.0.0.1"],
+            remote_port=local_port,
+            local_port=local_port,
         )
         self.pf.start()  # Start the port forward in a background thread
         LOGGER.debug("Port forward started")
-        return self.pf
 
     def close_port_forward(self):
         if self.pf:

@@ -2,9 +2,11 @@ import base64
 import logging
 import os
 import pathlib
+import socket
 import sys
 import time
 
+import constants
 import env_config
 import kubernetes_wrapper
 import main_common
@@ -19,7 +21,8 @@ if __name__ == "__main__":
     env_obj = env_config.Env(env_str)
 
     # configure logging
-    common_util = main_common.Utility(env_str)
+    db_type = constants.DBType.SPAR
+    common_util = main_common.Utility(env_str, db_type)
     common_util.configure_logging()
     logger_name = pathlib.Path(__file__).stem
     LOGGER = logging.getLogger(logger_name)
@@ -85,22 +88,36 @@ if __name__ == "__main__":
         local_port=db_conn_params.port,
         remote_port=db_conn_params.port,
     )
+    # The tunnel can take a few seconds to establish, so adding
+    # a sleep to allow the tunnel to be established
+    # time.sleep(0.5)
     conn = None
     retry = 0
-    while conn is None and retry < 4:
+    sock_success = False
+    while not sock_success or retry > 10:
         try:
-            conn = psycopg2.connect(
-                user=db_conn_params.username,
-                password=db_conn_params.password,
-                host=db_conn_params.host,
-                port=db_conn_params.port,
-                database=db_conn_params.service_name,
-            )
-        except psycopg2.OperationalError as e:
-            LOGGER.error("connection failed: %s", e)
+            # conn = psycopg2.connect(
+            #     user=db_conn_params.username,
+            #     password=db_conn_params.password,
+            #     host=db_conn_params.host,
+            #     port=db_conn_params.port,
+            #     database=db_conn_params.service_name,
+            # )
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(2)
+            sock.connect(("localhost", 5432))
+            sock_success = True
+
+        except OSError as e:
+            # LOGGER.exception("connection failed: %s", e)
+            LOGGER.exception("port forward not available...")
             conn = None
             time.sleep(1)
             retry += 1
+            sock_success = False
+        finally:
+            # Close the socket
+            sock.close()
 
     # connect to the database
     conn = psycopg2.connect(

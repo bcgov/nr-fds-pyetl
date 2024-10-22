@@ -4,6 +4,7 @@ Declare constants for the data_prep package.
 """
 
 import pathlib
+from enum import Enum
 
 # the name of the directory where data downloads will be cached before they
 # get uploaded to object store, and where they are cached when pulled from
@@ -18,6 +19,20 @@ PARQUET_SUFFIX = "parquet"
 
 # name of the directory in object store where the data backup files reside
 OBJECT_STORE_DATA_DIRECTORY = "pyetl"
+
+# database filter string
+DB_FILTER_STRING = "nr-spar-{env_str)}-database"
+
+# the port to use for the local port when establishing a port forward, and then
+# for connecting to the database that is in kubernetes
+DB_LOCAL_PORT = 5432
+
+
+# database types, used to identify which database (spar or oracle) is
+# to be worked with
+class DBType(Enum):
+    ORA = 1
+    SPAR = 2
 
 
 def get_parquet_file_path(table: str, env_str: str) -> pathlib.Path:
