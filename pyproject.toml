@@ -20,7 +20,7 @@ boto3 = {extras = ["s3"], version = "^1.35.37"}
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
-ruff = "^0.6.9"
+ruff = "^0.7.0"
 mypy-boto3 = "^1.35.38"
 
 [build-system]
