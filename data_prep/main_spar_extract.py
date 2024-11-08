@@ -28,8 +28,7 @@ if __name__ == "__main__":
     LOGGER = logging.getLogger(logger_name)
 
     # new stuff
-    util = main_common.Utility(env_str, db_type)
-    util.run_extract()
+    common_util.run_extract()
     sys.exit()
 
     # query kubernetes to get parameters necessary to build the tunnel

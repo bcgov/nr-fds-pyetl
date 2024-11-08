@@ -93,6 +93,8 @@ class DB(ABC):
 
         self.connection = None
         self.sql_alchemy_engine = None
+        self.db_type = None
+        self.populate_db_type()
 
     @abstractmethod
     def get_connection(self) -> None:
@@ -100,6 +102,17 @@ class DB(ABC):
         Connect to the database.
 
         Implement this method to populate the self.connection object property
+
+        :raises NotImplementedError: _description_
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def populate_db_type(self) -> None:
+        """
+        Populate the database type.
+
+        Implement this method to populate the self.db_type object property
 
         :raises NotImplementedError: _description_
         """
@@ -234,7 +247,11 @@ class DB(ABC):
             df_orders = pd.read_sql(select_obj, self.sql_alchemy_engine)
 
             LOGGER.debug("writing to parquet file: %s ", export_file)
-            df_orders.to_parquet(export_file)
+            df_orders.to_parquet(
+                export_file,
+                engine="pyarrow",
+            )
+            # engine='pyarrow'  engine="fastparquet"
             file_created = True
         else:
             LOGGER.info("file exists: %s, not re-exporting", export_file)
@@ -360,7 +377,9 @@ class DB(ABC):
         LOGGER.debug("retries: %s", retries)
         for table in table_list:
             spaces = " " * retries * 2
-            import_file = constants.get_parquet_file_path(table, env_str)
+            import_file = constants.get_parquet_file_path(
+                table, env_str, self.db_type
+            )
             LOGGER.info("Importing table %s %s", spaces, table)
             try:
                 self.load_data(table, import_file, purge=purge)

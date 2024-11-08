@@ -43,7 +43,9 @@ class OStore:
             endpoint_url=f"https://{self.conn_params.host}",
         )
 
-    def get_data_files(self, tables: list[str], env_str: str) -> None:
+    def get_data_files(
+        self, tables: list[str], env_str: str, db_type: constants.DBType
+    ) -> None:
         """
         Pull data files from object store.
 
@@ -52,8 +54,13 @@ class OStore:
         :type tables: list[str]
         """
         for table in tables:
-            local_data_file = constants.get_parquet_file_path(table, env_str)
-            remote_data_file = constants.get_parquet_file_ostore_path(table)
+            local_data_file = constants.get_parquet_file_path(
+                table, env_str, db_type
+            )
+            remote_data_file = constants.get_parquet_file_ostore_path(
+                table,
+                db_type,
+            )
             # keeping it simple for now, if local exists re-use it
             if not local_data_file.exists():
                 # pull the files from object store.
@@ -166,7 +173,9 @@ class OStore:
             )
         return versions
 
-    def put_data_files(self, tables: list[str], env_str: str) -> None:
+    def put_data_files(
+        self, tables: list[str], env_str: str, db_type: constants.DBType
+    ) -> None:
         """
         Upload files that correspond with tables to object storage.
 
@@ -182,8 +191,13 @@ class OStore:
         :type env_str: str
         """
         for table in tables:
-            local_data_file = constants.get_parquet_file_path(table, env_str)
-            remote_data_file = constants.get_parquet_file_ostore_path(table)
+            local_data_file = constants.get_parquet_file_path(
+                table, env_str, db_type
+            )
+            remote_data_file = constants.get_parquet_file_ostore_path(
+                table,
+                db_type,
+            )
             # keeping it simple for now, if local exists re-use it
             if local_data_file.exists():
                 self.delete_data_file(remote_data_file)

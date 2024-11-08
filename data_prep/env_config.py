@@ -176,7 +176,7 @@ class Env:
         )
         return obj_store_const
 
-    def get_db_env_constants(self) -> ConnectionParameters:
+    def get_ora_db_env_constants(self) -> ConnectionParameters:
         """
         Populate constants from the environment.
 

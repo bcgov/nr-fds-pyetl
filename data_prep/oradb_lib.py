@@ -19,6 +19,7 @@ import logging
 import logging.config
 from dataclasses import dataclass
 
+import constants
 import db_lib
 import oracledb
 import pandas as pd
@@ -60,6 +61,14 @@ class OracleDatabase(db_lib.DB):
                 service_name=self.service_name,
             )
             LOGGER.debug("connected to database")
+
+    def populate_db_type(self) -> None:
+        """
+        Populate the db_type variable.
+
+        Sets the db_type variable to SPAR.
+        """
+        self.db_type = constants.DBType.SPAR
 
     def get_sqlalchemy_engine(self) -> None:
         """

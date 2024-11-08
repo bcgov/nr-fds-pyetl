@@ -17,6 +17,7 @@ import env_config
 import kubernetes_wrapper
 import object_store
 import oradb_lib
+import postgresdb_lib
 
 LOGGER = logging.getLogger(__name__)
 
@@ -33,13 +34,21 @@ class Utility:
         self.env_str = env_str
         self.env_obj = env_config.Env(env_str)
         self.curdir = pathlib.Path(__file__).parents[0]
-        self.datadir = pathlib.Path(self.curdir, constants.DATA_DIR)
+        self.datadir = pathlib.Path(
+            self.curdir,
+            constants.DATA_DIR,
+            self.env_str,
+            db.name.lower(),
+        )
         self.db_type = db
         self.kube_client = None
 
     def make_dirs(self) -> None:
         """
         Make necessary directories.
+
+        Directories that need to be created are dependent on the database
+        environment (TEST or PROD)
         """
         LOGGER.debug("datadir: %s", self.datadir)
         if not self.datadir.exists():
@@ -75,6 +84,7 @@ class Utility:
         Determines what the database type is and uses different methods to
         retrieve database connecti
         """
+        # TODO: populate this, use this as fork for different db types
 
     def get_tables(self) -> list[str]:
         tables = []
@@ -89,12 +99,23 @@ class Utility:
 
         db_pod = self.get_kubnernetes_db_pod()
         db_params = self.get_dbparams_from_kubernetes()
-        self.open_port_forward(
+        self.open_port_forward_sync(
             db_pod.metadata.name,
             oc_params.namespace,
             constants.DB_LOCAL_PORT,
             db_params.port,
         )
+
+        # now get the actual tables
+        spar_db_params = self.get_dbparams_from_kubernetes()
+        db_connection = postgresdb_lib.PostgresDatabase(
+            connection_params=spar_db_params
+        )
+        tables_to_export = db_connection.get_tables(
+            schema=spar_db_params.schema_to_sync,
+            omit_tables=["FLYWAY_SCHEMA_HISTORY"],
+        )
+        return tables_to_export
 
     def get_tables_from_local_docker(self) -> list[str]:
         """
@@ -177,7 +198,7 @@ class Utility:
         # oc_params = self.env_obj.get_oc_constants()
         # kube_client = kubernetes_wrapper.KubeClient(oc_params)
 
-        db_filter_string = constants.db_filter_string.format(
+        db_filter_string = constants.DB_FILTER_STRING.format(
             env_str=self.env_str.lower()
         )
         pods = self.kube_client.get_pods(
@@ -203,7 +224,7 @@ class Utility:
     def get_dbparams_from_kubernetes(self) -> env_config.ConnectionParameters:
         oc_params = self.env_obj.get_oc_constants()
 
-        db_filter_string = constants.db_filter_string.format(
+        db_filter_string = constants.DB_FILTER_STRING.format(
             env_str=self.env_str.lower(),
         )
 
@@ -226,6 +247,7 @@ class Utility:
         db_secret = secrets[0]
         db_conn_params = env_config.ConnectionParameters
         db_conn_params.host = "localhost"
+        db_conn_params.schema_to_sync = "spar"
         db_conn_params.port = base64.b64decode(
             db_secret.data["database-port"],
         ).decode("utf-8")
@@ -246,41 +268,68 @@ class Utility:
         """
         self.make_dirs()
         tables_to_export = self.get_tables()
+        LOGGER.debug("tables to export: %s", tables_to_export)
+
         # tables_to_export = self.get_tables_from_local_docker()
         ostore = self.connect_ostore()
 
-        ora_params = self.env_obj.get_db_env_constants()
-        remote_ora_db = oradb_lib.OracleDatabase(
-            ora_params,
-        )  # use the environment variables for connection parameters
-        remote_ora_db.get_connection()
+        if self.db_type == constants.DBType.ORA:
+            # if oracle then do these things...
+            ora_params = self.env_obj.get_ora_db_env_constants()
+            db_connection = oradb_lib.OracleDatabase(
+                ora_params,
+            )  # use the environment variables for connection parameters
+            db_connection.get_connection()
+        elif self.db_type == constants.DBType.SPAR:
+            spar_db_params = self.get_dbparams_from_kubernetes()
+            db_connection = postgresdb_lib.PostgresDatabase(
+                connection_params=spar_db_params
+            )
+
+        # raise NotImplementedError("This method is not implemented yet")
+
         for table in tables_to_export:
             LOGGER.info("Exporting table %s", table)
             export_file = constants.get_parquet_file_path(
                 table,
                 self.env_obj.current_env,
+                self.db_type,
             )
             LOGGER.debug("export_file: %s", export_file)
-            file_created = remote_ora_db.extract_data(table, export_file)
+            file_created = db_connection.extract_data(table, export_file)
 
             if file_created:
                 # push the file to object store
-                ostore.put_data_files([export_file], self.env_obj.current_env)
+                ostore.put_data_files(
+                    [table], self.env_obj.current_env, self.db_type
+                )
 
     def run_injest(self) -> None:
         """
         Run the injest process.
         """
         self.make_dirs()
-        tables_to_import = self.get_tables_from_local_docker()
+        tables_to_import = self.get_tables()
+        LOGGER.debug("tables to import: %s", tables_to_import)
+
         ostore = self.connect_ostore()
-
         dcr = docker_parser.ReadDockerCompose()
-        local_ora_params = dcr.get_ora_conn_params()
-        local_ora_params.schema_to_sync = self.env_obj.get_schema_to_sync()
-        local_docker_db = oradb_lib.OracleDatabase(local_ora_params)
 
-        ostore.get_data_files(tables_to_import, self.env_obj.current_env)
+        if self.db_type == constants.DBType.ORA:
+
+            local_db_params = dcr.get_ora_conn_params()
+
+            local_db_params.schema_to_sync = self.env_obj.get_schema_to_sync()
+            local_docker_db = oradb_lib.OracleDatabase(local_db_params)
+
+        elif self.db_type == constants.DBType.SPAR:
+            local_db_params = dcr.get_spar_conn_params()
+
+            spar_db_params = self.get_dbparams_from_kubernetes()
+
+        ostore.get_data_files(
+            tables_to_import, self.env_obj.current_env, self.db_type
+        )
 
         local_docker_db.purge_data(table_list=tables_to_import)
 

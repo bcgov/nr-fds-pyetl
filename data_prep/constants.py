@@ -3,8 +3,11 @@ Declare constants for the data_prep package.
 
 """
 
+import logging
 import pathlib
 from enum import Enum
+
+LOGGER = logging.getLogger(__name__)
 
 # the name of the directory where data downloads will be cached before they
 # get uploaded to object store, and where they are cached when pulled from
@@ -21,7 +24,7 @@ PARQUET_SUFFIX = "parquet"
 OBJECT_STORE_DATA_DIRECTORY = "pyetl"
 
 # database filter string
-DB_FILTER_STRING = "nr-spar-{env_str)}-database"
+DB_FILTER_STRING = "nr-spar-{env_str}-database"
 
 # the port to use for the local port when establishing a port forward, and then
 # for connecting to the database that is in kubernetes
@@ -35,7 +38,11 @@ class DBType(Enum):
     SPAR = 2
 
 
-def get_parquet_file_path(table: str, env_str: str) -> pathlib.Path:
+def get_parquet_file_path(
+    table: str,
+    env_str: str,
+    db_type: DBType,
+):
     """
     Return path to parquet file that corresponds with a table.
 
@@ -47,10 +54,14 @@ def get_parquet_file_path(table: str, env_str: str) -> pathlib.Path:
     :rtype: pathlib.Path
     """
     parquet_file_name = f"{table}.{PARQUET_SUFFIX}"
-    return pathlib.Path(DATA_DIR, env_str, parquet_file_name)
+    return_path = pathlib.Path(
+        DATA_DIR, env_str, db_type.name, parquet_file_name
+    )
+    LOGGER.debug("returning path: %s", return_path)
+    return return_path
 
 
-def get_parquet_file_ostore_path(table: str) -> pathlib.Path:
+def get_parquet_file_ostore_path(table: str, db_type: DBType) -> pathlib.Path:
     """
     Get path for data table in object store.
 
@@ -63,4 +74,10 @@ def get_parquet_file_ostore_path(table: str) -> pathlib.Path:
     :rtype: pathlib.Path
     """
     parquet_file_name = f"{table}.{PARQUET_SUFFIX}"
-    return pathlib.Path(OBJECT_STORE_DATA_DIRECTORY, parquet_file_name)
+    full_path = pathlib.Path(
+        OBJECT_STORE_DATA_DIRECTORY,
+        db_type.name,
+        parquet_file_name,
+    )
+    LOGGER.debug("parquet file name: %s", full_path)
+    return full_path

@@ -4,12 +4,13 @@ import logging
 import logging.config
 from dataclasses import dataclass
 
+import constants
 import db_lib
 import pandas as pd
 import psycopg2
 import sqlalchemy
 from env_config import ConnectionParameters
-from psycopg2.exceptions import DatabaseError
+from psycopg2 import DatabaseError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -34,6 +35,14 @@ class PostgresDatabase(db_lib.DB):
             )
             LOGGER.debug("connected to database")
 
+    def populate_db_type(self) -> None:
+        """
+        Populate the db_type variable.
+
+        Sets the db_type variable to SPAR.
+        """
+        self.db_type = constants.DBType.SPAR
+
     def get_sqlalchemy_engine(self) -> None:
         """
         Populate the sqlalchemy engine.
@@ -43,9 +52,9 @@ class PostgresDatabase(db_lib.DB):
         """
         if self.sql_alchemy_engine is None:
             dsn = f"postgresql+psycopg2://{self.username}:{self.password}@{self.host}:{self.port}/{self.service_name}"
+            LOGGER.debug("dsn: %s", dsn)
             self.sql_alchemy_engine = sqlalchemy.create_engine(
                 dsn,
-                arraysize=1000,
             )
 
     def get_tables(
@@ -78,10 +87,12 @@ class PostgresDatabase(db_lib.DB):
         # query = "select table_name from all_tables where owner = :schema"
         query = (
             "SELECT table_name FROM information_schema.tables WHERE "
-            "table_schema = :schema"
+            "table_schema = %(schema)s"
         )
         LOGGER.debug("query: %s", query)
-        cursor.execute(query, schema=schema.upper())
+        cursor.execute(query, {"schema": schema})
+        # rows = cursor.fetchall()
+        # LOGGER.debug("table query data returned: %s", rows)
         tables = [
             row[0].upper()
             for row in cursor
@@ -89,6 +100,9 @@ class PostgresDatabase(db_lib.DB):
         ]
         cursor.close()
         LOGGER.debug("tables: %s", tables)
+        if not tables:
+            LOGGER.error("no tables found in schema: %s", schema)
+            raise DatabaseError("no tables found in schema")
         return tables
 
     def truncate_table(self, table: str) -> None:
