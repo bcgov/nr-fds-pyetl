@@ -49,6 +49,34 @@ class ReadDockerCompose:
         with pathlib.Path(self.compose_file_path).open("r") as fh:
             self.docker_comp = yaml.safe_load(fh)
 
+    def get_spar_conn_params(self) -> env_config.ConnectionParameters:
+        """
+        Return postgres connection parameters.
+
+        Reads the postgres connection parameters from the docker-compose file and
+        returns them as a oracledb.ConnectionTuple.
+
+        :return: a oracledb.ConnectionTuple populated with the connection
+            parameters
+        :rtype: oradb_lib.ConnectionTuple
+        """
+        conn_tuple = env_config.ConnectionParameters
+        conn_tuple.username = self.docker_comp["x-var"]["POSTGRES_USER"]
+        LOGGER.debug("username: %s", conn_tuple.username)
+        raise
+
+        conn_tuple.password = self.docker_comp["x-postgres-vars"][
+            "APP_USER_PASSWORD"
+        ]
+        conn_tuple.host = os.getenv("POSTGRES_HOST", "localhost")
+        conn_tuple.port = self.docker_comp["services"]["postgres"]["ports"][
+            0
+        ].split(":")[0]
+        conn_tuple.service_name = self.docker_comp["x-postgres-vars"][
+            "POSTGRES_DB"
+        ]
+        return conn_tuple
+
     def get_ora_conn_params(self) -> env_config.ConnectionParameters:
         """
         Return oracle connection parameters.

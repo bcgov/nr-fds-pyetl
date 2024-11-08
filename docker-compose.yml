@@ -9,8 +9,6 @@ x-var:
   - &FLYWAY_URL_POSTGRES
     jdbc:postgresql://spar-db:5432/spar
 
-
-
 x-postgres-vars: &postgres-vars
   POSTGRES_DB: spar
   POSTGRES_HOST: database
@@ -19,7 +17,6 @@ x-postgres-vars: &postgres-vars
   POSTGRES_PORT: 5432
   FLYWAY_URL_POSTGRES: jdbc:postgresql://spar-db:5432/spar
 
-
 x-oracle-vars: &oracle-vars
   ORACLE_DATABASE: DBDOCK_01
   ORACLE_PASSWORD: default
@@ -27,9 +24,7 @@ x-oracle-vars: &oracle-vars
   APP_USER_PASSWORD: default
   FLYWAY_URL: jdbc:oracle:thin:@//oracle:1521/DBDOCK_01
 
-
 services:
-
   spar-db:
     image: postgres:15
     container_name: database
@@ -55,6 +50,30 @@ services:
     depends_on:
       spar-db:
         condition: service_healthy
+
+  # spar-db-data-load:
+  #   profiles: ["python", "all"]
+  #   image: python:3.11
+  #   container_name: spar-db-data-loader
+  #   #entrypoint: bash /application/docker_run_TEST.bash
+  #   entrypoint:
+  #   #entrypoint: sleep 500000
+  #   working_dir:    /application
+  #   volumes:
+  #     -  "./.venv:/venv"
+  #     - "./data_prep:/application"
+  #     - "./poetry.lock:/application/poetry.lock"
+  #     - "./pyproject.toml:/application/pyproject.toml"
+  #     - "./docker-compose.yml:/application/docker-compose.yml"
+  #     - "./data:/application/data"
+  #   environment:
+  #     <<: [*oracle-vars]
+  #     ORACLE_HOST: oracle
+  #   env_file:
+  #     - ".env"
+  #   depends_on:
+  #     oracle-migrations:
+  #       condition: service_completed_successfully
 
 
 
