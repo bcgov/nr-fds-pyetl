@@ -60,21 +60,38 @@ class ReadDockerCompose:
             parameters
         :rtype: oradb_lib.ConnectionTuple
         """
-        conn_tuple = env_config.ConnectionParameters
-        conn_tuple.username = self.docker_comp["x-var"]["POSTGRES_USER"]
-        LOGGER.debug("username: %s", conn_tuple.username)
-        raise
+        import pprint
 
-        conn_tuple.password = self.docker_comp["x-postgres-vars"][
-            "APP_USER_PASSWORD"
+        pp = pprint.PrettyPrinter()
+        pp.pprint(self.docker_comp)
+        conn_tuple = env_config.ConnectionParameters
+        conn_tuple.username = self.docker_comp["x-postgres-vars"][
+            "POSTGRES_USER"
         ]
-        conn_tuple.host = os.getenv("POSTGRES_HOST", "localhost")
-        conn_tuple.port = self.docker_comp["services"]["postgres"]["ports"][
-            0
-        ].split(":")[0]
+        conn_tuple.password = self.docker_comp["x-postgres-vars"][
+            "POSTGRES_PASSWORD"
+        ]
+        conn_tuple.port = self.docker_comp["x-postgres-vars"]["POSTGRES_PORT"]
+
         conn_tuple.service_name = self.docker_comp["x-postgres-vars"][
             "POSTGRES_DB"
         ]
+        # using localhost because the connection is going to be made external
+        # to the docker container
+        conn_tuple.host = "localhost"
+
+        LOGGER.debug("username: %s", conn_tuple.username)
+
+        # conn_tuple.password = self.docker_comp["x-postgres-vars"][
+        #     "APP_USER_PASSWORD"
+        # ]
+        # conn_tuple.host = os.getenv("POSTGRES_HOST", "localhost")
+        # conn_tuple.port = self.docker_comp["services"]["postgres"]["ports"][
+        #     0
+        # ].split(":")[0]
+        # conn_tuple.service_name = self.docker_comp["x-postgres-vars"][
+        #     "POSTGRES_DB"
+        # ]
         return conn_tuple
 
     def get_ora_conn_params(self) -> env_config.ConnectionParameters:
@@ -93,9 +110,10 @@ class ReadDockerCompose:
         conn_tuple.password = self.docker_comp["x-oracle-vars"][
             "APP_USER_PASSWORD"
         ]
-        # if running via docker compose the host should come from ORACLE_HOST
-        # otherwise just use localhost
-        conn_tuple.host = os.getenv("ORACLE_HOST", "localhost")
+
+        # this method will return the host for the docker container which is
+        # expected to be running locally and is therefor 'localhost'
+        conn_tuple.host = "localhost"
 
         conn_tuple.port = self.docker_comp["services"]["oracle"]["ports"][
             0
