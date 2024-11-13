@@ -9,10 +9,10 @@ environment.
 
 If not already installed install `pyenv`
 
-Currently this project is using python 3.12, using pyenv make sure you are
-using that version.
+Currently this project is using python 3.12, using pyenv make sure you are using that version.
 
 `pyenv global 3.12`
+
 
 ## dependencies
 

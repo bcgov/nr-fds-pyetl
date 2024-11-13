@@ -13,6 +13,8 @@ from typing import TYPE_CHECKING
 
 import constants
 import pandas as pd
+import psycopg2
+import pyarrow
 import sqlalchemy
 from env_config import ConnectionParameters
 from oracledb.exceptions import DatabaseError as OracleDatabaseError
@@ -231,13 +233,14 @@ class DB(ABC):
         :rtype: bool
         """
         file_created = False
-        table_obj = self.get_table_object(table)
-        select_obj = sqlalchemy.select(table_obj)
 
         # check that the directory for export file exists
         export_file.parent.mkdir(parents=True, exist_ok=True)
 
         if not export_file.exists() or overwrite:
+            table_obj = self.get_table_object(table)
+            select_obj = sqlalchemy.select(table_obj)
+
             if export_file.exists():
                 export_file.unlink()
                 # delete the file if it exists
@@ -251,7 +254,6 @@ class DB(ABC):
                 export_file,
                 engine="pyarrow",
             )
-            # engine='pyarrow'  engine="fastparquet"
             file_created = True
         else:
             LOGGER.info("file exists: %s, not re-exporting", export_file)
@@ -292,7 +294,7 @@ class DB(ABC):
     def load_data(
         self,
         table: str,
-        import_file: str,
+        import_file: pathlib.Path,
         *,
         purge: bool = False,
     ) -> None:
@@ -307,22 +309,28 @@ class DB(ABC):
         :type purge: bool
         """
         # debugging to view the data before it gets loaded
-        pandas_df = pd.read_parquet(import_file)
-        tmp_file = self.get_tmp_file()
-        LOGGER.debug("tmp_file: %s", str(tmp_file))
-        pandas_df.to_csv(str(tmp_file), sep="|", index_label=None)
+        LOGGER.debug("input parquet file to load: %s", import_file)
+        if import_file.suffix == ".parquet":
+            LOGGER.debug("reading parquet file, %s", import_file)
+            pandas_df = pd.read_parquet(import_file)
+        else:
+            LOGGER.debug("reading csv file, %s", import_file)
+            pandas_df = pd.read_csv(import_file, sep="|")
+        LOGGER.debug("done loading dataframe.")
 
         LOGGER.debug("table: %s", table)
 
         self.get_sqlalchemy_engine()
         if purge:
             self.truncate_table(table.lower())
+        LOGGER.debug("loading data to table: %s", table)
         pandas_df.to_sql(
             table.lower(),
             self.sql_alchemy_engine,
-            schema="THE",
+            schema=self.schema_2_sync,
             if_exists="append",
             index=False,
+            method="multi",
         )
 
     def load_data_retry(  # noqa: PLR0913
@@ -378,8 +386,16 @@ class DB(ABC):
         for table in table_list:
             spaces = " " * retries * 2
             import_file = constants.get_parquet_file_path(
-                table, env_str, self.db_type
+                table,
+                env_str,
+                self.db_type,
             )
+            if not import_file.exists():
+                LOGGER.warning(
+                    "no parquet file for table %s, assuming its a csv", table
+                )
+                import_file = import_file.with_suffix(".csv")
+
             LOGGER.info("Importing table %s %s", spaces, table)
             try:
                 self.load_data(table, import_file, purge=purge)
@@ -421,7 +437,7 @@ class DB(ABC):
         self,
         table_list: list[str],
         retries: int = 1,
-        max_retries: int = 6,
+        max_retries: int = 25,
     ) -> None:
         """
         Purge the data from the tables in the list.
@@ -438,19 +454,30 @@ class DB(ABC):
             except (
                 sqlalchemy.exc.IntegrityError,
                 OracleDatabaseError,
+                psycopg2.errors.FeatureNotSupported,
+                psycopg2.errors.InFailedSqlTransaction,
             ) as e:
                 # might need DatabaseError,
-
-                LOGGER.exception(
-                    "%s purging table %s",
-                    e.__class__.__qualname__,
-                    table,
-                )
+                LOGGER.warning("error on table %s raised when purging", table)
+                # LOGGER.exception(
+                #     "%s purging table %s",
+                #     e.__class__.__qualname__,
+                #     table,
+                # )
                 failed_tables.append(table)
         if failed_tables:
             if retries < max_retries:
                 retries += 1
                 self.purge_data(failed_tables, retries=retries)
             else:
-                LOGGER.error("Max retries reached for table %s", table)
-                raise sqlalchemy.exc.IntegrityError
+                msg = "Max retries reached for table %s"
+                LOGGER.error(msg, table)
+                msg = msg % table
+                LOGGER.debug("error message: %s", msg)
+                LOGGER.debug("failed tables %s", failed_tables)
+                # statement=None, params=None, orig=e)
+                raise sqlalchemy.exc.DBAPIError(
+                    statement=msg,
+                    params=None,
+                    orig=None,
+                )

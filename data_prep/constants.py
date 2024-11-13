@@ -19,6 +19,7 @@ DATA_DIR = "data"
 VALID_ENVS = ("DEV", "TEST", "PROD", "LOCAL")
 
 PARQUET_SUFFIX = "parquet"
+SQL_DUMP_SUFFIX = ".sql.gz"
 
 # name of the directory in object store where the data backup files reside
 OBJECT_STORE_DATA_DIRECTORY = "pyetl"
@@ -28,7 +29,7 @@ DB_FILTER_STRING = "nr-spar-{env_str}-database"
 
 # the port to use for the local port when establishing a port forward, and then
 # for connecting to the database that is in kubernetes
-DB_LOCAL_PORT = 5432
+DB_LOCAL_PORT = 5433
 
 
 # database types, used to identify which database (spar or oracle) is
@@ -42,7 +43,7 @@ def get_parquet_file_path(
     table: str,
     env_str: str,
     db_type: DBType,
-):
+) -> pathlib.Path:
     """
     Return path to parquet file that corresponds with a table.
 
@@ -74,10 +75,39 @@ def get_parquet_file_ostore_path(table: str, db_type: DBType) -> pathlib.Path:
     :rtype: pathlib.Path
     """
     parquet_file_name = f"{table}.{PARQUET_SUFFIX}"
+    ostore_dir = get_parquet_directory_ostore_path(db_type)
     full_path = pathlib.Path(
-        OBJECT_STORE_DATA_DIRECTORY,
-        db_type.name,
+        ostore_dir,
         parquet_file_name,
     )
     LOGGER.debug("parquet file name: %s", full_path)
     return full_path
+
+
+def get_parquet_directory_ostore_path(db_type: DBType) -> pathlib.Path:
+    full_path = pathlib.Path(
+        OBJECT_STORE_DATA_DIRECTORY,
+        db_type.name,
+    )
+    return full_path
+
+
+def get_sql_dump_file_path(
+    table: str,
+    env_str: str,
+    db_type: DBType,
+) -> pathlib.Path:
+    """
+    Return path to sql dump file that corresponds with a table.
+
+    :param table: name of an oracle table
+    :type table: str
+    :param env_str: an environment string valid values DEV/TEST/PROD
+    :type env_str: str
+    :return: the path to the sql dump file that corresponds with the table name
+    :rtype: pathlib.Path
+    """
+    parquet_file = get_parquet_file_path(
+        table=table, env_str=env_str, db_type=db_type
+    )
+    sql_dump_file = parquet_file.with_suffix(SQL_DUMP_SUFFIX)

@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     import pathlib
 
 import logging
+import pathlib
 
 import boto3
 import botocore.exceptions
@@ -53,6 +54,16 @@ class OStore:
             pulled
         :type tables: list[str]
         """
+        ostore_dir = constants.get_parquet_directory_ostore_path(db_type)
+        remote_files = self.s3_client.list_objects(
+            Bucket=self.conn_params.bucket,
+            Prefix=str(ostore_dir),
+        )
+        remote_file_names = [
+            remote_file["Key"] for remote_file in remote_files["Contents"]
+        ]
+        LOGGER.debug("remote files: %s", remote_file_names)
+
         for table in tables:
             local_data_file = constants.get_parquet_file_path(
                 table, env_str, db_type
@@ -61,6 +72,13 @@ class OStore:
                 table,
                 db_type,
             )
+            # Added logic to use csv if parquet fails... So if the parquet file
+            # doesn't exist get the csv file instead.
+            LOGGER.debug("remote_data_file: %s", str(remote_data_file))
+            if str(remote_data_file) not in remote_file_names:
+                remote_data_file = remote_data_file.with_suffix(".csv")
+                local_data_file = local_data_file.with_suffix(".csv")
+
             # keeping it simple for now, if local exists re-use it
             if not local_data_file.exists():
                 # pull the files from object store.
@@ -198,6 +216,19 @@ class OStore:
                 table,
                 db_type,
             )
+            # Ran into issues with some of the data files not exporting as parquet
+            # files.  When unable to export parquet the export will default to
+            # csv files.  Testing to see if the parquet file exists, and if not
+            # then change the source and destination files to csv.
+            if not local_data_file.exists():
+                # need a better way of handling alternative formats
+                local_data_file = local_data_file.with_suffix(
+                    constants.SQL_DUMP_SUFFIX
+                )
+                remote_data_file = remote_data_file.with_suffix(
+                    constants.SQL_DUMP_SUFFIX
+                )
+
             # keeping it simple for now, if local exists re-use it
             if local_data_file.exists():
                 self.delete_data_file(remote_data_file)

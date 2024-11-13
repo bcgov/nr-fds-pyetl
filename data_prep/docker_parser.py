@@ -79,19 +79,7 @@ class ReadDockerCompose:
         # using localhost because the connection is going to be made external
         # to the docker container
         conn_tuple.host = "localhost"
-
-        LOGGER.debug("username: %s", conn_tuple.username)
-
-        # conn_tuple.password = self.docker_comp["x-postgres-vars"][
-        #     "APP_USER_PASSWORD"
-        # ]
-        # conn_tuple.host = os.getenv("POSTGRES_HOST", "localhost")
-        # conn_tuple.port = self.docker_comp["services"]["postgres"]["ports"][
-        #     0
-        # ].split(":")[0]
-        # conn_tuple.service_name = self.docker_comp["x-postgres-vars"][
-        #     "POSTGRES_DB"
-        # ]
+        conn_tuple.schema_to_sync = "spar"
         return conn_tuple
 
     def get_ora_conn_params(self) -> env_config.ConnectionParameters:

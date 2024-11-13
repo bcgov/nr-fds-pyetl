@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+import gzip
 import logging
 import logging.config
+import os
+import pathlib
+import subprocess
 from dataclasses import dataclass
 
 import constants
 import db_lib
 import pandas as pd
 import psycopg2
+import pyarrow
 import sqlalchemy
 from env_config import ConnectionParameters
 from psycopg2 import DatabaseError
@@ -114,9 +119,11 @@ class PostgresDatabase(db_lib.DB):
         self.get_connection()
         cursor = self.connection.cursor()
         LOGGER.debug("truncating table: %s", table)
-        cursor.execute(f"truncate table {self.schema_2_sync}.{table}")
+        LOGGER.debug("schema to sync: %s", self.schema_2_sync)
+        cursor.execute(f"truncate table {self.schema_2_sync}.{table} CASCADE")
         self.connection.commit()
         cursor.close()
+        LOGGER.debug("successfully truncated table: %s", table)
 
     def get_fk_constraints(self) -> list[db_lib.TableConstraints]:
         """
@@ -153,13 +160,13 @@ class PostgresDatabase(db_lib.DB):
                     AND rc.unique_constraint_schema = rco.constraint_schema
                 WHERE
                     tc.constraint_type = 'FOREIGN KEY' and
-                    tc.table_schema = 'spar' and
-                    ccu.table_schema = 'spar' and
-                    rco.table_schema = 'spar'
+                    tc.table_schema = %(schema)s and
+                    ccu.table_schema = %(schema)s and
+                    rco.table_schema = %(schema)s
                     """
         self.get_connection()
         cursor = self.connection.cursor()
-        cursor.execute(query, schema=self.schema_2_sync)
+        cursor.execute(query, {"schema": self.schema_2_sync})
         constraint_list = []
         for row in cursor:
             LOGGER.debug(row)
@@ -189,6 +196,15 @@ class PostgresDatabase(db_lib.DB):
                 f"ALTER TABLE {self.schema_2_sync}.{cons.table_name} "
                 f"ALTER CONSTRAINT {cons.constraint_name} NOT VALID"
             )
+
+            # ALTER TABLE spar.seedlot_collection_method ALTER CONSTRAINT
+            # seedlot_coll_met_seedlot_fk DEFERRABLE INITIALLY DEFERRED;
+            query = (
+                f"ALTER TABLE {self.schema_2_sync}.{cons.table_name} "
+                f"ALTER CONSTRAINT {cons.constraint_name} DEFERRABLE INITIALLY DEFERRED"
+            )
+
+            LOGGER.debug("alter query: %s", query)
             cursor.execute(query)
         cursor.close()
 
@@ -215,3 +231,138 @@ class PostgresDatabase(db_lib.DB):
             )
             cursor.execute(query)
         cursor.close()
+
+    def load_data(
+        self,
+        table: str,
+        import_file: pathlib.Path,
+        *,
+        purge: bool = False,
+    ) -> None:
+        """
+        Load the data from the file into the table.
+
+        Override the default implementation to use the postgres copy command to
+        speed up loading of csv data.
+
+        :param table: the table to load the data into
+        :type table: str
+        :param import_file: the file to read the data from
+        :type import_file: str
+        :param purge: if True, delete the data from the table before loading.
+        :type purge: bool
+        """
+        # debugging to view the data before it gets loaded
+        LOGGER.debug("input parquet file to load: %s", import_file)
+        if import_file.suffix == ".parquet":
+            LOGGER.debug("reading parquet file, %s", import_file)
+            super().load_data(table=table, import_file=import_file, purge=purge)
+        else:
+            LOGGER.debug("loading data from csv using COPY, %s", import_file)
+
+            cur = self.connection.cursor()
+            # cons_name = "registration_form_a_class_seedlot_fk"
+            # query = (
+            #     f"ALTER TABLE {self.schema_2_sync}.{table.lower()} "
+            #     f"ALTER CONSTRAINT {cons_name} DEFERRABLE INITIALLY DEFERRED"
+            # )
+            # cur.execute(query)
+            with open(import_file) as f:
+                # spar.seedlot_registration_a_class_save
+                cur.execute("SET search_path TO spar, public ")
+                cur.copy_from(
+                    f,
+                    "seedlot_registration_a_class_save",
+                    sep="|",
+                    size=8192,
+                )
+            cur.close()
+
+    def extract_data(
+        self,
+        table: str,
+        export_file: pathlib.Path,
+        *,
+        overwrite: bool = False,
+    ) -> bool:
+        """
+        Override the default implementation to use the postgres pg_dump command.
+
+        By default will call the super class method to extract the data from the
+        database and store in a parquet file.  If that process fails then the
+        fallback will be to use the pg_dump command to extract the data from the
+        database.
+
+        :param table: the name of the table who's data will be copied to the
+            exported data file (parquet or pg_dump format)
+        :type table: str
+        :param export_file: the full path to the file that will be created, and
+            populated with the data from the table.
+        :type export_file: str
+        :param overwrite: if True the file will be overwritten if it exists,
+        :return: True if the file was created, False if it was not
+        :rtype: bool
+        """
+        file_created = False
+
+        # check that the directory for export file exists
+        export_file.parent.mkdir(parents=True, exist_ok=True)
+        export_file_sql = export_file.with_suffix(constants.SQL_DUMP_SUFFIX)
+        LOGGER.debug("export file is: %s", export_file)
+        LOGGER.debug("export file sql is: %s", export_file_sql)
+
+        if (
+            not export_file.exists() and not export_file_sql.exists()
+        ) or overwrite:
+
+            if export_file.exists():
+                export_file.unlink()  # delete dump file if exists
+            if export_file_sql.exists():
+                export_file_sql.unlink()
+                # delete the file if it exists
+            try:
+                # first try the super class method to extract the data using parquet
+                super().extract_data(
+                    table=table,
+                    export_file=export_file,
+                    overwrite=overwrite,
+                )
+            except pyarrow.lib.ArrowNotImplementedError as e:
+                # the dump to parquet failed... fail over is to us pg_dump
+                LOGGER.debug("running pg_dump to extract the data")
+                # copy the environment and populate the PGPASSWORD variable
+                my_env = os.environ.copy()
+                my_env["PGPASSWORD"] = self.password
+
+                # setup the pg_dump command
+                pg_dump_command_list = [
+                    "pg_dump",
+                    "-p",
+                    str(self.port),
+                    "--data-only",
+                    "-U",
+                    self.username,
+                    "-h",
+                    self.host,
+                    "-d",
+                    self.service_name,
+                    "-t",
+                    f"{self.schema_2_sync}.{table}",
+                ]
+                LOGGER.debug("command list: %s", pg_dump_command_list)
+                with gzip.open(str(export_file_sql), "wb") as f:
+                    popen = subprocess.Popen(
+                        pg_dump_command_list,
+                        stdout=subprocess.PIPE,
+                        universal_newlines=True,
+                        env=my_env,
+                    )
+                    for stdout_line in iter(popen.stdout.readline, ""):
+                        f.write(stdout_line.encode("utf-8"))
+                popen.stdout.close()
+                popen.wait()
+                LOGGER.info("pg_dump complete")
+            file_created = True
+        else:
+            LOGGER.info("file exists: %s, not re-exporting", export_file)
+        return file_created

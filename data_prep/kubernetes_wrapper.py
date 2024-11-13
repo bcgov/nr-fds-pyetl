@@ -101,7 +101,7 @@ class KubeClient:
         LOGGER.debug("Opening port forward for the pod: %s", pod_name)
         pod = Pod.get(name=pod_name, namespace=namespace)
         self.pf = pod.portforward(
-            remote_port=local_port,
+            remote_port=remote_port,
             local_port=local_port,
         )
         self.pf.start()  # Start the port forward in a background thread

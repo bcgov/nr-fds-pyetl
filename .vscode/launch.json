@@ -1,0 +1,32 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "spar-extract",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/data_prep/main_spar_extract.py",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "name": "spar-ingest",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/data_prep/main_spar_ingest.py",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.env"
+        }
+
+    ]
+}

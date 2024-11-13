@@ -89,9 +89,10 @@ class Utility:
     def get_tables(self) -> list[str]:
         tables = []
         if self.db_type == constants.DBType.ORA:
-            tables = self.get_tables_from_local_docker()
+            tables = self.get_tables_from_local_ora_docker()
         elif self.db_type == constants.DBType.SPAR:
-            tables = self.get_tables_from_spar()
+            tables = self.get_tables_from_local_spar_docker()
+            # tables = self.get_tables_from_spar()
         return tables
 
     def get_tables_from_spar(self):
@@ -108,8 +109,11 @@ class Utility:
 
         # now get the actual tables
         spar_db_params = self.get_dbparams_from_kubernetes()
+        # swap the connection port to the local port configured for the
+        # tunnel
+        spar_db_params.port = constants.DB_LOCAL_PORT
         db_connection = postgresdb_lib.PostgresDatabase(
-            connection_params=spar_db_params
+            connection_params=spar_db_params,
         )
         tables_to_export = db_connection.get_tables(
             schema=spar_db_params.schema_to_sync,
@@ -117,9 +121,30 @@ class Utility:
         )
         return tables_to_export
 
-    def get_tables_from_local_docker(self) -> list[str]:
+    def get_tables_from_local_spar_docker(self) -> list[str]:
         """
-        Get tables from local docker.
+        Get a list of table from local spar docker database.
+
+        :return: list of tables found in the local spar database schema
+        :rtype: list[str]
+        """
+        dcr = docker_parser.ReadDockerCompose()
+        spar_params = dcr.get_spar_conn_params()
+        # TODO: ideally get the schema from where it is defined, but its in migrations which makes it tricky... could put into config
+        spar_params.schema_to_sync = "spar"
+        LOGGER.debug("schema to sync: %s", spar_params.schema_to_sync)
+        local_docker_db = postgresdb_lib.PostgresDatabase(spar_params)
+        tables_to_export = local_docker_db.get_tables(
+            local_docker_db.schema_2_sync,
+            omit_tables=["FLYWAY_SCHEMA_HISTORY"],
+        )
+        LOGGER.debug("tables retrieved: %s", tables_to_export)
+        return tables_to_export
+
+    # TODO: need to come back to this and link to the extract process
+    def get_tables_from_local_ora_docker(self) -> list[str]:
+        """
+        Get list of tables from local oracle docker database.
         """
         dcr = docker_parser.ReadDockerCompose()
         local_ora_params = dcr.get_ora_conn_params()
@@ -227,7 +252,7 @@ class Utility:
         db_filter_string = constants.DB_FILTER_STRING.format(
             env_str=self.env_str.lower(),
         )
-
+        self.get_kubernetes_client()
         secrets = self.kube_client.get_secrets(
             namespace=oc_params.namespace,
             filter_str=db_filter_string,
@@ -267,7 +292,8 @@ class Utility:
         Run the extract process.
         """
         self.make_dirs()
-        tables_to_export = self.get_tables()
+        # gets the table list from openshift database
+        tables_to_export = self.get_tables_from_spar()
         LOGGER.debug("tables to export: %s", tables_to_export)
 
         # tables_to_export = self.get_tables_from_local_docker()
@@ -282,8 +308,11 @@ class Utility:
             db_connection.get_connection()
         elif self.db_type == constants.DBType.SPAR:
             spar_db_params = self.get_dbparams_from_kubernetes()
+            # using port forward so override the port to the local port that
+            # is forwarded to the remote port
+            spar_db_params.port = constants.DB_LOCAL_PORT
             db_connection = postgresdb_lib.PostgresDatabase(
-                connection_params=spar_db_params
+                connection_params=spar_db_params,
             )
 
         # raise NotImplementedError("This method is not implemented yet")
@@ -295,6 +324,7 @@ class Utility:
                 self.env_obj.current_env,
                 self.db_type,
             )
+
             LOGGER.debug("export_file: %s", export_file)
             file_created = db_connection.extract_data(table, export_file)
 
@@ -324,11 +354,12 @@ class Utility:
 
         elif self.db_type == constants.DBType.SPAR:
             local_db_params = dcr.get_spar_conn_params()
-
-            spar_db_params = self.get_dbparams_from_kubernetes()
+            local_docker_db = postgresdb_lib.PostgresDatabase(local_db_params)
 
         ostore.get_data_files(
-            tables_to_import, self.env_obj.current_env, self.db_type
+            tables_to_import,
+            self.env_obj.current_env,
+            self.db_type,
         )
 
         local_docker_db.purge_data(table_list=tables_to_import)
