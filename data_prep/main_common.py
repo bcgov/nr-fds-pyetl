@@ -362,7 +362,7 @@ class Utility:
             self.db_type,
         )
 
-        local_docker_db.purge_data(table_list=tables_to_import)
+        local_docker_db.purge_data(table_list=tables_to_import, cascade=True)
 
         local_docker_db.load_data_retry(
             data_dir=self.datadir,

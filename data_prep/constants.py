@@ -14,6 +14,9 @@ LOGGER = logging.getLogger(__name__)
 # object store
 DATA_DIR = "data"
 
+# constraint backup directory
+CONSTRAINT_BACKUP_DIR = "fk_constraint_backup"
+
 # when running the script these are the different key words for describing
 # different environments.
 VALID_ENVS = ("DEV", "TEST", "PROD", "LOCAL")
@@ -111,3 +114,4 @@ def get_sql_dump_file_path(
         table=table, env_str=env_str, db_type=db_type
     )
     sql_dump_file = parquet_file.with_suffix(SQL_DUMP_SUFFIX)
+

@@ -154,7 +154,7 @@ class DB(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def truncate_table(self, table: str) -> None:
+    def truncate_table(self, table: str, cascade: bool = False) -> None:
         """
         Delete all the data from the table.
 
@@ -301,6 +301,9 @@ class DB(ABC):
         """
         Load the data from the file into the table.
 
+        This is the default method that expects to load the data from a parquet
+        file.
+
         :param table: the table to load the data into
         :type table: str
         :param import_file: the file to read the data from
@@ -310,12 +313,8 @@ class DB(ABC):
         """
         # debugging to view the data before it gets loaded
         LOGGER.debug("input parquet file to load: %s", import_file)
-        if import_file.suffix == ".parquet":
-            LOGGER.debug("reading parquet file, %s", import_file)
-            pandas_df = pd.read_parquet(import_file)
-        else:
-            LOGGER.debug("reading csv file, %s", import_file)
-            pandas_df = pd.read_csv(import_file, sep="|")
+        LOGGER.debug("reading parquet file, %s", import_file)
+        pandas_df = pd.read_parquet(import_file)
         LOGGER.debug("done loading dataframe.")
 
         LOGGER.debug("table: %s", table)
@@ -390,11 +389,11 @@ class DB(ABC):
                 env_str,
                 self.db_type,
             )
-            if not import_file.exists():
-                LOGGER.warning(
-                    "no parquet file for table %s, assuming its a csv", table
-                )
-                import_file = import_file.with_suffix(".csv")
+            # if not import_file.exists():
+            #     LOGGER.warning(
+            #         "no parquet file for table %s, assuming its a csv", table
+            #     )
+            #     import_file = import_file.with_suffix(constants.SQL_DUMP_SUFFIX)
 
             LOGGER.info("Importing table %s %s", spaces, table)
             try:
@@ -403,7 +402,6 @@ class DB(ABC):
                 sqlalchemy.exc.IntegrityError,
                 OracleDatabaseError,
             ) as e:
-
                 LOGGER.exception(
                     "%s loading table %s",
                     e.__class__.__qualname__,
@@ -433,11 +431,23 @@ class DB(ABC):
         else:
             self.enable_constraints(cons_list)
 
+    def get_record_count(self, table: str) -> int:
+        query = f"SELECT COUNT(*) FROM {self.schema_2_sync}.{table.lower()}"
+        LOGGER.debug("query: %s", query)
+        self.get_connection()
+        cursor = self.connection.cursor()
+        cursor.execute(query, {})
+        count = cursor.fetchone()[0]
+        cursor.close()
+        LOGGER.debug("record count for %s is %s", table, count)
+        return count
+
     def purge_data(
         self,
         table_list: list[str],
         retries: int = 1,
         max_retries: int = 25,
+        cascade: bool = False,
     ) -> None:
         """
         Purge the data from the tables in the list.
@@ -448,27 +458,39 @@ class DB(ABC):
         self.get_connection()
         failed_tables = []
         for table in table_list:
-            try:
-                self.truncate_table(table)
-                LOGGER.info("purged table %s", table)
-            except (
-                sqlalchemy.exc.IntegrityError,
-                OracleDatabaseError,
-                psycopg2.errors.FeatureNotSupported,
-                psycopg2.errors.InFailedSqlTransaction,
-            ) as e:
-                # might need DatabaseError,
-                LOGGER.warning("error on table %s raised when purging", table)
-                # LOGGER.exception(
-                #     "%s purging table %s",
-                #     e.__class__.__qualname__,
-                #     table,
-                # )
-                failed_tables.append(table)
+            record_count = self.get_record_count(table)
+            if record_count > 0:
+                try:
+                    self.truncate_table(table, cascade)
+                    LOGGER.info("purged table %s", table)
+                except (
+                    sqlalchemy.exc.IntegrityError,
+                    OracleDatabaseError,
+                    psycopg2.errors.FeatureNotSupported,
+                    psycopg2.errors.InFailedSqlTransaction,
+                ) as e:
+                    # might need DatabaseError,
+                    LOGGER.warning(
+                        "error on table %s raised when purging", table
+                    )
+                    # if retries > 3:
+                    #     raise
+                    LOGGER.exception(
+                        "%s purging table %s",
+                        e.__class__.__qualname__,
+                        table,
+                    )
+                    failed_tables.append(table)
         if failed_tables:
             if retries < max_retries:
                 retries += 1
-                self.purge_data(failed_tables, retries=retries)
+                LOGGER.debug("retrying failed tables: %s", failed_tables)
+                LOGGER.debug("retries: %s", retries)
+                self.purge_data(
+                    table_list=failed_tables,
+                    retries=retries,
+                    cascade=True,
+                )
             else:
                 msg = "Max retries reached for table %s"
                 LOGGER.error(msg, table)
@@ -476,6 +498,7 @@ class DB(ABC):
                 LOGGER.debug("error message: %s", msg)
                 LOGGER.debug("failed tables %s", failed_tables)
                 # statement=None, params=None, orig=e)
+                raise
                 raise sqlalchemy.exc.DBAPIError(
                     statement=msg,
                     params=None,

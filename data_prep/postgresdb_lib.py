@@ -110,7 +110,7 @@ class PostgresDatabase(db_lib.DB):
             raise DatabaseError("no tables found in schema")
         return tables
 
-    def truncate_table(self, table: str) -> None:
+    def truncate_table(self, table: str, cascade: bool = False) -> None:
         """
         Delete all the data from the table.
 
@@ -120,10 +120,18 @@ class PostgresDatabase(db_lib.DB):
         cursor = self.connection.cursor()
         LOGGER.debug("truncating table: %s", table)
         LOGGER.debug("schema to sync: %s", self.schema_2_sync)
-        cursor.execute(f"truncate table {self.schema_2_sync}.{table} CASCADE")
-        self.connection.commit()
+        query = f"truncate table {self.schema_2_sync}.{table.lower()}"
+        if cascade:
+            query += " CASCADE"
+            LOGGER.debug("truncate with cascade option.")
+        try:
+            cursor.execute(query)
+            self.connection.commit()
+            LOGGER.debug("successfully truncated table: %s", table)
+        except psycopg2.errors.FeatureNotSupported as e:
+            LOGGER.error("truncate failed: %s", e)
+            self.connection.rollback()
         cursor.close()
-        LOGGER.debug("successfully truncated table: %s", table)
 
     def get_fk_constraints(self) -> list[db_lib.TableConstraints]:
         """
@@ -136,7 +144,6 @@ class PostgresDatabase(db_lib.DB):
             results of the foreign key constraint query
         :rtype: list[TableConstraints]
         """
-
         query = """SELECT
                     tc.constraint_name AS fk_constraint_name,
                     tc.table_name AS from_table,
@@ -169,8 +176,9 @@ class PostgresDatabase(db_lib.DB):
         cursor.execute(query, {"schema": self.schema_2_sync})
         constraint_list = []
         for row in cursor:
-            LOGGER.debug(row)
+            # LOGGER.debug(row)
             tab_con = db_lib.TableConstraints(*row)
+            LOGGER.debug("constraint: %s", tab_con)
             constraint_list.append(tab_con)
         return constraint_list
 
@@ -189,23 +197,23 @@ class PostgresDatabase(db_lib.DB):
         """
         self.get_connection()
         cursor = self.connection.cursor()
+        # cache in memory the constraints that are being disabled
+        self.fk_constraint_backup = ConstraintBackup(self)
+        self.fk_constraint_backup.backup_constraints(constraint_list)
 
         for cons in constraint_list:
             LOGGER.info("disabling constraint %s", cons.constraint_name)
-            query = (
-                f"ALTER TABLE {self.schema_2_sync}.{cons.table_name} "
-                f"ALTER CONSTRAINT {cons.constraint_name} NOT VALID"
-            )
-
-            # ALTER TABLE spar.seedlot_collection_method ALTER CONSTRAINT
-            # seedlot_coll_met_seedlot_fk DEFERRABLE INITIALLY DEFERRED;
-            query = (
-                f"ALTER TABLE {self.schema_2_sync}.{cons.table_name} "
-                f"ALTER CONSTRAINT {cons.constraint_name} DEFERRABLE INITIALLY DEFERRED"
-            )
-
+            query = self.fk_constraint_backup.get_disable_alter_statement(cons)
             LOGGER.debug("alter query: %s", query)
-            cursor.execute(query)
+            try:
+                cursor.execute(query)
+                self.connection.commit()
+            except (
+                psycopg2.errors.UndefinedObject,
+                psycopg2.errors.InFailedSqlTransaction,
+            ) as e:
+                LOGGER.warning("constraint not found: %s", cons.constraint_name)
+        LOGGER.debug("closing the cursor")
         cursor.close()
 
     def enable_constraints(
@@ -225,10 +233,7 @@ class PostgresDatabase(db_lib.DB):
 
         for cons in constraint_list:
             LOGGER.info("enabling constraint %s", cons.constraint_name)
-            query = (
-                f"ALTER TABLE {self.schema_2_sync}.{cons.table_name} "
-                f"VALIDATE CONSTRAINT {cons.constraint_name}"
-            )
+            query = self.fk_constraint_backup.get_enable_alter_statement(cons)
             cursor.execute(query)
         cursor.close()
 
@@ -254,29 +259,45 @@ class PostgresDatabase(db_lib.DB):
         """
         # debugging to view the data before it gets loaded
         LOGGER.debug("input parquet file to load: %s", import_file)
-        if import_file.suffix == ".parquet":
+        if import_file.suffix == ".parquet" and import_file.exists():
             LOGGER.debug("reading parquet file, %s", import_file)
             super().load_data(table=table, import_file=import_file, purge=purge)
         else:
-            LOGGER.debug("loading data from csv using COPY, %s", import_file)
+            import_file_sql = import_file.with_suffix(constants.SQL_DUMP_SUFFIX)
+            LOGGER.debug(
+                "loading data from csv using sql_dump file, %s", import_file_sql
+            )
 
-            cur = self.connection.cursor()
-            # cons_name = "registration_form_a_class_seedlot_fk"
-            # query = (
-            #     f"ALTER TABLE {self.schema_2_sync}.{table.lower()} "
-            #     f"ALTER CONSTRAINT {cons_name} DEFERRABLE INITIALLY DEFERRED"
-            # )
-            # cur.execute(query)
-            with open(import_file) as f:
-                # spar.seedlot_registration_a_class_save
-                cur.execute("SET search_path TO spar, public ")
-                cur.copy_from(
-                    f,
-                    "seedlot_registration_a_class_save",
-                    sep="|",
-                    size=8192,
-                )
-            cur.close()
+            my_env = os.environ.copy()
+            my_env["PGPASSWORD"] = self.password
+            gzip_command_list = ["gunzip", "-c", str(import_file_sql)]
+            psql_command_list = [
+                "psql",
+                "-U",
+                self.username,
+                "-d",
+                self.service_name,
+                "-h",
+                self.host,
+                "-p",
+                str(self.port),
+            ]
+            LOGGER.debug("psql command list: %s", psql_command_list)
+            LOGGER.debug("start gunzip pipe...")
+            # psql -d spar -h localhost -p 5432 -U postgres  < seed_save.dmp
+            gunzip_process = subprocess.Popen(
+                gzip_command_list, stdout=subprocess.PIPE
+            )
+            LOGGER.debug("start data load pipe...")
+            load_process = subprocess.Popen(
+                psql_command_list,
+                env=my_env,
+                stdin=gunzip_process.stdout,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                # text=True,
+            )
+            LOGGER.debug("loading data...")
 
     def extract_data(
         self,
@@ -366,3 +387,97 @@ class PostgresDatabase(db_lib.DB):
         else:
             LOGGER.info("file exists: %s, not re-exporting", export_file)
         return file_created
+
+
+class ConstraintBackup:
+    """
+    Handle constraint backup and restore.
+
+    Postgres does not have the ability to disable constraints like oracle does.
+    This class is used to backup constraints, so that they can be reloaded
+    after the data load has been completed.
+    """
+
+    def __init__(self, db_inst: PostgresDatabase):
+        connection_params = ConnectionParameters
+        connection_params.username = db_inst.username
+        connection_params.password = db_inst.password
+        connection_params.host = db_inst.host
+        connection_params.port = db_inst.port
+        connection_params.service_name = db_inst.service_name
+        connection_params.schema_to_sync = db_inst.schema_2_sync
+
+        self.connection_params = connection_params
+        self.constraint_list: list[db_lib.TableConstraints]
+
+    def get_constraint_backup_file_path(self):
+        """
+        Return the path to the constraint backup file.
+
+        :return: the path to the constraint backup file
+        :rtype: pathlib.Path
+        """
+        backup_file_name = (
+            f"fk_bkup_{self.connection_params.host}_"
+            f"{self.connection_params.port}_"
+            f"{self.connection_params.service_name}.sql"
+        )
+        return pathlib.Path(
+            constants.DATA_DIR,
+            constants.CONSTRAINT_BACKUP_DIR,
+            backup_file_name,
+        )
+
+    def backup_constraints(
+        self, constraint_list: list[db_lib.TableConstraints]
+    ) -> None:
+        """
+        Backup the constraints to a file.
+        """
+        self.constraint_list = constraint_list
+        backup_file = self.get_constraint_backup_file_path()
+        LOGGER.debug("backup file: %s", backup_file)
+
+        # make sure the directory exists
+        backup_file.parent.mkdir(parents=True, exist_ok=True)
+
+        with backup_file.open("w") as f:
+            for cons in constraint_list:
+                # example alter statement:
+                # ALTER TABLE spar.seedlot_registration_a_class_save ADD CONSTRAINT
+                #    registration_form_a_class_seedlot_fk FOREIGN KEY (seedlot_number) REFERENCES spar.seedlot(seedlot_number);
+                LOGGER.debug("constraint: %s", cons.constraint_name)
+                alter_statement = self.get_enable_alter_statement(cons)
+                f.write(alter_statement)
+
+    def get_enable_alter_statement(self, cons: db_lib.TableConstraints) -> str:
+        """
+        Return the alter statement for the constraint.
+
+        :param cons: the constraint to generate the alter statement for
+        :type cons: TableConstraints
+        :return: the alter statement
+        :rtype: str
+        """
+        alter_statement = (
+            f"ALTER TABLE {self.connection_params.schema_to_sync}.{cons.table_name} "
+            + f"ADD CONSTRAINT {cons.constraint_name} FOREIGN KEY ({cons.column_name}) "
+            + f"REFERENCES {self.connection_params.schema_to_sync}.{cons.referenced_table}({cons.referenced_column}) "
+            + " ;\n"
+        )
+        return alter_statement
+
+    def get_disable_alter_statement(self, cons: db_lib.TableConstraints) -> str:
+        """
+        Return the alter statement to disable the constraint.
+
+        :param cons: the constraint to generate the alter statement for
+        :type cons: TableConstraints
+        :return: the alter statement
+        :rtype: str
+        """
+        alter_statement = (
+            f"ALTER TABLE {self.connection_params.schema_to_sync}.{cons.table_name} "
+            + f"DROP CONSTRAINT {cons.constraint_name};\n"
+        )
+        return alter_statement

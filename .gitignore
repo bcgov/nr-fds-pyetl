@@ -162,3 +162,4 @@ tmp_file
 data_prep/data/
 junk.txt
 data/**
+data_prep/junk.py

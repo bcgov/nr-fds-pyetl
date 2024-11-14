@@ -76,8 +76,12 @@ class OStore:
             # doesn't exist get the csv file instead.
             LOGGER.debug("remote_data_file: %s", str(remote_data_file))
             if str(remote_data_file) not in remote_file_names:
-                remote_data_file = remote_data_file.with_suffix(".csv")
-                local_data_file = local_data_file.with_suffix(".csv")
+                remote_data_file = remote_data_file.with_suffix(
+                    constants.SQL_DUMP_SUFFIX
+                )
+                local_data_file = local_data_file.with_suffix(
+                    constants.SQL_DUMP_SUFFIX
+                )
 
             # keeping it simple for now, if local exists re-use it
             if not local_data_file.exists():

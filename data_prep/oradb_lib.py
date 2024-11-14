@@ -123,7 +123,7 @@ class OracleDatabase(db_lib.DB):
         LOGGER.debug("tables: %s", tables)
         return tables
 
-    def truncate_table(self, table: str) -> None:
+    def truncate_table(self, table: str, casacade: bool = False) -> None:
         """
         Delete all the data from the table.
 
