@@ -26,7 +26,7 @@ x-oracle-vars: &oracle-vars
 
 services:
   spar-db:
-    image: postgres:15
+    image: postgis/postgis:15-master
     container_name: database
     environment:
       <<: *postgres-vars
