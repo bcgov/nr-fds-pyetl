@@ -42,6 +42,24 @@ class DBType(Enum):
     SPAR = 2
 
 
+def get_default_export_file_path(
+    table: str,
+    env_str: str,
+    db_type: DBType,
+) -> pathlib.Path:
+    """
+    Return the path to the default export file.
+
+    Different databases have different file types that are used to export data.
+    example: oracle will use parquet
+    postgres will use sql file dumped from pg_dump
+    """
+    if db_type == DBType.ORA:
+        return get_parquet_file_path(table, env_str, db_type)
+    elif db_type == DBType.SPAR:
+        return get_sql_dump_file_path(table, env_str, db_type)
+
+
 def get_parquet_file_path(
     table: str,
     env_str: str,
@@ -61,7 +79,6 @@ def get_parquet_file_path(
     return_path = pathlib.Path(
         DATA_DIR, env_str, db_type.name, parquet_file_name
     )
-    LOGGER.debug("returning path: %s", return_path)
     return return_path
 
 
@@ -78,7 +95,7 @@ def get_parquet_file_ostore_path(table: str, db_type: DBType) -> pathlib.Path:
     :rtype: pathlib.Path
     """
     parquet_file_name = f"{table}.{PARQUET_SUFFIX}"
-    ostore_dir = get_parquet_directory_ostore_path(db_type)
+    ostore_dir = get_export_ostore_path(db_type)
     full_path = pathlib.Path(
         ostore_dir,
         parquet_file_name,
@@ -87,7 +104,7 @@ def get_parquet_file_ostore_path(table: str, db_type: DBType) -> pathlib.Path:
     return full_path
 
 
-def get_parquet_directory_ostore_path(db_type: DBType) -> pathlib.Path:
+def get_export_ostore_path(db_type: DBType) -> pathlib.Path:
     full_path = pathlib.Path(
         OBJECT_STORE_DATA_DIRECTORY,
         db_type.name,
@@ -114,4 +131,4 @@ def get_sql_dump_file_path(
         table=table, env_str=env_str, db_type=db_type
     )
     sql_dump_file = parquet_file.with_suffix(SQL_DUMP_SUFFIX)
-
+    return sql_dump_file

@@ -131,6 +131,7 @@ class PostgresDatabase(db_lib.DB):
         except psycopg2.errors.FeatureNotSupported as e:
             LOGGER.error("truncate failed: %s", e)
             self.connection.rollback()
+            raise
         cursor.close()
 
     def get_fk_constraints(self) -> list[db_lib.TableConstraints]:
@@ -174,12 +175,53 @@ class PostgresDatabase(db_lib.DB):
         self.get_connection()
         cursor = self.connection.cursor()
         cursor.execute(query, {"schema": self.schema_2_sync})
-        constraint_list = []
-        for row in cursor:
-            # LOGGER.debug(row)
-            tab_con = db_lib.TableConstraints(*row)
-            LOGGER.debug("constraint: %s", tab_con)
-            constraint_list.append(tab_con)
+
+        # restructure the data, removing duplicates
+        constraint_data = cursor.fetchall()
+        cursor.close()
+
+        constraint_data_index = {}
+        for row in constraint_data:
+            # can have multiple columns in from and multiple columns in to
+            # definitions for a constraint.
+            # 0 - foreign key constraint name
+            # 1 - from table
+            # 2 - from column
+            # 3 - primary key constraint name
+            # 4 - to table
+            # 5 - to column
+            constraint_name = row[0]
+            if constraint_name in constraint_data_index:
+                existing_record = constraint_data_index[row[0]]
+                # is the incomming source table already defined for this constraint
+                # and the column is not already defined
+                if (
+                    row[1] == existing_record.table_name
+                    and row[2] not in existing_record.column_names
+                ):
+                    existing_record.column_names.append(row[2])
+                    constraint_data_index[row[0]] = existing_record
+                # is the referenced table already defined for this constraint but
+                # the referenced column is not
+                if (
+                    row[4] == existing_record.referenced_table
+                    and row[5] not in existing_record.referenced_columns
+                ):
+                    existing_record.referenced_columns.append(row[5])
+                    constraint_data_index[row[0]] = existing_record
+            else:
+                cons_struct = db_lib.TableConstraints(
+                    constraint_name=row[0],
+                    table_name=row[1],
+                    column_names=[row[2]],
+                    r_constraint_name=row[3],
+                    referenced_table=row[4],
+                    referenced_columns=[row[5]],
+                )
+                constraint_data_index[constraint_name] = cons_struct
+
+        constraint_list = list(constraint_data_index.values())
+        LOGGER.debug("constraint_data_index: %s", constraint_list)
         return constraint_list
 
     def disable_fk_constraints(
@@ -212,13 +254,17 @@ class PostgresDatabase(db_lib.DB):
                 psycopg2.errors.UndefinedObject,
                 psycopg2.errors.InFailedSqlTransaction,
             ) as e:
-                LOGGER.warning("constraint not found: %s", cons.constraint_name)
+                # UndefinedObject: gets raised when constraint does not exist.
+                LOGGER.warning(
+                    "constraint not found: %s", cons.constraint_name, e
+                )
         LOGGER.debug("closing the cursor")
         cursor.close()
 
     def enable_constraints(
         self,
         constraint_list: list[db_lib.TableConstraints],
+        retries: int = 0,
     ) -> None:
         """
         Enable all foreign key constraints.
@@ -228,14 +274,45 @@ class PostgresDatabase(db_lib.DB):
         :param constraint_list: list of constraints that are to be enabled
         :type constraint_list: list[TableConstraints]
         """
+        max_retries = 5  # could put this into constants
         self.get_connection()
         cursor = self.connection.cursor()
-
+        failed_constraints = []
         for cons in constraint_list:
             LOGGER.info("enabling constraint %s", cons.constraint_name)
             query = self.fk_constraint_backup.get_enable_alter_statement(cons)
-            cursor.execute(query)
+            try:
+                cursor.execute(query)
+                self.connection.commit()
+            except psycopg2.errors.DuplicateObject:
+                LOGGER.info(
+                    "constraint already exists: %s", cons.constraint_name
+                )
+            except (
+                psycopg2.errors.InFailedSqlTransaction,
+                psycopg2.errors.InvalidForeignKey,
+            ) as e:
+                LOGGER.error(
+                    "unable to enable the constraint: %s", cons.constraint_name
+                )
+                if retries > 1:
+                    raise
+                self.connection.rollback()
+                failed_constraints.append(cons)
         cursor.close()
+        if failed_constraints:
+            if retries > max_retries:
+                # TODO: specify exception type
+                raise
+            retries += 1
+            self.enable_constraints(failed_constraints, retries)
+            LOGGER.error(
+                "retrying %s failed constraints", len(failed_constraints)
+            )
+        else:
+            LOGGER.info("all constraints enabled")
+            LOGGER.debug("remove the constraint backup file")
+            self.fk_constraint_backup.get_constraint_backup_file_path().unlink()
 
     def load_data(
         self,
@@ -295,9 +372,16 @@ class PostgresDatabase(db_lib.DB):
                 stdin=gunzip_process.stdout,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                # text=True,
+                text=True,
             )
+            stdout, stderr = load_process.communicate()
+            LOGGER.debug("stdout: %s", stdout)
+            LOGGER.debug("stderr: %s", stderr)
             LOGGER.debug("loading data...")
+            LOGGER.debug("return code: %s", load_process.returncode)
+            if load_process.returncode != 0:
+                LOGGER.error("data load failed")
+                raise DatabaseError("data load failed")
 
     def extract_data(
         self,
@@ -307,6 +391,7 @@ class PostgresDatabase(db_lib.DB):
         overwrite: bool = False,
     ) -> bool:
         """
+
         Override the default implementation to use the postgres pg_dump command.
 
         By default will call the super class method to extract the data from the
@@ -324,68 +409,71 @@ class PostgresDatabase(db_lib.DB):
         :return: True if the file was created, False if it was not
         :rtype: bool
         """
+        LOGGER.debug("exporting table %s to %s", table, export_file)
         file_created = False
-
-        # check that the directory for export file exists
-        export_file.parent.mkdir(parents=True, exist_ok=True)
-        export_file_sql = export_file.with_suffix(constants.SQL_DUMP_SUFFIX)
-        LOGGER.debug("export file is: %s", export_file)
-        LOGGER.debug("export file sql is: %s", export_file_sql)
-
-        if (
-            not export_file.exists() and not export_file_sql.exists()
-        ) or overwrite:
-
-            if export_file.exists():
-                export_file.unlink()  # delete dump file if exists
-            if export_file_sql.exists():
-                export_file_sql.unlink()
-                # delete the file if it exists
-            try:
-                # first try the super class method to extract the data using parquet
-                super().extract_data(
+        if (not export_file.exists()) or overwrite:
+            if "".join(export_file.suffixes) == constants.SQL_DUMP_SUFFIX:
+                file_created = self.extract_sql_dump_file(export_file, table)
+            elif "".join(export_file.suffixes) == constants.PARQUET_SUFFIX:
+                file_created = super().extract_data(
                     table=table,
                     export_file=export_file,
                     overwrite=overwrite,
                 )
-            except pyarrow.lib.ArrowNotImplementedError as e:
-                # the dump to parquet failed... fail over is to us pg_dump
-                LOGGER.debug("running pg_dump to extract the data")
-                # copy the environment and populate the PGPASSWORD variable
-                my_env = os.environ.copy()
-                my_env["PGPASSWORD"] = self.password
-
-                # setup the pg_dump command
-                pg_dump_command_list = [
-                    "pg_dump",
-                    "-p",
-                    str(self.port),
-                    "--data-only",
-                    "-U",
-                    self.username,
-                    "-h",
-                    self.host,
-                    "-d",
-                    self.service_name,
-                    "-t",
-                    f"{self.schema_2_sync}.{table}",
-                ]
-                LOGGER.debug("command list: %s", pg_dump_command_list)
-                with gzip.open(str(export_file_sql), "wb") as f:
-                    popen = subprocess.Popen(
-                        pg_dump_command_list,
-                        stdout=subprocess.PIPE,
-                        universal_newlines=True,
-                        env=my_env,
-                    )
-                    for stdout_line in iter(popen.stdout.readline, ""):
-                        f.write(stdout_line.encode("utf-8"))
-                popen.stdout.close()
-                popen.wait()
-                LOGGER.info("pg_dump complete")
-            file_created = True
+            else:
+                LOGGER.debug("suffix: %s", export_file.suffix)
+                LOGGER.error("unsupported file type: %s", export_file)
+                raise ValueError("unsupported file type %s", export_file)
         else:
             LOGGER.info("file exists: %s, not re-exporting", export_file)
+        return file_created
+
+    def extract_sql_dump_file(
+        self, export_file: pathlib.Path, table: str
+    ) -> bool:
+        """
+        Extract the sql dump file from the database.
+
+        The sql dump file is a file that contains the database schema and data.
+        """
+        file_created = False
+        export_file.parent.mkdir(parents=True, exist_ok=True)
+        LOGGER.debug("extracting sql dump file")
+        # the dump to parquet failed... fail over is to us pg_dump
+        LOGGER.debug("running pg_dump to extract the data")
+        # copy the environment and populate the PGPASSWORD variable
+        my_env = os.environ.copy()
+        my_env["PGPASSWORD"] = self.password
+
+        # setup the pg_dump command
+        pg_dump_command_list = [
+            "pg_dump",
+            "-p",
+            str(self.port),
+            "--data-only",
+            "-U",
+            self.username,
+            "-h",
+            self.host,
+            "-d",
+            self.service_name,
+            "-t",
+            f"{self.schema_2_sync}.{table}",
+        ]
+        LOGGER.debug("command list: %s", pg_dump_command_list)
+        with gzip.open(str(export_file), "wb") as f:
+            popen = subprocess.Popen(
+                pg_dump_command_list,
+                stdout=subprocess.PIPE,
+                universal_newlines=True,
+                env=my_env,
+            )
+            for stdout_line in iter(popen.stdout.readline, ""):
+                f.write(stdout_line.encode("utf-8"))
+        popen.stdout.close()
+        popen.wait()
+        LOGGER.info("pg_dump complete")
+        file_created = True
         return file_created
 
 
@@ -441,6 +529,7 @@ class ConstraintBackup:
         # make sure the directory exists
         backup_file.parent.mkdir(parents=True, exist_ok=True)
 
+        # need logic for if the constraint file already exists
         with backup_file.open("w") as f:
             for cons in constraint_list:
                 # example alter statement:
@@ -461,8 +550,8 @@ class ConstraintBackup:
         """
         alter_statement = (
             f"ALTER TABLE {self.connection_params.schema_to_sync}.{cons.table_name} "
-            + f"ADD CONSTRAINT {cons.constraint_name} FOREIGN KEY ({cons.column_name}) "
-            + f"REFERENCES {self.connection_params.schema_to_sync}.{cons.referenced_table}({cons.referenced_column}) "
+            + f"ADD CONSTRAINT {cons.constraint_name} FOREIGN KEY ({','.join(cons.column_names)}) "
+            + f"REFERENCES {self.connection_params.schema_to_sync}.{cons.referenced_table}({','.join(cons.referenced_columns)}) "
             + " ;\n"
         )
         return alter_statement

@@ -44,7 +44,6 @@ class ReadDockerCompose:
 
         if self.compose_file_path is None:
             self.compose_file_path = "./docker-compose.yml"
-        LOGGER.debug("docker compose file is: %s", self.compose_file_path)
 
         with pathlib.Path(self.compose_file_path).open("r") as fh:
             self.docker_comp = yaml.safe_load(fh)

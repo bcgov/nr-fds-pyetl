@@ -319,7 +319,10 @@ class Utility:
 
         for table in tables_to_export:
             LOGGER.info("Exporting table %s", table)
-            export_file = constants.get_parquet_file_path(
+            # the export file type is different depending on the database.
+            # originally wanted to keep to parquet, but loading the json data
+            # used by spar doesn't work well with postgres.  So using pg_dump.
+            export_file = constants.get_default_export_file_path(
                 table,
                 self.env_obj.current_env,
                 self.db_type,
@@ -329,7 +332,7 @@ class Utility:
             file_created = db_connection.extract_data(table, export_file)
 
             if file_created:
-                # push the file to object store
+                # push the file to object store, if a new file has been created
                 ostore.put_data_files(
                     [table], self.env_obj.current_env, self.db_type
                 )

@@ -10,7 +10,7 @@ def test_get_parquet_directory_ostore_path():
     """
     Verify the object store path for parquet files is correct.
     """
-    ostore_dir = constants.get_parquet_directory_ostore_path(
+    ostore_dir = constants.get_export_ostore_path(
         constants.DBType.SPAR,
     )
     LOGGER.debug("ostore_dir: %s", ostore_dir)

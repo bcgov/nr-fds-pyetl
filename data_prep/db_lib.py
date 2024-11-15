@@ -38,10 +38,10 @@ class TableConstraints:
 
     constraint_name: str
     table_name: str
-    column_name: str
+    column_names: list[str]
     r_constraint_name: str
     referenced_table: str
-    referenced_column: str
+    referenced_columns: list[str]
 
 
 class DB(ABC):
@@ -232,11 +232,12 @@ class DB(ABC):
         :return: True if the file was created, False if it was not
         :rtype: bool
         """
+        LOGGER.debug("exporting table %s to %s", table, export_file)
         file_created = False
 
         # check that the directory for export file exists
         export_file.parent.mkdir(parents=True, exist_ok=True)
-
+        LOGGER.debug("export file: %s", export_file)
         if not export_file.exists() or overwrite:
             table_obj = self.get_table_object(table)
             select_obj = sqlalchemy.select(table_obj)

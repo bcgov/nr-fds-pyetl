@@ -54,7 +54,7 @@ class OStore:
             pulled
         :type tables: list[str]
         """
-        ostore_dir = constants.get_parquet_directory_ostore_path(db_type)
+        ostore_dir = constants.get_export_ostore_path(db_type)
         remote_files = self.s3_client.list_objects(
             Bucket=self.conn_params.bucket,
             Prefix=str(ostore_dir),
