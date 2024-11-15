@@ -38,6 +38,4 @@ Activate the poetry environment.
 
 ## Running script
 
-python data_prep/main_spar_extract.py <env: TEST|PROD>
-
-
+`python data_prep/main_spar_extract.py <env: TEST|PROD>`
