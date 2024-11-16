@@ -340,7 +340,9 @@ class PostgresDatabase(db_lib.DB):
             LOGGER.debug("reading parquet file, %s", import_file)
             super().load_data(table=table, import_file=import_file, purge=purge)
         else:
-            import_file_sql = import_file.with_suffix(constants.SQL_DUMP_SUFFIX)
+            import_file_sql = import_file.with_suffix(
+                "." + constants.SQL_DUMP_SUFFIX
+            )
             LOGGER.debug(
                 "loading data from csv using sql_dump file, %s", import_file_sql
             )

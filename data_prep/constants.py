@@ -22,7 +22,7 @@ CONSTRAINT_BACKUP_DIR = "fk_constraint_backup"
 VALID_ENVS = ("DEV", "TEST", "PROD", "LOCAL")
 
 PARQUET_SUFFIX = "parquet"
-SQL_DUMP_SUFFIX = ".sql.gz"
+SQL_DUMP_SUFFIX = "sql.gz"
 
 # name of the directory in object store where the data backup files reside
 OBJECT_STORE_DATA_DIRECTORY = "pyetl"
@@ -145,5 +145,5 @@ def get_sql_dump_file_path(
     parquet_file = get_parquet_file_path(
         table=table, env_str=env_str, db_type=db_type
     )
-    sql_dump_file = parquet_file.with_suffix(SQL_DUMP_SUFFIX)
+    sql_dump_file = parquet_file.with_suffix("." + SQL_DUMP_SUFFIX)
     return sql_dump_file

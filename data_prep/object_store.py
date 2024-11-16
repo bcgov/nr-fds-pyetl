@@ -65,22 +65,27 @@ class OStore:
         LOGGER.debug("remote files: %s", remote_file_names)
 
         for table in tables:
-            local_data_file = constants.get_parquet_file_path(
-                table, env_str, db_type
+            local_data_file = constants.get_default_export_file_path(
+                table,
+                env_str,
+                db_type,
             )
-            remote_data_file = constants.get_parquet_file_ostore_path(
+            local_data_file.parent.mkdir(parents=True, exist_ok=True)
+            LOGGER.debug("local file: %s", local_data_file)
+            remote_data_file = constants.get_default_export_file_ostore_path(
                 table,
                 db_type,
             )
+            LOGGER.debug("remote file: %s", remote_data_file)
             # Added logic to use csv if parquet fails... So if the parquet file
             # doesn't exist get the csv file instead.
             LOGGER.debug("remote_data_file: %s", str(remote_data_file))
             if str(remote_data_file) not in remote_file_names:
                 remote_data_file = remote_data_file.with_suffix(
-                    constants.SQL_DUMP_SUFFIX
+                    ". " + constants.SQL_DUMP_SUFFIX
                 )
                 local_data_file = local_data_file.with_suffix(
-                    constants.SQL_DUMP_SUFFIX
+                    "." + constants.SQL_DUMP_SUFFIX
                 )
 
             # keeping it simple for now, if local exists re-use it
