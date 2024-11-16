@@ -77,7 +77,7 @@ class ReadDockerCompose:
         ]
         # using localhost because the connection is going to be made external
         # to the docker container
-        conn_tuple.host = "localhost"
+        conn_tuple.host = os.getenv("POSTGRES_HOST", "localhost")
         conn_tuple.schema_to_sync = "spar"
         return conn_tuple
 

@@ -12,21 +12,37 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "spar-extract",
+            "name": "spar-extract-test",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/data_prep/main_spar_extract.py",
             "console": "integratedTerminal",
-            "envFile": "${workspaceFolder}/.env"
+            "envFile": "${workspaceFolder}/.env",
+            "args": [
+                "TEST"
+            ]
         },
         {
-            "name": "spar-ingest",
+            "name": "spar-ingest-test",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/data_prep/main_spar_ingest.py",
             "console": "integratedTerminal",
-            "envFile": "${workspaceFolder}/.env"
-        }
-
+            "envFile": "${workspaceFolder}/.env",
+            "args": [
+                "TEST"
+            ]
+        },
+        {
+            "name": "spar-extract-prod",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/data_prep/main_spar_extract.py",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.env",
+            "args": [
+                "PROD"
+            ]
+        },
     ]
 }

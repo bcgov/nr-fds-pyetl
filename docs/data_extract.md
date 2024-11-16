@@ -28,6 +28,15 @@ port forward tunnel for pulling the data from postgres in openshift.
 * OC_TOKEN_PROD - ditto as above except this is the key that will be used to
                   extract the data from prod.
 
+The following are the env vars required to connect to object storage.  The
+env can be either TEST|PROD, depending on which env is being extracted:
+
+* OBJECT_STORE_USER_<env>
+* OBJECT_STORE_SECRET_<env>
+* OBJECT_STORE_BUCKET_<env>
+* OBJECT_STORE_HOST_<env>
+
+
 ## Install / configure dependencies
 
 Install dependencies using poetry

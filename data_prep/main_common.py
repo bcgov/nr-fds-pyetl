@@ -336,6 +336,8 @@ class Utility:
                 ostore.put_data_files(
                     [table], self.env_obj.current_env, self.db_type
                 )
+        self.kube_client.close_port_forward()
+
 
     def run_injest(self) -> None:
         """

@@ -108,5 +108,6 @@ class KubeClient:
         LOGGER.debug("Port forward started")
 
     def close_port_forward(self):
+        LOGGER.debug("Closing database port forward")
         if self.pf:
             self.pf.stop()

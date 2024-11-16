@@ -20,9 +20,9 @@ boto3 = {extras = ["s3"], version = "^1.35.37"}
 kubernetes = "^31.0.0"
 requests = "^2.32.3"
 openshift-client = "^2.0.4"
-psycopg2 = "^2.9.10"
 kr8s = "^0.17.4"
 
+psycopg2-binary = "^2.9.10"
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
 ruff = "^0.6.9"

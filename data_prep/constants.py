@@ -42,6 +42,21 @@ class DBType(Enum):
     SPAR = 2
 
 
+def get_default_export_file_ostore_path(table: str, db_type: DBType):
+    if db_type == DBType.ORA:
+        suffix = PARQUET_SUFFIX
+    elif db_type == DBType.SPAR:
+        suffix = SQL_DUMP_SUFFIX
+    parquet_file_name = f"{table}.{suffix}"
+    ostore_dir = get_export_ostore_path(db_type)
+    full_path = pathlib.Path(
+        ostore_dir,
+        parquet_file_name,
+    )
+    LOGGER.debug("parquet file name: %s", full_path)
+    return full_path
+
+
 def get_default_export_file_path(
     table: str,
     env_str: str,

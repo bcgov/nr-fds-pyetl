@@ -51,31 +51,28 @@ services:
       spar-db:
         condition: service_healthy
 
-  # spar-db-data-load:
-  #   profiles: ["python", "all"]
-  #   image: python:3.11
-  #   container_name: spar-db-data-loader
-  #   #entrypoint: bash /application/docker_run_TEST.bash
-  #   entrypoint:
-  #   #entrypoint: sleep 500000
-  #   working_dir:    /application
-  #   volumes:
-  #     -  "./.venv:/venv"
-  #     - "./data_prep:/application"
-  #     - "./poetry.lock:/application/poetry.lock"
-  #     - "./pyproject.toml:/application/pyproject.toml"
-  #     - "./docker-compose.yml:/application/docker-compose.yml"
-  #     - "./data:/application/data"
-  #   environment:
-  #     <<: [*oracle-vars]
-  #     ORACLE_HOST: oracle
-  #   env_file:
-  #     - ".env"
-  #   depends_on:
-  #     oracle-migrations:
-  #       condition: service_completed_successfully
-
-
+  spar-db-data-load:
+    profiles: ["python", "all"]
+    image: python:3.11.10-slim-bullseye
+    container_name: spar-db-data-loader
+    entrypoint: bash /application/docker_run_SPAR_TEST.bash
+    #entrypoint: sleep 500000
+    working_dir:    /application
+    volumes:
+      -  "./.venv:/venv"
+      - "./data_prep:/application"
+      - "./poetry.lock:/application/poetry.lock"
+      - "./pyproject.toml:/application/pyproject.toml"
+      - "./docker-compose.yml:/application/docker-compose.yml"
+      - "./data:/application/data"
+    environment:
+      <<: [*postgres-vars]
+      POSTGRES_HOST: spar-db
+    env_file:
+      - ".env"
+    depends_on:
+      spar-db-migrations:
+        condition: service_completed_successfully
 
   # Name of the Docker Compose service
   oracle:

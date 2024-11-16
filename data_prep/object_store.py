@@ -213,25 +213,13 @@ class OStore:
         :type env_str: str
         """
         for table in tables:
-            local_data_file = constants.get_parquet_file_path(
+            local_data_file = constants.get_default_export_file_path(
                 table, env_str, db_type
             )
-            remote_data_file = constants.get_parquet_file_ostore_path(
+            remote_data_file = constants.get_default_export_file_ostore_path(
                 table,
                 db_type,
             )
-            # Ran into issues with some of the data files not exporting as parquet
-            # files.  When unable to export parquet the export will default to
-            # csv files.  Testing to see if the parquet file exists, and if not
-            # then change the source and destination files to csv.
-            if not local_data_file.exists():
-                # need a better way of handling alternative formats
-                local_data_file = local_data_file.with_suffix(
-                    constants.SQL_DUMP_SUFFIX
-                )
-                remote_data_file = remote_data_file.with_suffix(
-                    constants.SQL_DUMP_SUFFIX
-                )
 
             # keeping it simple for now, if local exists re-use it
             if local_data_file.exists():
