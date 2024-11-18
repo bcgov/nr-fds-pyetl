@@ -92,20 +92,22 @@ class ReadDockerCompose:
             parameters
         :rtype: oradb_lib.ConnectionTuple
         """
-        conn_tuple = env_config.ConnectionParameters
-        conn_tuple.username = self.docker_comp["x-oracle-vars"]["APP_USER"]
-        conn_tuple.password = self.docker_comp["x-oracle-vars"][
+        # extract variables from parsing the docker compose file
+        dcr_user_name = self.docker_comp["x-oracle-vars"]["APP_USER"]
+        dcr_user_password = self.docker_comp["x-oracle-vars"][
             "APP_USER_PASSWORD"
         ]
+        dcr_port = self.docker_comp["services"]["oracle"]["ports"][0].split(
+            ":"
+        )[0]
+        dcr_service_name = self.docker_comp["x-oracle-vars"]["ORACLE_DATABASE"]
 
+        conn_tuple = env_config.ConnectionParameters
+        conn_tuple.username = os.getenv("ORACLE_USER", dcr_user_name)
+        conn_tuple.password = os.getenv("ORACLE_USER", dcr_user_password)
+        conn_tuple.service_name = os.getenv("ORACLE_DATABASE", dcr_service_name)
         # this method will return the host for the docker container which is
         # expected to be running locally and is therefor 'localhost'
-        conn_tuple.host = "localhost"
-
-        conn_tuple.port = self.docker_comp["services"]["oracle"]["ports"][
-            0
-        ].split(":")[0]
-        conn_tuple.service_name = self.docker_comp["x-oracle-vars"][
-            "ORACLE_DATABASE"
-        ]
+        conn_tuple.host = os.getenv("ORACLE_HOST", "localhost")
+        conn_tuple.port = os.getenv("ORACLE_PORT", dcr_port)
         return conn_tuple

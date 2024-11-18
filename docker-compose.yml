@@ -22,7 +22,8 @@ x-postgres-vars: &postgres-vars
 x-oracle-vars: &oracle-vars
   ORACLE_DATABASE: DBDOCK_01
   ORACLE_PASSWORD: default
-  POSTGRES_DATABASE: *POSTGRES_HOST
+  # if change the host here, need to also change the name of the service
+  ORACLE_HOST: oracle
   APP_USER: the
   APP_USER_PASSWORD: default
   FLYWAY_URL: jdbc:oracle:thin:@//oracle:1521/DBDOCK_01
