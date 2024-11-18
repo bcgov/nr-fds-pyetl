@@ -150,6 +150,7 @@ services:
         condition: service_completed_successfully
 
   cloudbeaver:
+    profiles: ["cloudbeaver"]
     image: dbeaver/cloudbeaver:latest
     container_name: cloudbeaver
     restart: always
