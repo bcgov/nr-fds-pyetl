@@ -57,11 +57,9 @@ services:
         condition: service_healthy
 
   postgres-data-load:
-    # profiles: ["python", "all"]
     image: python:3.11.10-slim-bullseye
     container_name: postgres-data-load
     entrypoint: bash /application/docker_run_SPAR_TEST.bash
-    #entrypoint: sleep 500000
     working_dir: /application
     volumes:
       -  "./.venv:/venv"
@@ -118,7 +116,6 @@ services:
         condition: service_healthy
 
   oracle-data-load:
-    # profiles: ["python", "all"]
     image: python:3.11
     container_name: oracle-data-load
     entrypoint: bash /application/docker_run_ORA_TEST.bash
