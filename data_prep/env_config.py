@@ -148,7 +148,7 @@ class Env:
         need to pull in this value from the environment.
         """
         LOGGER.debug("env for schema retrieval: %s", self.current_env)
-        return os.getenv(f"ORACLE_SCHEMA_TO_SYNC_{self.current_env}")
+        return os.getenv(f"ORACLE_SCHEMA_TO_SYNC_{self.current_env}", "THE")
 
     def get_ostore_constants(self) -> ObjectStoreParameters:
         """
