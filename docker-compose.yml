@@ -149,6 +149,18 @@ services:
       postgres-data-load:
         condition: service_completed_successfully
 
+  cloudbeaver:
+    image: dbeaver/cloudbeaver:latest
+    container_name: cloudbeaver
+    restart: always
+    ports:
+      - '8978:8978'
+    volumes:
+      - /opt/cloudbeaver/workspace
+    depends_on:
+      etl:
+        condition: service_completed_successfully
+
   # # debug service, useful for understanding how environment variables work
   # echoit:
   #   image: functions/alpine:health
