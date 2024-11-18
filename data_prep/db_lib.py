@@ -324,13 +324,17 @@ class DB(ABC):
         if purge:
             self.truncate_table(table.lower())
         LOGGER.debug("loading data to table: %s", table)
+        if self.db_type == constants.DBType.SPAR:
+            method = "multi"
+        elif self.db_type == constants.DBType.ORA:
+            method = None
         pandas_df.to_sql(
             table.lower(),
             self.sql_alchemy_engine,
             schema=self.schema_2_sync,
             if_exists="append",
             index=False,
-            method="multi",
+            method=method,
         )
 
     def load_data_retry(  # noqa: PLR0913
@@ -385,7 +389,7 @@ class DB(ABC):
         LOGGER.debug("retries: %s", retries)
         for table in table_list:
             spaces = " " * retries * 2
-            import_file = constants.get_parquet_file_path(
+            import_file = constants.get_default_export_file_path(
                 table,
                 env_str,
                 self.db_type,

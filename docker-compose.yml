@@ -54,7 +54,7 @@ services:
   spar-db-data-load:
     profiles: ["python", "all"]
     image: python:3.11.10-slim-bullseye
-    container_name: spar-db-data-loader
+    container_name: spar-db-data-load
     entrypoint: bash /application/docker_run_SPAR_TEST.bash
     #entrypoint: sleep 500000
     working_dir:    /application
@@ -93,7 +93,7 @@ services:
     # Mount a local SQL file to initialize your schema at startup
     volumes:
       - oracle-data:/opt/oracle/oradata  # Mount the volume to the Oracle data directory
-      - ./oradb/db_init.sql:/container-entrypoint-initdb.d/my-init.sql:ro
+      - ./oradb/db_init/db_init.sql:/container-entrypoint-initdb.d/my-init.sql:ro
 
   oracle-migrations:
     image: flyway/flyway:10-alpine
@@ -114,12 +114,12 @@ services:
   oracle-data-load:
     profiles: ["python", "all"]
     image: python:3.11
-    container_name: oracle-data-loader
+    container_name: oracle-data-load
     entrypoint: bash /application/docker_run_TEST.bash
     #entrypoint: sleep 500000
     working_dir:    /application
     volumes:
-      -  "./.venv:/venv"
+      - "./.venv:/venv"
       - "./data_prep:/application"
       - "./poetry.lock:/application/poetry.lock"
       - "./pyproject.toml:/application/pyproject.toml"
@@ -133,6 +133,17 @@ services:
     depends_on:
       oracle-migrations:
         condition: service_completed_successfully
+
+  # debug service, useful for understanding how environment variables work
+  etl:
+    container_name: etl
+    image: functions/alpine:health
+    command: ["/bin/sh", "-c", "echo Postgres and Oracle envs now live!"]
+    depends_on:
+      oracle-data-load:
+        condition: service_completed_successfully
+    #   spar-db-data-load:
+    #     condition: service_completed_successfully
 
   # debug service, useful for understanding how environment variables work
   echoit:

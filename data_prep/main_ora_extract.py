@@ -47,6 +47,7 @@ import pathlib
 import sys
 from concurrent import futures  # noqa: F401
 
+import constants
 import main_common
 
 LOGGER = logging.getLogger(__name__)
@@ -59,7 +60,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         env_str = sys.argv[1]
 
-    common_util = main_common.Utility(env_str)
+    common_util = main_common.Utility(env_str, constants.DBType.ORA)
     common_util.configure_logging()
     logger_name = pathlib.Path(__file__).stem
     LOGGER = logging.getLogger(logger_name)

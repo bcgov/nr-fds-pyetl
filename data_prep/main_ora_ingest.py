@@ -39,6 +39,7 @@ import logging
 import pathlib
 import sys
 
+import constants
 import main_common
 
 LOGGER = logging.getLogger(__name__)
@@ -50,7 +51,9 @@ if __name__ == "__main__":
     env_str = "TEST"
     if len(sys.argv) > 1:
         env_str = sys.argv[1]
-    common_util = main_common.Utility(env_str)
+
+    db_type = constants.DBType.ORA
+    common_util = main_common.Utility(env_str, db_type)
     common_util.configure_logging()
     logger_name = pathlib.Path(__file__).stem
     LOGGER = logging.getLogger(logger_name)

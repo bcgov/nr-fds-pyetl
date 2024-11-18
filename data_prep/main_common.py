@@ -35,7 +35,6 @@ class Utility:
         self.env_obj = env_config.Env(env_str)
         self.curdir = pathlib.Path(__file__).parents[0]
         self.datadir = pathlib.Path(
-            self.curdir,
             constants.DATA_DIR,
             self.env_str,
             db.name.lower(),
@@ -217,6 +216,13 @@ class Utility:
                 # Close the socket
                 sock.close()
 
+    def get_tables_for_extract(self) -> list[str]:
+        if self.db_type == constants.DBType.ORA:
+            tables = self.get_tables()
+        elif self.db_type == constants.DBType.SPAR:
+            tables = self.get_tables_from_spar()
+        return tables
+
     def get_kubnernetes_db_pod(self) -> str:
         self.get_kubernetes_client()
 
@@ -292,8 +298,9 @@ class Utility:
         Run the extract process.
         """
         self.make_dirs()
+
         # gets the table list from openshift database
-        tables_to_export = self.get_tables_from_spar()
+        tables_to_export = self.get_tables_for_extract()
         LOGGER.debug("tables to export: %s", tables_to_export)
 
         # tables_to_export = self.get_tables_from_local_docker()
@@ -336,8 +343,8 @@ class Utility:
                 ostore.put_data_files(
                     [table], self.env_obj.current_env, self.db_type
                 )
-        self.kube_client.close_port_forward()
-
+        if self.db_type == constants.DBType.SPAR:
+            self.kube_client.close_port_forward()
 
     def run_injest(self) -> None:
         """

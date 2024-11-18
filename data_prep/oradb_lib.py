@@ -68,7 +68,7 @@ class OracleDatabase(db_lib.DB):
 
         Sets the db_type variable to SPAR.
         """
-        self.db_type = constants.DBType.SPAR
+        self.db_type = constants.DBType.ORA
 
     def get_sqlalchemy_engine(self) -> None:
         """
