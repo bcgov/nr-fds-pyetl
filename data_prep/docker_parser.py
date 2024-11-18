@@ -102,6 +102,15 @@ class ReadDockerCompose:
         )[0]
         dcr_service_name = self.docker_comp["x-oracle-vars"]["ORACLE_DATABASE"]
 
+        # this is setup to facilitate development of this code.  It will first
+        # check to see if the environment has been populated.  If it has not
+        # then it will use the values that have been extracted from the docker
+        # compose.  The one exception is host. When host (ORACLE_HOST) has not
+        # been populated it will default to localhost.
+        #
+        # defaulting to localhost allows development of the script using the
+        # docker database, when the script is NOT being executed from within
+        # docker-compose!
         conn_tuple = env_config.ConnectionParameters
         conn_tuple.username = os.getenv("ORACLE_USER", dcr_user_name)
         conn_tuple.password = os.getenv("ORACLE_USER", dcr_user_password)
