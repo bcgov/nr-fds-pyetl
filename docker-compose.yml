@@ -13,7 +13,7 @@ x-var:
 
 x-postgres-vars: &postgres-vars
   POSTGRES_DB: spar
-  POSTGRES_HOST: postgres
+  POSTGRES_HOST: *POSTGRES_HOST
   POSTGRES_USER: *POSTGRES_USER
   POSTGRES_PASSWORD: *POSTGRES_PASSWORD
   POSTGRES_PORT: 5432
@@ -59,7 +59,7 @@ services:
   postgres-data-load:
     image: python:3.11.10-slim-bullseye
     container_name: postgres-data-load
-    entrypoint: bash /application/docker_run_SPAR_TEST.sh
+    entrypoint: /application/docker_run_SPAR_TEST.sh
     working_dir: /application
     volumes:
       -  "./.venv:/venv"
@@ -70,7 +70,6 @@ services:
       - "./data:/application/data"
     environment:
       <<: [*postgres-vars]
-      POSTGRES_HOST: postgres
     env_file:
       - ".env"
     depends_on:
@@ -118,7 +117,7 @@ services:
   oracle-data-load:
     image: python:3.11
     container_name: oracle-data-load
-    entrypoint: bash /application/docker_run_ORA_TEST.sh
+    entrypoint: /application/docker_run_ORA_TEST.sh
     working_dir: /application
     volumes:
       - "./.venv:/venv"
