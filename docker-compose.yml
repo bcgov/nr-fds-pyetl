@@ -41,7 +41,7 @@ services:
       test: ["CMD", "pg_isready", "-U", postgres]
     ports: ["5432:5432"]
 
-  spar-db-migrations:
+  postgres-data-migrations:
     image: flyway/flyway:10-alpine
     container_name: migrations_spar
     command: info migrate info
@@ -56,10 +56,10 @@ services:
       postgres:
         condition: service_healthy
 
-  spar-db-data-load:
+  postgres-data-load:
     # profiles: ["python", "all"]
     image: python:3.11.10-slim-bullseye
-    container_name: spar-db-data-load
+    container_name: postgres-data-load
     entrypoint: bash /application/docker_run_SPAR_TEST.bash
     #entrypoint: sleep 500000
     working_dir: /application
@@ -76,7 +76,7 @@ services:
     env_file:
       - ".env"
     depends_on:
-      spar-db-migrations:
+      postgres-data-migrations:
         condition: service_completed_successfully
 
   # Name of the Docker Compose service
@@ -118,11 +118,10 @@ services:
         condition: service_healthy
 
   oracle-data-load:
-    profiles: ["python", "all"]
+    # profiles: ["python", "all"]
     image: python:3.11
     container_name: oracle-data-load
     entrypoint: bash /application/docker_run_ORA_TEST.bash
-    #entrypoint: sleep 500000
     working_dir: /application
     volumes:
       - "./.venv:/venv"
@@ -133,7 +132,6 @@ services:
       - "./data:/application/data"
     environment:
       <<: [*oracle-vars]
-      ORACLE_HOST: oracle
     env_file:
       - ".env"
     depends_on:
@@ -141,15 +139,15 @@ services:
         condition: service_completed_successfully
 
   # debug service, useful for understanding how environment variables work
-  # etl:
-  #   container_name: etl
-  #   image: functions/alpine:health
-  #   command: ["/bin/sh", "-c", "echo Postgres and Oracle envs now live!"]
-    # depends_on:
-    #   oracle-data-load:
-    #     condition: service_completed_successfully
-    #   spar-db-data-load:
-    #     condition: service_completed_successfully
+  etl:
+    container_name: etl
+    image: functions/alpine:health
+    command: ["/bin/sh", "-c", "echo Postgres and Oracle envs now live!"]
+    depends_on:
+      oracle-data-load:
+        condition: service_completed_successfully
+      postgres-data-load:
+        condition: service_completed_successfully
 
   # # debug service, useful for understanding how environment variables work
   # echoit:
