@@ -120,7 +120,7 @@ services:
     profiles: ["python", "all"]
     image: python:3.11
     container_name: oracle-data-load
-    entrypoint: bash /application/docker_run_SPAR_TEST.bash
+    entrypoint: bash /application/docker_run_ORA_TEST.bash
     #entrypoint: sleep 500000
     working_dir: /application
     volumes:
