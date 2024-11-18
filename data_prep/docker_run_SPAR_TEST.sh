@@ -1,14 +1,20 @@
-#!/usr/bin/bash
-# wrapper script to initiate the data load
-apt-get update && apt-get --assume-yes install postgresql-common gnupg gnupg2 gnupg1 && /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y && apt-get --assume-yes install postgresql-client-15
+#!/bin/sh
 
+# Wrapper script to initiate the data load
+apt update && apt install -y postgresql-common gnupg gnupg2 gnupg1
+
+# Requires postgresql-common
+/usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y && \
+  apt install -y postgresql-client-15
+
+# Install poetry and load virtual env
 echo "install poetry"
 python3 -m pip install poetry
 cd /application
+poetry config virtualenvs.create false --local
 poetry install
-source $(poetry env info --path)/bin/activate
-
-# echo "activate the venv"
-# source /venv/bin/activate
+. $(poetry env info --path)/bin/activate
 echo "run the data ingestion"
+
+# Run script
 python3 ./main_spar_ingest.py TEST
