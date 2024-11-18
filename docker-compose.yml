@@ -7,15 +7,15 @@ x-var:
   - &POSTGRES_DATABASE
     postgres
   - &FLYWAY_URL_POSTGRES
-    jdbc:postgresql://spar-db:5432/spar
+    jdbc:postgresql://postgres:5432/spar
 
 x-postgres-vars: &postgres-vars
   POSTGRES_DB: spar
-  POSTGRES_HOST: database
+  POSTGRES_HOST: postgres
   POSTGRES_USER: *POSTGRES_USER
   POSTGRES_PASSWORD: *POSTGRES_PASSWORD
   POSTGRES_PORT: 5432
-  FLYWAY_URL_POSTGRES: jdbc:postgresql://spar-db:5432/spar
+  FLYWAY_URL_POSTGRES: jdbc:postgresql://postgres:5432/spar
 
 x-oracle-vars: &oracle-vars
   ORACLE_DATABASE: DBDOCK_01
@@ -25,13 +25,14 @@ x-oracle-vars: &oracle-vars
   FLYWAY_URL: jdbc:oracle:thin:@//oracle:1521/DBDOCK_01
 
 services:
-  spar-db:
+  postgres:
     image: postgis/postgis:15-master
-    container_name: database
+    container_name: postgres
     environment:
       <<: *postgres-vars
     volumes:
-    - ./migrations_spar/init.sql:/initdb/init.sql
+      - ./migrations_spar/init.sql:/initdb/init.sql
+      - /var/lib/postgresql/data
     healthcheck:
       test: ["CMD", "pg_isready", "-U", postgres]
     ports: ["5432:5432"]
@@ -48,16 +49,16 @@ services:
       FLYWAY_BASELINE_ON_MIGRATE: true
       FLYWAY_DEFAULT_SCHEMA: spar
     depends_on:
-      spar-db:
+      postgres:
         condition: service_healthy
 
   spar-db-data-load:
-    profiles: ["python", "all"]
+    # profiles: ["python", "all"]
     image: python:3.11.10-slim-bullseye
     container_name: spar-db-data-load
     entrypoint: bash /application/docker_run_SPAR_TEST.bash
     #entrypoint: sleep 500000
-    working_dir:    /application
+    working_dir: /application
     volumes:
       -  "./.venv:/venv"
       - "./data_prep:/application"
@@ -67,7 +68,7 @@ services:
       - "./data:/application/data"
     environment:
       <<: [*postgres-vars]
-      POSTGRES_HOST: spar-db
+      POSTGRES_HOST: postgres
     env_file:
       - ".env"
     depends_on:
@@ -79,6 +80,7 @@ services:
     # Docker Hub image (feel free to change the tag "latest" to any other available one)
     image: gvenzl/oracle-free:latest
     # Forward Oracle port to localhost
+    container_name: oracle
     ports:
       - "1521:1521"
     # Provide passwords and other environment variables to the container
@@ -97,7 +99,7 @@ services:
 
   oracle-migrations:
     image: flyway/flyway:10-alpine
-    container_name: migrations_ora
+    container_name: oracle-migrations
     command: info migrate info
     volumes:
       - "./migrations_ora/sql:/flyway/sql:ro"
@@ -115,9 +117,9 @@ services:
     profiles: ["python", "all"]
     image: python:3.11
     container_name: oracle-data-load
-    entrypoint: bash /application/docker_run_TEST.bash
+    entrypoint: bash /application/docker_run_SPAR_TEST.bash
     #entrypoint: sleep 500000
-    working_dir:    /application
+    working_dir: /application
     volumes:
       - "./.venv:/venv"
       - "./data_prep:/application"
@@ -135,26 +137,26 @@ services:
         condition: service_completed_successfully
 
   # debug service, useful for understanding how environment variables work
-  etl:
-    container_name: etl
-    image: functions/alpine:health
-    command: ["/bin/sh", "-c", "echo Postgres and Oracle envs now live!"]
-    depends_on:
-      oracle-data-load:
-        condition: service_completed_successfully
+  # etl:
+  #   container_name: etl
+  #   image: functions/alpine:health
+  #   command: ["/bin/sh", "-c", "echo Postgres and Oracle envs now live!"]
+    # depends_on:
+    #   oracle-data-load:
+    #     condition: service_completed_successfully
     #   spar-db-data-load:
     #     condition: service_completed_successfully
 
-  # debug service, useful for understanding how environment variables work
-  echoit:
-    image: functions/alpine:health
-    environment:
-      <<: *oracle-vars
-      FLYWAY_USER: "${APP_USER}"
-      FLYWAY_PASSWORD: "${APP_USER_PASSWORD}"
-      FLYWAY_BASELINE_ON_MIGRATE: true
-      FLYWAY_DEFAULT_SCHEMA: "${APP_USER}"
-    entrypoint: ["/bin/sh", "-c", "export && echo \"oradb is ${FLYWAY_USER}\" &&  exec $fprocess"]
+  # # debug service, useful for understanding how environment variables work
+  # echoit:
+  #   image: functions/alpine:health
+  #   environment:
+  #     <<: *oracle-vars
+  #     FLYWAY_USER: "${APP_USER}"
+  #     FLYWAY_PASSWORD: "${APP_USER_PASSWORD}"
+  #     FLYWAY_BASELINE_ON_MIGRATE: true
+  #     FLYWAY_DEFAULT_SCHEMA: "${APP_USER}"
+  #   entrypoint: ["/bin/sh", "-c", "export && echo \"oradb is ${FLYWAY_USER}\" &&  exec $fprocess"]
 
 volumes:
   oracle-data:
