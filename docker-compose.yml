@@ -6,6 +6,8 @@ x-var:
     default
   - &POSTGRES_DATABASE
     postgres
+  - &POSTGRES_HOST
+    postgres
   - &FLYWAY_URL_POSTGRES
     jdbc:postgresql://postgres:5432/spar
 
@@ -20,6 +22,7 @@ x-postgres-vars: &postgres-vars
 x-oracle-vars: &oracle-vars
   ORACLE_DATABASE: DBDOCK_01
   ORACLE_PASSWORD: default
+  POSTGRES_DATABASE: *POSTGRES_HOST
   APP_USER: the
   APP_USER_PASSWORD: default
   FLYWAY_URL: jdbc:oracle:thin:@//oracle:1521/DBDOCK_01
