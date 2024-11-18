@@ -43,7 +43,7 @@ services:
 
   postgres-data-migrations:
     image: flyway/flyway:10-alpine
-    container_name: migrations_spar
+    container_name: postgres-data-migrations
     command: info migrate info
     volumes: ["./migrations_spar/sql:/flyway/sql:ro"]
     environment:
@@ -59,7 +59,7 @@ services:
   postgres-data-load:
     image: python:3.11.10-slim-bullseye
     container_name: postgres-data-load
-    entrypoint: bash /application/docker_run_SPAR_TEST.bash
+    entrypoint: bash /application/docker_run_SPAR_TEST.sh
     working_dir: /application
     volumes:
       -  "./.venv:/venv"
@@ -118,7 +118,7 @@ services:
   oracle-data-load:
     image: python:3.11
     container_name: oracle-data-load
-    entrypoint: bash /application/docker_run_ORA_TEST.bash
+    entrypoint: bash /application/docker_run_ORA_TEST.sh
     working_dir: /application
     volumes:
       - "./.venv:/venv"
