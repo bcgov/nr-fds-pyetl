@@ -3,9 +3,9 @@
 <img src="https://lh3.googleusercontent.com/pw/AP1GczMJaVEHHphmPE_w4ekcrlvD9UIGulCzzPXXIrPen7cEzwjA3CSlNLMyZMJpXrNC8ySVjEXoQra98CQSD__EQuINSi4QXiKkraBFw-1FLsV_jyKghJGFri4v9M3PKSHUeLbsgCP0Ns2GAhO0yYKAfqj6_Q=w1381-h778-s-no-gm?authuser=0" width="700px">
 
 Instructions on how to create and configure, and ultimately load data to
-a local development oracle database.  The intent is to allow  local development
+a local development oracle and postgres database.  The intent is to allow  local development
 without any concerns on load / data polution and or corruption to the various
-on prem line of business databases.
+on prem line of business databases, or the actual new spar database.
 
 **Assumptions:**
 1. The DDL has been extracted and configured with flyway migrations
@@ -49,4 +49,7 @@ The docker compose will spin up the oracle environment, run the migrations to
 create the table structures, and then finally pull the data from object store
 and load it into the oracle database.
 
-```docker compose up oracle-data-load```
+It will also create the postgres database that represents new spar, runs the
+migrations, and loads the cached data from object store.
+
+```docker compose up etl```
