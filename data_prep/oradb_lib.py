@@ -277,6 +277,7 @@ class OracleDatabase(db_lib.DB):
         table_list: list[str],
         retries: int = 1,
         max_retries: int = 6,
+        cascade: bool = False,
     ) -> None:
         """
         Purge the data from the tables in the list.
