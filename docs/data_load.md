@@ -3,9 +3,14 @@
 <img src="https://lh3.googleusercontent.com/pw/AP1GczMJaVEHHphmPE_w4ekcrlvD9UIGulCzzPXXIrPen7cEzwjA3CSlNLMyZMJpXrNC8ySVjEXoQra98CQSD__EQuINSi4QXiKkraBFw-1FLsV_jyKghJGFri4v9M3PKSHUeLbsgCP0Ns2GAhO0yYKAfqj6_Q=w1381-h778-s-no-gm?authuser=0" width="700px">
 
 Instructions on how to create and configure, and ultimately load data to
-a local development oracle and postgres database.  The intent is to allow  local development
-without any concerns on load / data polution and or corruption to the various
-on prem line of business databases, or the actual new spar database.
+a local development oracle and postgres database.  The intent is to allow
+local development without any concerns on load / data polution and or corruption
+to the various on prem line of business databases, or the new spar
+database.
+
+For most requirements this is the doc to folllow.  Re-running the extraction
+should only be required if you need the latest greatest data in your dev
+environment.
 
 **Assumptions:**
 1. The DDL has been extracted and configured with flyway migrations
