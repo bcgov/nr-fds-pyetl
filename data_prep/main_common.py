@@ -48,11 +48,12 @@ class Utility:
 
         Directories that need to be created are dependent on the database
         environment (TEST or PROD)
+
         """
         LOGGER.debug("datadir: %s", self.datadir)
         if not self.datadir.exists():
             self.datadir.mkdir(parents=True)
-        env_path = pathlib.Path(self.datadir, self.env_obj.env)
+        env_path = pathlib.Path(self.datadir, self.env_str)
         if not env_path.exists():
             env_path.mkdir()
 
