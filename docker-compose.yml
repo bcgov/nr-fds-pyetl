@@ -59,10 +59,9 @@ services:
   postgres-data-load:
     image: python:3.11.10-slim-bullseye
     container_name: postgres-data-load
-    entrypoint: ["CMD", "/application/docker_run_SPAR_TEST.sh"]
+    entrypoint: ["/application/docker_run_SPAR_TEST.sh"]
     working_dir: /application
     volumes:
-      -  "./.venv:/application/.venv"
       - "./data_prep:/application"
       - "./poetry.lock:/application/poetry.lock"
       - "./pyproject.toml:/application/pyproject.toml"
@@ -117,10 +116,10 @@ services:
   oracle-data-load:
     image: python:3.11
     container_name: oracle-data-load
-    entrypoint: ["CMD", "/application/docker_run_ORA_TEST.sh"]
+    # "CMD",
+    entrypoint: [ "/application/docker_run_ORA_TEST.sh"]
     working_dir: /application
     volumes:
-      - "./.venv:/venv"
       - "./data_prep:/application"
       - "./poetry.lock:/application/poetry.lock"
       - "./pyproject.toml:/application/pyproject.toml"

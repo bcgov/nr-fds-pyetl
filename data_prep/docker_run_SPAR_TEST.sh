@@ -8,6 +8,10 @@ apt update && apt install -y postgresql-common gnupg gnupg2 gnupg1
   apt install -y postgresql-client-15
 
 # Install poetry and load virtual env
+#   - configure poetry cache directory and virtualenvs path, so can be re-used
+export POETRY_CACHE_DIR=/application/docker_data/poetry_cache
+export POETRY_VIRTUALENVS_PATH=/application/docker_data/poetry_venvs
+
 echo "install poetry"
 python3 -m pip install poetry
 cd /application
