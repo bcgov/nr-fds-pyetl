@@ -57,7 +57,6 @@ class PostgresDatabase(db_lib.DB):
         """
         if self.sql_alchemy_engine is None:
             dsn = f"postgresql+psycopg2://{self.username}:{self.password}@{self.host}:{self.port}/{self.service_name}"
-            LOGGER.debug("dsn: %s", dsn)
             self.sql_alchemy_engine = sqlalchemy.create_engine(
                 dsn,
             )
