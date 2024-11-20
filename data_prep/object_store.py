@@ -101,6 +101,12 @@ class OStore:
                         str(remote_data_file),
                         f,
                     )
+            if not local_data_file.exists():
+                LOGGER.error(
+                    "Unable to retrieve the file. %s from object storage",
+                    remote_data_file,
+                )
+                raise FileNotFoundError
 
     def object_exists(self, object_name: str) -> bool:
         """

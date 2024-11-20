@@ -342,57 +342,54 @@ class PostgresDatabase(db_lib.DB):
         :type purge: bool
         """
         # debugging to view the data before it gets loaded
-        LOGGER.debug("input parquet file to load: %s", import_file)
-        if import_file.suffix == ".parquet" and import_file.exists():
-            LOGGER.debug("reading parquet file, %s", import_file)
-            super().load_data(table=table, import_file=import_file, purge=purge)
-        else:
-            import_file_sql = import_file.with_suffix(
-                "." + constants.SQL_DUMP_SUFFIX,
-            )
-            LOGGER.debug(
-                "loading data from csv using sql_dump file, %s",
-                import_file_sql,
-            )
+        LOGGER.debug("input file to load: %s", import_file)
+        if not import_file.exists():
+            LOGGER.error("sql dump file not found: %s", import_file)
+            raise FileNotFoundError
 
-            my_env = os.environ.copy()
-            my_env["PGPASSWORD"] = self.password
-            gzip_command_list = ["gunzip", "-c", str(import_file_sql)]
-            psql_command_list = [
-                "psql",
-                "-U",
-                self.username,
-                "-d",
-                self.service_name,
-                "-h",
-                self.host,
-                "-p",
-                str(self.port),
-            ]
-            LOGGER.debug("psql command list: %s", psql_command_list)
-            LOGGER.debug("start gunzip pipe...")
-            # psql -d spar -h localhost -p 5432 -U postgres  < seed_save.dmp
-            gunzip_process = subprocess.Popen(  # noqa: S603
-                gzip_command_list,
-                stdout=subprocess.PIPE,
-            )
-            LOGGER.debug("start data load pipe...")
-            load_process = subprocess.Popen(  # noqa: S603
-                psql_command_list,
-                env=my_env,
-                stdin=gunzip_process.stdout,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-            )
-            stdout, stderr = load_process.communicate()
-            LOGGER.debug("stdout: %s", stdout)
-            LOGGER.debug("stderr: %s", stderr)
-            LOGGER.debug("loading data...")
-            LOGGER.debug("return code: %s", load_process.returncode)
-            if load_process.returncode != 0:
-                LOGGER.error("data load failed on input file: %s", import_file)
-                raise DatabaseError
+        LOGGER.debug(
+            "loading data from csv using sql_dump file, %s",
+            import_file,
+        )
+
+        my_env = os.environ.copy()
+        my_env["PGPASSWORD"] = self.password
+        gzip_command_list = ["gunzip", "-c", str(import_file)]
+        psql_command_list = [
+            "psql",
+            "-U",
+            self.username,
+            "-d",
+            self.service_name,
+            "-h",
+            self.host,
+            "-p",
+            str(self.port),
+        ]
+        LOGGER.debug("psql command list: %s", psql_command_list)
+        LOGGER.debug("start gunzip pipe...")
+        # psql -d spar -h localhost -p 5432 -U postgres  < seed_save.dmp
+        gunzip_process = subprocess.Popen(  # noqa: S603
+            gzip_command_list,
+            stdout=subprocess.PIPE,
+        )
+        LOGGER.debug("start data load pipe...")
+        load_process = subprocess.Popen(  # noqa: S603
+            psql_command_list,
+            env=my_env,
+            stdin=gunzip_process.stdout,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        stdout, stderr = load_process.communicate()
+        LOGGER.debug("stdout: %s", stdout)
+        LOGGER.debug("stderr: %s", stderr)
+        LOGGER.debug("loading data...")
+        LOGGER.debug("return code: %s", load_process.returncode)
+        if load_process.returncode != 0:
+            LOGGER.error("data load failed on input file: %s", import_file)
+            raise DatabaseError
 
     def extract_data(
         self,

@@ -482,7 +482,7 @@ class DB(ABC):
             record_count = self.get_record_count(table)
             if record_count > 0:
                 try:
-                    self.truncate_table(table, cascade)
+                    self.truncate_table(table=table, cascade=True)
                     LOGGER.info("purged table %s", table)
                 except (
                     sqlalchemy.exc.IntegrityError,

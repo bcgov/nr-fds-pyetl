@@ -164,7 +164,7 @@ class OracleDatabase(db_lib.DB):
 
         self.get_sqlalchemy_engine()
         if purge:
-            self.truncate_table(table.lower())
+            self.truncate_table(table=table.lower())
         with (
             self.sql_alchemy_engine.connect() as connection,
             connection.begin(),
@@ -257,7 +257,7 @@ class OracleDatabase(db_lib.DB):
                 LOGGER.info("Adding %s to failed tables", table)
                 failed_tables.append(table)
                 LOGGER.info("truncating failed load table: %s", table)
-                self.truncate_table(table.lower())
+                self.truncate_table(table=table.lower())
 
         if failed_tables:
             if retries < self.max_retries:
@@ -297,7 +297,7 @@ class OracleDatabase(db_lib.DB):
             record_count = self.get_record_count(table)
             if record_count > 0:
                 try:
-                    self.truncate_table(table)
+                    self.truncate_table(table=table)
                     LOGGER.info("purged table %s", table)
                 except (
                     sqlalchemy.exc.IntegrityError,
