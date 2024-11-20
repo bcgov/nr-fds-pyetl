@@ -4,18 +4,17 @@ Wrapper to object storage functionality.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    import pathlib
-
 import logging
-import pathlib
+from typing import TYPE_CHECKING
 
 import boto3
 import botocore.exceptions
 import constants
-import env_config
+
+if TYPE_CHECKING:
+    import pathlib
+
+    import env_config
 
 LOGGER = logging.getLogger(__name__)
 
@@ -45,7 +44,10 @@ class OStore:
         )
 
     def get_data_files(
-        self, tables: list[str], env_str: str, db_type: constants.DBType
+        self,
+        tables: list[str],
+        env_str: str,
+        db_type: constants.DBType,
     ) -> None:
         """
         Pull data files from object store.
@@ -82,10 +84,10 @@ class OStore:
             LOGGER.debug("remote_data_file: %s", str(remote_data_file))
             if str(remote_data_file) not in remote_file_names:
                 remote_data_file = remote_data_file.with_suffix(
-                    ". " + constants.SQL_DUMP_SUFFIX
+                    ". " + constants.SQL_DUMP_SUFFIX,
                 )
                 local_data_file = local_data_file.with_suffix(
-                    "." + constants.SQL_DUMP_SUFFIX
+                    "." + constants.SQL_DUMP_SUFFIX,
                 )
 
             # keeping it simple for now, if local exists re-use it
@@ -201,7 +203,10 @@ class OStore:
         return versions
 
     def put_data_files(
-        self, tables: list[str], env_str: str, db_type: constants.DBType
+        self,
+        tables: list[str],
+        env_str: str,
+        db_type: constants.DBType,
     ) -> None:
         """
         Upload files that correspond with tables to object storage.
@@ -219,7 +224,9 @@ class OStore:
         """
         for table in tables:
             local_data_file = constants.get_default_export_file_path(
-                table, env_str, db_type
+                table,
+                env_str,
+                db_type,
             )
             remote_data_file = constants.get_default_export_file_ostore_path(
                 table,
@@ -236,15 +243,3 @@ class OStore:
                 str(remote_data_file),
             )
             LOGGER.debug("response from object store upload: %s", response)
-
-
-if __name__ == "__main__":
-
-    env = env_config.Env("TEST")
-    file = "tmp_file"
-    ostore_creds = env.get_ostore_constants()
-    ostore = OStore(ostore_creds)
-
-    table = "BEC_VERSION_CONTROL"
-    ostore.put_data_files([table], env.current_env)
-    ostore.get_data_files([table], env.current_env)
