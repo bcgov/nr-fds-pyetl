@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 import constants
 import pandas as pd
 import psycopg2
-import pyarrow
+import psycopg2.sql
 import sqlalchemy
 from env_config import ConnectionParameters
 from oracledb.exceptions import DatabaseError as OracleDatabaseError
@@ -25,8 +25,6 @@ if TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 
 
-# TODO: move all the types to their own module, so there is only one place to
-# look
 @dataclass
 class TableConstraints:
     """
@@ -98,6 +96,10 @@ class DB(ABC):
         self.db_type = None
         self.populate_db_type()
 
+        # methods that implement retries how many times to allow the errors to
+        # be caught and retried
+        self.max_retries = 6
+
     @abstractmethod
     def get_connection(self) -> None:
         """
@@ -154,7 +156,7 @@ class DB(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def truncate_table(self, table: str, cascade: bool = False) -> None:
+    def truncate_table(self, table: str, *, cascade: bool = False) -> None:
         """
         Delete all the data from the table.
 
@@ -337,13 +339,13 @@ class DB(ABC):
             method=method,
         )
 
-    def load_data_retry(  # noqa: PLR0913
+    def load_data_retry(
         self,
         table_list: list[str],
-        data_dir: pathlib.Path,  # TODO(guyLafleur): get rid of this parameter if not required, which I suspect it is not  # noqa: E501
+        data_dir: pathlib.Path,
         env_str: str,
         retries: int = 1,
-        max_retries: int = 6,
+        *,
         purge: bool = False,
     ) -> None:
         """
@@ -378,8 +380,6 @@ class DB(ABC):
         :raises sqlalchemy.exc.IntegrityError: If unable to resolve instegrity
             constraints the method will raise this error
         """
-        if max_retries is None:
-            max_retries = len(table_list) - 1
 
         cons_list = self.get_fk_constraints()
         self.disable_fk_constraints(cons_list)
@@ -394,11 +394,6 @@ class DB(ABC):
                 env_str,
                 self.db_type,
             )
-            # if not import_file.exists():
-            #     LOGGER.warning(
-            #         "no parquet file for table %s, assuming its a csv", table
-            #     )
-            #     import_file = import_file.with_suffix(constants.SQL_DUMP_SUFFIX)
 
             LOGGER.info("Importing table %s %s", spaces, table)
             try:
@@ -418,7 +413,7 @@ class DB(ABC):
                 self.truncate_table(table.lower())
 
         if failed_tables:
-            if retries < max_retries:
+            if retries < self.max_retries:
                 LOGGER.info("Retrying failed tables")
                 retries += 1
                 self.load_data_retry(
@@ -426,7 +421,6 @@ class DB(ABC):
                     data_dir=data_dir,
                     env_str=env_str,
                     retries=retries,
-                    max_retries=max_retries,
                     purge=purge,
                 )
             else:
@@ -437,11 +431,32 @@ class DB(ABC):
             self.enable_constraints(cons_list)
 
     def get_record_count(self, table: str) -> int:
-        query = f"SELECT COUNT(*) FROM {self.schema_2_sync}.{table.lower()}"
-        LOGGER.debug("query: %s", query)
+        """
+        Return the record count for the table.
+
+        :param table: name of the table to get the record count for
+        :type table: str
+        :return: integer representing the number of records/rows in the table
+        :rtype: int
+        """
+        query = "SELECT COUNT(*) FROM {schema}.{table}"
+
+        LOGGER.debug("record count query: %s", query)
         self.get_connection()
         cursor = self.connection.cursor()
-        cursor.execute(query, {})
+        if self.db_type == constants.DBType.SPAR:
+            query = psycopg2.sql.SQL(
+                "SELECT COUNT(*) FROM {schema}.{table}",
+            ).format(
+                table=psycopg2.sql.Identifier(table.lower()),
+                schema=psycopg2.sql.Identifier(self.schema_2_sync),
+            )
+        elif self.db_type == constants.DBType.ORA:
+            query = query.format(
+                schema=self.schema_2_sync,
+                table=table.lower(),
+            )
+        cursor.execute(query)
         count = cursor.fetchone()[0]
         cursor.close()
         LOGGER.debug("record count for %s is %s", table, count)
@@ -452,6 +467,7 @@ class DB(ABC):
         table_list: list[str],
         retries: int = 1,
         max_retries: int = 25,
+        *,
         cascade: bool = False,
     ) -> None:
         """
@@ -476,7 +492,8 @@ class DB(ABC):
                 ) as e:
                     # might need DatabaseError,
                     LOGGER.warning(
-                        "error on table %s raised when purging", table
+                        "error on table %s raised when purging",
+                        table,
                     )
                     # if retries > 3:
                     #     raise
@@ -503,7 +520,6 @@ class DB(ABC):
                 LOGGER.debug("error message: %s", msg)
                 LOGGER.debug("failed tables %s", failed_tables)
                 # statement=None, params=None, orig=e)
-                raise
                 raise sqlalchemy.exc.DBAPIError(
                     statement=msg,
                     params=None,

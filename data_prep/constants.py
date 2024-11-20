@@ -38,11 +38,38 @@ DB_LOCAL_PORT = 5433
 # database types, used to identify which database (spar or oracle) is
 # to be worked with
 class DBType(Enum):
+    """
+    Define the database types that are supported.
+
+    An enumeration of the different database types that are supported by the
+    scripts in this project.
+
+    """
+
     ORA = 1
     SPAR = 2
 
 
-def get_default_export_file_ostore_path(table: str, db_type: DBType):
+def get_default_export_file_ostore_path(
+    table: str,
+    db_type: DBType,
+) -> pathlib.Path:
+    """
+    Return the path to the export file in object storage.
+
+    Different databases have different file types that are used to export data.
+    This method will determine the database type and return the path to the
+    correct file reference.
+
+    :param table: name of the database table who's corresponding data file in
+        object storage is to be retrieved.
+    :type table: str
+    :param db_type: an enumeration of the database type, either ORA or SPAR
+    :type db_type: DBType
+    :return: a path object that refers to the object storage location for the
+        specified table.
+    :rtype: pathlib.Path
+    """
     if db_type == DBType.ORA:
         suffix = PARQUET_SUFFIX
     elif db_type == DBType.SPAR:
@@ -69,10 +96,12 @@ def get_default_export_file_path(
     example: oracle will use parquet
     postgres will use sql file dumped from pg_dump
     """
+    return_table = None
     if db_type == DBType.ORA:
-        return get_parquet_file_path(table, env_str, db_type)
+        return_table = get_parquet_file_path(table, env_str, db_type)
     elif db_type == DBType.SPAR:
-        return get_sql_dump_file_path(table, env_str, db_type)
+        return_table = get_sql_dump_file_path(table, env_str, db_type)
+    return return_table
 
 
 def get_parquet_file_path(
@@ -92,8 +121,12 @@ def get_parquet_file_path(
     """
     parquet_file_name = f"{table}.{PARQUET_SUFFIX}"
     return_path = pathlib.Path(
-        DATA_DIR, env_str, db_type.name, parquet_file_name
+        DATA_DIR,
+        env_str,
+        db_type.name,
+        parquet_file_name,
     )
+    LOGGER.debug("parquet file name: %s", return_path)
     return return_path
 
 
@@ -120,10 +153,20 @@ def get_parquet_file_ostore_path(table: str, db_type: DBType) -> pathlib.Path:
 
 
 def get_export_ostore_path(db_type: DBType) -> pathlib.Path:
+    """
+    Return the directory path in object storage where the data files are stored.
+
+    :param db_type: the type of database, either ORA or SPAR
+    :type db_type: DBType
+    :return: the directory where the data files are located in object storage
+        for the specified database type
+    :rtype: pathlib.Path
+    """
     full_path = pathlib.Path(
         OBJECT_STORE_DATA_DIRECTORY,
         db_type.name,
     )
+    LOGGER.debug("object store data path: %s", full_path)
     return full_path
 
 
@@ -143,7 +186,10 @@ def get_sql_dump_file_path(
     :rtype: pathlib.Path
     """
     parquet_file = get_parquet_file_path(
-        table=table, env_str=env_str, db_type=db_type
+        table=table,
+        env_str=env_str,
+        db_type=db_type,
     )
     sql_dump_file = parquet_file.with_suffix("." + SQL_DUMP_SUFFIX)
+    LOGGER.debug("sql dump file name: %s", sql_dump_file)
     return sql_dump_file

@@ -77,25 +77,29 @@ class Utility:
         ostore_params = self.env_obj.get_ostore_constants()
         return object_store.OStore(conn_params=ostore_params)
 
-    def get_db_connection_params(self):
-        """
-        Get database connection object.
-
-        Determines what the database type is and uses different methods to
-        retrieve database connecti
-        """
-        # TODO: populate this, use this as fork for different db types
-
     def get_tables(self) -> list[str]:
+        """
+        Get table list from database.
+
+        Redirects to the appropriate method based on the database type.
+
+        :return: list of tables found in the database schema
+        :rtype: list[str]
+        """
         tables = []
         if self.db_type == constants.DBType.ORA:
             tables = self.get_tables_from_local_ora_docker()
         elif self.db_type == constants.DBType.SPAR:
             tables = self.get_tables_from_local_spar_docker()
-            # tables = self.get_tables_from_spar()
         return tables
 
-    def get_tables_from_spar(self):
+    def get_tables_from_spar(self) -> list[str]:
+        """
+        Get tables from local containerized spar database.
+
+        :return: list of tables found in the spar database schema
+        :rtype: list[str]
+        """
         oc_params = self.env_obj.get_oc_constants()
 
         db_pod = self.get_kubnernetes_db_pod()
@@ -119,6 +123,7 @@ class Utility:
             schema=spar_db_params.schema_to_sync,
             omit_tables=["FLYWAY_SCHEMA_HISTORY"],
         )
+        LOGGER.debug("number of table to export: %s", len(tables_to_export))
         return tables_to_export
 
     def get_tables_from_local_spar_docker(self) -> list[str]:
@@ -209,7 +214,7 @@ class Utility:
                 sock.settimeout(2)
                 sock.connect(("localhost", local_port))
                 sock_success = True
-            except OSError as e:  # noqa: PERF203
+            except OSError as e:
                 LOGGER.exception("port forward not available...")
                 time.sleep(1)
                 retry += 1
@@ -218,6 +223,16 @@ class Utility:
                 sock.close()
 
     def get_tables_for_extract(self) -> list[str]:
+        """
+        Get the tables to extract from the database.
+
+        Queries metadata from the local docker compose database to get the list
+        of tables that need to be extracted.
+
+        :return: a list of table names to be extracted, for the specified
+            database type.
+        :rtype: list[str]
+        """
         if self.db_type == constants.DBType.ORA:
             tables = self.get_tables()
         elif self.db_type == constants.DBType.SPAR:
@@ -225,13 +240,17 @@ class Utility:
         return tables
 
     def get_kubnernetes_db_pod(self) -> str:
+        """
+        Return the database pod from kubernetes.
+
+        :raises IndexError: raised if cannot find a database pod
+        :return: string representing the database pod name
+        :rtype: str
+        """
         self.get_kubernetes_client()
 
-        # oc_params = self.env_obj.get_oc_constants()
-        # kube_client = kubernetes_wrapper.KubeClient(oc_params)
-
         db_filter_string = constants.DB_FILTER_STRING.format(
-            env_str=self.env_str.lower()
+            env_str=self.env_str.lower(),
         )
         pods = self.kube_client.get_pods(
             filter_str=db_filter_string,
@@ -246,7 +265,7 @@ class Utility:
             )
             LOGGER.exception(msg)
             raise IndexError(msg)
-        elif len(pods) == 0:
+        if len(pods) == 0:
             msg = (
                 f"searching for pods that match the pattern {db_filter_string}"
                 "didn't return any pods"
@@ -254,6 +273,13 @@ class Utility:
         return pods[0]
 
     def get_dbparams_from_kubernetes(self) -> env_config.ConnectionParameters:
+        """
+        Retrieve database parameters from kubernetes.
+
+        :raises IndexError: unable to find database pod
+        :return: database connection parameters used to connect to spar database
+        :rtype: env_config.ConnectionParameters
+        """
         oc_params = self.env_obj.get_oc_constants()
 
         db_filter_string = constants.DB_FILTER_STRING.format(
@@ -304,7 +330,6 @@ class Utility:
         tables_to_export = self.get_tables_for_extract()
         LOGGER.debug("tables to export: %s", tables_to_export)
 
-        # tables_to_export = self.get_tables_from_local_docker()
         ostore = self.connect_ostore()
 
         if self.db_type == constants.DBType.ORA:
@@ -323,8 +348,6 @@ class Utility:
                 connection_params=spar_db_params,
             )
 
-        # raise NotImplementedError("This method is not implemented yet")
-
         for table in tables_to_export:
             LOGGER.info("Exporting table %s", table)
             # the export file type is different depending on the database.
@@ -342,7 +365,9 @@ class Utility:
             if file_created:
                 # push the file to object store, if a new file has been created
                 ostore.put_data_files(
-                    [table], self.env_obj.current_env, self.db_type
+                    [table],
+                    self.env_obj.current_env,
+                    self.db_type,
                 )
         if self.db_type == constants.DBType.SPAR:
             self.kube_client.close_port_forward()

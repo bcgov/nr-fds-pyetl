@@ -52,8 +52,8 @@ class ReadDockerCompose:
         """
         Return postgres connection parameters.
 
-        Reads the postgres connection parameters from the docker-compose file and
-        returns them as a oracledb.ConnectionTuple.
+        Reads the postgres connection parameters from the docker-compose file
+        and returns them as a oracledb.ConnectionTuple.
 
         :return: a oracledb.ConnectionTuple populated with the connection
             parameters
@@ -98,7 +98,7 @@ class ReadDockerCompose:
             "APP_USER_PASSWORD"
         ]
         dcr_port = self.docker_comp["services"]["oracle"]["ports"][0].split(
-            ":"
+            ":",
         )[0]
         dcr_service_name = self.docker_comp["x-oracle-vars"]["ORACLE_DATABASE"]
 
