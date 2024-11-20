@@ -42,6 +42,8 @@ class Utility:
         self.db_type = db
         self.kube_client = None
 
+        self.connection_retries = 10
+
     def make_dirs(self) -> None:
         """
         Make necessary directories.
@@ -135,8 +137,6 @@ class Utility:
         """
         dcr = docker_parser.ReadDockerCompose()
         spar_params = dcr.get_spar_conn_params()
-        # TODO: ideally get the schema from where it is defined, but its in migrations which makes it tricky... could put into config
-        spar_params.schema_to_sync = "spar"
         LOGGER.debug("schema to sync: %s", spar_params.schema_to_sync)
         local_docker_db = postgresdb_lib.PostgresDatabase(spar_params)
         tables_to_export = local_docker_db.get_tables(
@@ -146,7 +146,6 @@ class Utility:
         LOGGER.debug("tables retrieved: %s", tables_to_export)
         return tables_to_export
 
-    # TODO: need to come back to this and link to the extract process
     def get_tables_from_local_ora_docker(self) -> list[str]:
         """
         Get list of tables from local oracle docker database.
@@ -163,12 +162,14 @@ class Utility:
         LOGGER.debug("tables retrieved: %s", tables_to_export)
         return tables_to_export
 
-    def get_kubernetes_client(self):
+    def get_kubernetes_client(self) -> None:
         """
+        Populate kubernetes client.
+
         This method is called any time a method is called that requires the
         kube_client property
         """
-        if self.kube_client == None:
+        if self.kube_client is None:
             oc_params = self.env_obj.get_oc_constants()
             self.kube_client = kubernetes_wrapper.KubeClient(oc_params)
 
@@ -196,8 +197,6 @@ class Utility:
         :type remote_port: str
         """
         self.get_kubernetes_client()
-        # oc_params = self.env_obj.get_oc_constants()
-        # kubernetes_client = kubernetes_wrapper.KubeClient(oc_params)
 
         self.kube_client.open_port_forward(
             pod_name=pod_name,
@@ -208,7 +207,7 @@ class Utility:
         sock_success = False
         retry = 0
         # test the connection
-        while not sock_success or retry > 10:
+        while not sock_success or retry > self.connection_retries:
             try:
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 sock.settimeout(2)

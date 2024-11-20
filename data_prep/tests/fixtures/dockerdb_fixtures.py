@@ -17,7 +17,9 @@ def docker_connection_params():
     """
     conn_params = env_config.ConnectionParameters
     conn_params.username = "postgres"
-    conn_params.password = "default"
+    # ignore security warning for this... its a dev database that gets spun up
+    # only to support local dev.
+    conn_params.password = "default"  # #NOSONAR
     conn_params.host = "localhost"
     conn_params.port = 5432
     conn_params.service_name = "spar"

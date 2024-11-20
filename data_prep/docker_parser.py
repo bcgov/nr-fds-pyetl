@@ -59,10 +59,7 @@ class ReadDockerCompose:
             parameters
         :rtype: oradb_lib.ConnectionTuple
         """
-        import pprint
 
-        pp = pprint.PrettyPrinter()
-        pp.pprint(self.docker_comp)
         conn_tuple = env_config.ConnectionParameters
         conn_tuple.username = self.docker_comp["x-postgres-vars"][
             "POSTGRES_USER"
