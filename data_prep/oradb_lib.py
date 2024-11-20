@@ -165,7 +165,10 @@ class OracleDatabase(db_lib.DB):
         self.get_sqlalchemy_engine()
         if purge:
             self.truncate_table(table.lower())
-        with self.sql_alchemy_engine.connect() as connection, connection.begin():
+        with (
+            self.sql_alchemy_engine.connect() as connection,
+            connection.begin(),
+        ):
             pandas_df.to_sql(
                 table.lower(),
                 con=connection,
@@ -174,9 +177,9 @@ class OracleDatabase(db_lib.DB):
                 index=False,
             )
             # now verify data
-        sql = f"Select count(*) from {self.schema_2_sync}.{table}"
+        sql = "Select count(*) from {schema}.{table}"
         cur = self.connection.cursor()
-        cur.execute(sql)
+        cur.execute(sql.format(schema=self.schema_2_sync, table=table))
         result = cur.fetchall()
         rows_loaded = result[0][0]
         if not rows_loaded:
@@ -234,7 +237,9 @@ class OracleDatabase(db_lib.DB):
         for table in table_list:
             spaces = " " * retries * 2
             import_file = constants.get_parquet_file_path(
-                table, env_str, self.db_type
+                table,
+                env_str,
+                self.db_type,
             )
             LOGGER.info("Importing table %s %s", spaces, table)
             try:
@@ -278,7 +283,7 @@ class OracleDatabase(db_lib.DB):
         retries: int = 1,
         max_retries: int = 6,
         *,
-        cascade: bool = False,
+        cascade: bool = False,  # noqa: ARG002
     ) -> None:
         """
         Purge the data from the tables in the list.
@@ -294,12 +299,16 @@ class OracleDatabase(db_lib.DB):
                 try:
                     self.truncate_table(table)
                     LOGGER.info("purged table %s", table)
-                except (  # noqa: PERF203
+                except (
                     sqlalchemy.exc.IntegrityError,
                     DatabaseError,
                 ):
+                    msg = (
+                        "error encountered when attempting to purge table:"
+                        " %s, retrying"
+                    )
                     LOGGER.warning(
-                        "error encountered when attempting to purge table: %s, retrying",
+                        msg,
                         table,
                     )
                     failed_tables.append(table)

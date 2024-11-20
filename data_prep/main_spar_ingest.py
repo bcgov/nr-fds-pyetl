@@ -60,5 +60,4 @@ if __name__ == "__main__":
     logger_name = pathlib.Path(__file__).stem
     LOGGER = logging.getLogger(logger_name)
     LOGGER.debug("log message in main")
-    
     common_util.run_injest()

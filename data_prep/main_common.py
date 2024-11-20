@@ -213,7 +213,7 @@ class Utility:
                 sock.settimeout(2)
                 sock.connect(("localhost", local_port))
                 sock_success = True
-            except OSError as e:
+            except OSError:  # noqa: PERF203
                 LOGGER.exception("port forward not available...")
                 time.sleep(1)
                 retry += 1
