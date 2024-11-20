@@ -17,38 +17,22 @@ from __future__ import annotations
 
 import logging
 import logging.config
-import os
-import pathlib
-from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import pathlib
 
 import constants
+import db_lib
 import oracledb
 import pandas as pd
 import sqlalchemy
-from env_config import ConnectionParameters
 from oracledb.exceptions import DatabaseError
 
 LOGGER = logging.getLogger(__name__)
 
 
-@dataclass
-class TableConstraints:
-    """
-    Data class for storing constraints.
-
-    Model / types for storing database constraints when queried from the
-    database.
-    """
-
-    constraint_name: str
-    table_name: str
-    column_name: str
-    r_constraint_name: str
-    referenced_table: str
-    referenced_column: str
-
-
-class OracleDatabase:
+class OracleDatabase(db_lib.DB):
     """
     Wrapper to access oracle databases.
 
@@ -62,54 +46,9 @@ class OracleDatabase:
     service_name: ORACLE_SERVICE
     """
 
-    def __init__(
-        self,
-        connection_params: ConnectionParameters | None = None,
-    ) -> None:
-        """
-        Construct for the OracleDatabase class.
-
-        Recieves a ConnectionParameters object and a schema to sync.  Extracts
-        parameters from the ConnectionParameters, then if they are empty or null
-        checks for the parameters in the environment.
-
-        :param connection_params: Parameters that define connection to database,
-            defaults to None
-        :type connection_params: ConnectionParameters | None, optional
-        :param schema_to_sync: The schema that contains the objects that are to
-            be extracted or loaded to.  If the property is not populated the
-            script will look in the env var: ORACLE_SCHEMA_TO_SYNC,
-            defaults to None
-        :type schema_to_sync: None | str, optional
-        """
-        if connection_params is None:
-            connection_params = ConnectionParameters
-        self.username = connection_params.username
-        self.password = connection_params.password
-        self.host = connection_params.host
-        self.port = connection_params.port
-        self.service_name = connection_params.service_name
-        self.schema_2_sync = connection_params.schema_to_sync
-
-        # if the parameters are not supplied attempt to get them from the
-        # environment
-        if self.username is None:
-            self.username = os.getenv("ORACLE_USER")
-        if self.password is None:
-            self.password = os.getenv("ORACLE_PASSWORD")
-        if self.host is None:
-            self.host = os.getenv("ORACLE_HOST")
-        if self.port is None:
-            self.port = os.getenv("ORACLE_PORT")
-        if self.service_name is None:
-            self.service_name = os.getenv("ORACLE_SERVICE")
-
-        self.connection = None
-        self.sql_alchemy_engine = None
-
     def get_connection(self) -> None:
         """
-        Create a connection to the database.
+        Create a connection to the oracle database.
 
         Creates a connection to the database using class variables that are
         populated by the object constructor.
@@ -124,6 +63,14 @@ class OracleDatabase:
                 service_name=self.service_name,
             )
             LOGGER.debug("connected to database")
+
+    def populate_db_type(self) -> None:
+        """
+        Populate the db_type variable.
+
+        Sets the db_type variable to SPAR.
+        """
+        self.db_type = constants.DBType.ORA
 
     def get_sqlalchemy_engine(self) -> None:
         """
@@ -178,87 +125,13 @@ class OracleDatabase:
         LOGGER.debug("tables: %s", tables)
         return tables
 
-    def get_table_object(self, table_name: str) -> sqlalchemy.Table:
-        """
-        Get a SQLAlchemy Table object for an existing database table.
-
-        :param table_name: the name of the table to get a SQLAlchemy Table
-            object for
-        :type table_name: str
-        :return: returns a SQLAlchemy Table object for the table
-        :rtype: sqlalchemy.Table
-        """
-        self.get_sqlalchemy_engine()
-        metadata = sqlalchemy.MetaData()
-        LOGGER.debug("schema2Sync is: %s", self.schema_2_sync)
-        return sqlalchemy.Table(
-            table_name.lower(),
-            metadata,
-            autoload_with=self.sql_alchemy_engine,
-            schema=self.schema_2_sync.lower(),
-        )
-
-    def extract_data(
-        self,
-        table: str,
-        export_file: pathlib.Path,
-        *,
-        overwrite: bool = False,
-    ) -> bool:
-        """
-        Extract a table from the database to a parquet file.
-
-        :param table: the name of the table who's data will be copied to the
-            parquet file
-        :type table: str
-        :param export_file: the full path to the file that will be created, and
-            populated with the data from the table.
-        :type export_file: str
-        :param overwrite: if True the file will be overwritten if it exists,
-        :return: True if the file was created, False if it was not
-        :rtype: bool
-        """
-        file_created = False
-        table_obj = self.get_table_object(table)
-        select_obj = sqlalchemy.select(table_obj)
-
-        # check that the directory for export file exists
-        export_file.parent.mkdir(parents=True, exist_ok=True)
-
-        if not export_file.exists() or overwrite:
-            if export_file.exists():
-                export_file.unlink()
-                # delete the file if it exists
-            LOGGER.debug("data_query_sql: %s", select_obj)
-            LOGGER.debug("reading the %s", table)
-            self.get_sqlalchemy_engine()
-            df_orders = pd.read_sql(select_obj, self.sql_alchemy_engine)
-
-            LOGGER.debug("writing to parquet file: %s ", export_file)
-            df_orders.to_parquet(export_file)
-            file_created = True
-        else:
-            LOGGER.info("file exists: %s, not re-exporting", export_file)
-        return file_created
-
-    def get_tmp_file(self) -> pathlib.Path:
-        """
-        Return a temporary file name.
-
-        :return: the temporary file name
-        :rtype: str
-        """
-        tmp_file_name = pathlib.Path("tmp_file")
-        if pathlib.Path.exists(tmp_file_name):
-            pathlib.Path(tmp_file_name).unlink()
-        return tmp_file_name
-
-    def truncate_table(self, table: str) -> None:
+    def truncate_table(self, table: str, *, casacade: bool = False) -> None:
         """
         Delete all the data from the table.
 
         :param table: the table to delete the data from
         """
+        LOGGER.debug("cascade is ignored for oracle: %s", casacade)
         self.get_connection()
         cursor = self.connection.cursor()
         LOGGER.debug("truncating table: %s", table)
@@ -291,20 +164,22 @@ class OracleDatabase:
 
         self.get_sqlalchemy_engine()
         if purge:
-            self.truncate_table(table.lower())
-        with self.sql_alchemy_engine.connect() as connection:
-            with connection.begin():
-                pandas_df.to_sql(
-                    table.lower(),
-                    con=connection,
-                    schema="THE",
-                    if_exists="append",
-                    index=False,
-                )
-                # now verify data
-        sql = f"Select count(*) from {self.schema_2_sync}.{table}"
+            self.truncate_table(table=table.lower())
+        with (
+            self.sql_alchemy_engine.connect() as connection,
+            connection.begin(),
+        ):
+            pandas_df.to_sql(
+                table.lower(),
+                con=connection,
+                schema="THE",
+                if_exists="append",
+                index=False,
+            )
+            # now verify data
+        sql = "Select count(*) from {schema}.{table}"
         cur = self.connection.cursor()
-        cur.execute(sql)
+        cur.execute(sql.format(schema=self.schema_2_sync, table=table))
         result = cur.fetchall()
         rows_loaded = result[0][0]
         if not rows_loaded:
@@ -315,10 +190,10 @@ class OracleDatabase:
     def load_data_retry(
         self,
         table_list: list[str],
-        data_dir: pathlib.Path,  # TODO(guyLafleur): get rid of this parameter if not required, which I suspect it is not
+        data_dir: pathlib.Path,
         env_str: str,
         retries: int = 1,
-        max_retries: int = 6,
+        *,
         purge: bool = False,
     ) -> None:
         """
@@ -353,9 +228,6 @@ class OracleDatabase:
         :raises sqlalchemy.exc.IntegrityError: If unable to resolve instegrity
             constraints the method will raise this error
         """
-        if max_retries is None:
-            max_retries = len(table_list) - 1
-
         cons_list = self.get_fk_constraints()
         self.disable_fk_constraints(cons_list)
 
@@ -364,7 +236,11 @@ class OracleDatabase:
         LOGGER.debug("retries: %s", retries)
         for table in table_list:
             spaces = " " * retries * 2
-            import_file = constants.get_parquet_file_path(table, env_str)
+            import_file = constants.get_parquet_file_path(
+                table,
+                env_str,
+                self.db_type,
+            )
             LOGGER.info("Importing table %s %s", spaces, table)
             try:
                 self.load_data(table, import_file, purge=purge)
@@ -381,10 +257,10 @@ class OracleDatabase:
                 LOGGER.info("Adding %s to failed tables", table)
                 failed_tables.append(table)
                 LOGGER.info("truncating failed load table: %s", table)
-                self.truncate_table(table.lower())
+                self.truncate_table(table=table.lower())
 
         if failed_tables:
-            if retries < max_retries:
+            if retries < self.max_retries:
                 LOGGER.info("Retrying failed tables")
                 retries += 1
                 self.load_data_retry(
@@ -392,7 +268,6 @@ class OracleDatabase:
                     data_dir=data_dir,
                     env_str=env_str,
                     retries=retries,
-                    max_retries=max_retries,
                     purge=purge,
                 )
             else:
@@ -407,6 +282,8 @@ class OracleDatabase:
         table_list: list[str],
         retries: int = 1,
         max_retries: int = 6,
+        *,
+        cascade: bool = False,  # noqa: ARG002
     ) -> None:
         """
         Purge the data from the tables in the list.
@@ -417,18 +294,24 @@ class OracleDatabase:
         self.get_connection()
         failed_tables = []
         for table in table_list:
-            try:
-                self.truncate_table(table)
-                LOGGER.info("purged table %s", table)
-            except (  # noqa: PERF203
-                sqlalchemy.exc.IntegrityError,
-                DatabaseError,
-            ):
-                LOGGER.warning(
-                    "error encountered when attempting to purge table: %s, retrying",
-                    table,
-                )
-                failed_tables.append(table)
+            record_count = self.get_record_count(table)
+            if record_count > 0:
+                try:
+                    self.truncate_table(table=table)
+                    LOGGER.info("purged table %s", table)
+                except (
+                    sqlalchemy.exc.IntegrityError,
+                    DatabaseError,
+                ):
+                    msg = (
+                        "error encountered when attempting to purge table:"
+                        " %s, retrying"
+                    )
+                    LOGGER.warning(
+                        msg,
+                        table,
+                    )
+                    failed_tables.append(table)
         if failed_tables:
             if retries < max_retries:
                 retries += 1
@@ -437,7 +320,7 @@ class OracleDatabase:
                 LOGGER.error("Max retries reached for table %s", table)
                 raise sqlalchemy.exc.IntegrityError
 
-    def get_fk_constraints(self) -> list[TableConstraints]:
+    def get_fk_constraints(self) -> list[db_lib.TableConstraints]:
         """
         Return the foreign key constraints for the schema.
 
@@ -479,13 +362,13 @@ class OracleDatabase:
         constraint_list = []
         for row in cursor:
             LOGGER.debug(row)
-            tab_con = TableConstraints(*row)
+            tab_con = db_lib.TableConstraints(*row)
             constraint_list.append(tab_con)
         return constraint_list
 
     def disable_fk_constraints(
         self,
-        constraint_list: list[TableConstraints],
+        constraint_list: list[db_lib.TableConstraints],
     ) -> None:
         """
         Disable all foreign key constraints.
@@ -511,7 +394,7 @@ class OracleDatabase:
 
     def enable_constraints(
         self,
-        constraint_list: list[TableConstraints],
+        constraint_list: list[db_lib.TableConstraints],
     ) -> None:
         """
         Enable all foreign key constraints.

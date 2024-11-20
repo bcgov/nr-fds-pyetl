@@ -1,24 +1,86 @@
+
+x-var:
+  - &POSTGRES_USER
+    postgres
+  - &POSTGRES_PASSWORD
+    default
+  - &POSTGRES_DATABASE
+    postgres
+  - &POSTGRES_HOST
+    postgres
+  - &FLYWAY_URL_POSTGRES
+    jdbc:postgresql://postgres:5432/spar
+
 x-postgres-vars: &postgres-vars
   POSTGRES_DB: spar
-  POSTGRES_HOST: database
-  POSTGRES_USER: postgres
-  POSTGRES_PASSWORD: default
+  POSTGRES_HOST: *POSTGRES_HOST
+  POSTGRES_USER: *POSTGRES_USER
+  POSTGRES_PASSWORD: *POSTGRES_PASSWORD
   POSTGRES_PORT: 5432
+  FLYWAY_URL_POSTGRES: jdbc:postgresql://postgres:5432/spar
 
 x-oracle-vars: &oracle-vars
   ORACLE_DATABASE: DBDOCK_01
   ORACLE_PASSWORD: default
+  # if change the host here, need to also change the name of the service
+  ORACLE_HOST: oracle
   APP_USER: the
   APP_USER_PASSWORD: default
   FLYWAY_URL: jdbc:oracle:thin:@//oracle:1521/DBDOCK_01
 
-
 services:
+  postgres:
+    image: postgis/postgis:15-master
+    container_name: postgres
+    environment:
+      <<: *postgres-vars
+    volumes:
+      - ./migrations_spar/init.sql:/initdb/init.sql
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", postgres]
+    ports: ["5432:5432"]
+
+  postgres-migrations:
+    image: flyway/flyway:10-alpine
+    container_name: postgres-migrations
+    command: info migrate info
+    volumes: ["./migrations_spar/sql:/flyway/sql:ro"]
+    environment:
+      FLYWAY_URL: *FLYWAY_URL_POSTGRES
+      FLYWAY_USER: *POSTGRES_USER
+      FLYWAY_PASSWORD: *POSTGRES_PASSWORD
+      FLYWAY_BASELINE_ON_MIGRATE: true
+      FLYWAY_DEFAULT_SCHEMA: spar
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres-data-load:
+    image: python:3.11.10-slim-bullseye
+    container_name: postgres-data-load
+    entrypoint: ["/application/docker_run_SPAR_TEST.sh"]
+    working_dir: /application
+    volumes:
+      - "./data_prep:/application"
+      - "./poetry.lock:/application/poetry.lock"
+      - "./pyproject.toml:/application/pyproject.toml"
+      - "./docker-compose.yml:/application/docker-compose.yml"
+      - "./data:/application/data"
+    environment:
+      <<: [*postgres-vars]
+    env_file:
+      - ".env"
+    depends_on:
+      postgres-migrations:
+        condition: service_completed_successfully
+
   # Name of the Docker Compose service
   oracle:
     # Docker Hub image (feel free to change the tag "latest" to any other available one)
     image: gvenzl/oracle-free:latest
     # Forward Oracle port to localhost
+    container_name: oracle
     ports:
       - "1521:1521"
     # Provide passwords and other environment variables to the container
@@ -33,14 +95,14 @@ services:
     # Mount a local SQL file to initialize your schema at startup
     volumes:
       - oracle-data:/opt/oracle/oradata  # Mount the volume to the Oracle data directory
-      - ./oradb/db_init.sql:/container-entrypoint-initdb.d/my-init.sql:ro
+      - ./oradb/db_init/db_init.sql:/container-entrypoint-initdb.d/my-init.sql:ro
 
   oracle-migrations:
     image: flyway/flyway:10-alpine
-    container_name: migrations
+    container_name: oracle-migrations
     command: info migrate info
     volumes:
-      - "./migrations/sql:/flyway/sql:ro"
+      - "./migrations_ora/sql:/flyway/sql:ro"
     environment:
       <<: *oracle-vars
       FLYWAY_USER: THE
@@ -52,14 +114,12 @@ services:
         condition: service_healthy
 
   oracle-data-load:
-    profiles: ["python", "all"]
-    image: python:3.12
-    container_name: oracle-data-loader
-    entrypoint: bash /application/docker_run_TEST.bash
-    #entrypoint: sleep 500000
-    working_dir:    /application
+    image: python:3.11
+    container_name: oracle-data-load
+    # "CMD",
+    entrypoint: [ "/application/docker_run_ORA_TEST.sh"]
+    working_dir: /application
     volumes:
-      -  "./.venv:/venv"
       - "./data_prep:/application"
       - "./poetry.lock:/application/poetry.lock"
       - "./pyproject.toml:/application/pyproject.toml"
@@ -67,7 +127,6 @@ services:
       - "./data:/application/data"
     environment:
       <<: [*oracle-vars]
-      ORACLE_HOST: oracle
     env_file:
       - ".env"
     depends_on:
@@ -75,15 +134,39 @@ services:
         condition: service_completed_successfully
 
   # debug service, useful for understanding how environment variables work
-  echoit:
+  etl:
+    container_name: etl
     image: functions/alpine:health
-    environment:
-      <<: *oracle-vars
-      FLYWAY_USER: "${APP_USER}"
-      FLYWAY_PASSWORD: "${APP_USER_PASSWORD}"
-      FLYWAY_BASELINE_ON_MIGRATE: true
-      FLYWAY_DEFAULT_SCHEMA: "${APP_USER}"
-    entrypoint: ["/bin/sh", "-c", "export && echo \"oradb is ${FLYWAY_USER}\" &&  exec $fprocess"]
+    command: ["/bin/sh", "-c", "echo Postgres and Oracle envs now live!"]
+    depends_on:
+      oracle-data-load:
+        condition: service_completed_successfully
+      postgres-data-load:
+        condition: service_completed_successfully
+
+  cloudbeaver:
+    profiles: ["cloudbeaver"]
+    image: dbeaver/cloudbeaver:latest
+    container_name: cloudbeaver
+    restart: always
+    ports:
+      - '8978:8978'
+    volumes:
+      - /opt/cloudbeaver/workspace
+    depends_on:
+      etl:
+        condition: service_completed_successfully
+
+  # # debug service, useful for understanding how environment variables work
+  # echoit:
+  #   image: functions/alpine:health
+  #   environment:
+  #     <<: *oracle-vars
+  #     FLYWAY_USER: "${APP_USER}"
+  #     FLYWAY_PASSWORD: "${APP_USER_PASSWORD}"
+  #     FLYWAY_BASELINE_ON_MIGRATE: true
+  #     FLYWAY_DEFAULT_SCHEMA: "${APP_USER}"
+  #   entrypoint: ["/bin/sh", "-c", "export && echo \"oradb is ${FLYWAY_USER}\" &&  exec $fprocess"]
 
 volumes:
   oracle-data:

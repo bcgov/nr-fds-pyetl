@@ -9,10 +9,10 @@ environment.
 
 If not already installed install `pyenv`
 
-Currently this project is using python 3.12, using pyenv make sure you are
-using that version.
+Currently this project is using python 3.12, using pyenv make sure you are using that version.
 
 `pyenv global 3.12`
+
 
 ## dependencies
 
@@ -88,8 +88,6 @@ following env vars that enable communication with the on prem database:
 * `ORACLE_HOST_TEST`
 * `ORACLE_PORT_TEST`
 * `ORACLE_SERVICE_TEST`
-* `ORACLE_SYNC_USER_TEST`
-* `ORACLE_SYNC_PASSWORD_TEST`
 * `ORACLE_USER_TEST`
 * `ORACLE_PASSWORD_TEST`
 
