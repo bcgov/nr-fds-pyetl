@@ -57,7 +57,7 @@ services:
         condition: service_healthy
 
   postgres-data-load:
-    image: python:3.11.10-slim-bookworm
+    image: python:3.13.0-slim-bookworm
     container_name: postgres-data-load
     entrypoint: ["/application/docker_run_SPAR_TEST.sh"]
     working_dir: /application
@@ -114,7 +114,7 @@ services:
         condition: service_healthy
 
   oracle-data-load:
-    image: python:3.11
+    image: python:3.13
     container_name: oracle-data-load
     # "CMD",
     entrypoint: [ "/application/docker_run_ORA_TEST.sh"]
