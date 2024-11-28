@@ -46,6 +46,28 @@
             ]
         },
         {
+            "name": "spar-ingest-prod",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/data_prep/main_spar_ingest.py",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.env",
+            "args": [
+                "PROD"
+            ]
+        },
+        {
+            "name": "oracle-extract-prod",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/data_prep/main_ora_extract.py",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.env",
+            "args": [
+                "PROD"
+            ]
+        },
+        {
             "name": "oracle-ingest-test",
             "type": "python",
             "request": "launch",

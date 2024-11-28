@@ -420,18 +420,16 @@ class PostgresDatabase(db_lib.DB):
         LOGGER.debug("exporting table %s to %s", table, export_file)
         file_created = False
         if (not export_file.exists()) or overwrite:
-            if "".join(export_file.suffixes) == constants.SQL_DUMP_SUFFIX:
-                file_created = self.extract_sql_dump_file(export_file, table)
-            elif "".join(export_file.suffixes) == constants.PARQUET_SUFFIX:
+            if not "".join(export_file.suffixes).endswith(
+                constants.SQL_DUMP_SUFFIX,
+            ):
                 file_created = super().extract_data(
                     table=table,
                     export_file=export_file,
                     overwrite=overwrite,
                 )
             else:
-                LOGGER.debug("suffix: %s", export_file.suffix)
-                LOGGER.error("unsupported file type: %s", export_file)
-                raise ValueError
+                file_created = self.extract_sql_dump_file(export_file, table)
         else:
             LOGGER.info("file exists: %s, not re-exporting", export_file)
         return file_created
