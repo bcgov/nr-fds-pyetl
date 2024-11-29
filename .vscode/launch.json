@@ -78,6 +78,17 @@
                 "TEST"
             ]
         },
+        {
+            "name": "run sync locally",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/sync/src/main.py",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/sync/.env",
+            "args": [
+                ""
+            ]
+        }
 
     ]
 }
