@@ -15,25 +15,30 @@ set -euo nounset
 ### Setup
 
 # Several packages are not working for python 3.12
-PYVER=3.10.13
+# PYVER=3.10.13
 
-export COMMAND=${1:-}
-if [ "${COMMAND}" == "setup" ]; then
-  [ -z "${PYENV_ROOT}" ]|| export PYENV_ROOT="$HOME/.pyenv"
-  command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
-  eval "$(pyenv init -)"
-  pyenv update
-  pyenv install -s ${PYVER}
-  pyenv global ${PYVER}
-  python -m venv --clear venv
-  source venv/bin/activate
-  python -m pip install --upgrade pip
-fi
+# export COMMAND=${1:-}
+# if [ "${COMMAND}" == "setup" ]; then
+#   [ -z "${PYENV_ROOT}" ]|| export PYENV_ROOT="$HOME/.pyenv"
+#   command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+#   eval "$(pyenv init -)"
+#   pyenv update
+#   pyenv install -s ${PYVER}
+#   pyenv global ${PYVER}
+#   python -m venv --clear venv
+#   source venv/bin/activate
+#   python -m pip install --upgrade pip
+# fi
 
 
 ### Requirements
 
-python -m pip install -r ./requirements.txt --cache-dir ./data
+#python -m pip install -r ./requirements.txt --cache-dir ./data
+poetry install
+
+# activate env
+poetry_path=$(poetry env info --path)
+. $poetry_path/bin/activate
 
 
 ### Run
