@@ -24,13 +24,31 @@ and new spar applications.
 * ORACLE_SYNC_PASSWORD
 
 
+## Option 1. Run sync script directly
 
-## Without Docker
+Start by starting the local versions of the oracle and postgres databases.
+
+```bash
+docker compose up etl
+```
+
+Wait for the compose process to complete.
 
 The repo currently contains two python poetry configurations.  For this reason
-to run the sync process locally
+to run the sync process locally you need run from the sync directory.
+
+```bash
+cd sync
+poetry install
+# activate env
+source $(poetry env info --path)/bin/activate
+# run the script
+python src/main.py
+```
 
 
-## With Docker
+## Option 2. Run sync script through docker compose
 
-
+```bash
+docker compose up sync
+```
