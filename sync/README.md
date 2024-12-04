@@ -27,6 +27,9 @@ and new spar applications.
 
 ## Without Docker
 
+The repo currently contains two python poetry configurations.  For this reason
+to run the sync process locally
+
 
 ## With Docker
 
