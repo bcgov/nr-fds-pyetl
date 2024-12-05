@@ -138,6 +138,14 @@ def read_settings():
 
 
 def main() -> int:
+    """
+    Run main method that triggers the ETL process.
+
+    If no errors encountered, it will return 0, otherwise 1
+
+    :return: status of the run, 0 if successful, 1 if failed
+    :rtype: int
+    """
     try:
         definition_of_yes = ["Y", "YES", "1", "T", "TRUE", "t", "true"]
         job_return_code = 0
