@@ -7,6 +7,8 @@ import sys
 import module.data_synchronization as data_sync
 import yaml
 
+LOGGER = logging.getLogger(__name__)
+
 
 def env_var_is_filled(variable):
     if os.environ.get(variable) is None:
