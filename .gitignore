@@ -166,3 +166,4 @@ data_prep/junk.py
 data_prep/docker_data/**
 data_prep/poetry.toml
 
+sync/src/junk.py

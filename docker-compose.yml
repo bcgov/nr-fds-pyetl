@@ -5,56 +5,106 @@ x-var:
   - &POSTGRES_PASSWORD
     default
   - &POSTGRES_DATABASE
-    postgres
+    spar
   - &POSTGRES_HOST
     postgres
-  - &FLYWAY_URL_POSTGRES
+  - &POSTGRES_PORT
+    5432
+  - &POSTGRES_SCHEMA
+    spar
+  - &POSTGRES_FLYWAY_URL_POSTGRES
     jdbc:postgresql://postgres:5432/spar
+  - &ORACLE_USER
+    THE
+  - &ORACLE_PASSWORD
+    default
+  - &ORACLE_DATABASE
+    DBDOCK_01
+  - &ORACLE_HOST
+    oracle
+  - &ORACLE_PORT
+    1521
+  - &ORACLE_FLYWAY_URL
+    jdbc:oracle:thin:@//oracle:1521/DBDOCK_01
+
+
 
 x-postgres-vars: &postgres-vars
-  POSTGRES_DB: spar
+  POSTGRES_DB: *POSTGRES_DATABASE
   POSTGRES_HOST: *POSTGRES_HOST
   POSTGRES_USER: *POSTGRES_USER
   POSTGRES_PASSWORD: *POSTGRES_PASSWORD
-  POSTGRES_PORT: 5432
-  FLYWAY_URL_POSTGRES: jdbc:postgresql://postgres:5432/spar
+  POSTGRES_PORT: *POSTGRES_PORT
+  FLYWAY_URL_POSTGRES: *POSTGRES_FLYWAY_URL_POSTGRES
+  #FLYWAY_URL_POSTGRES: jdbc:postgresql://postgres:5432/spar
 
 x-oracle-vars: &oracle-vars
-  ORACLE_DATABASE: DBDOCK_01
-  ORACLE_PASSWORD: default
-  # if change the host here, need to also change the name of the service
-  ORACLE_HOST: oracle
-  APP_USER: the
-  APP_USER_PASSWORD: default
-  FLYWAY_URL: jdbc:oracle:thin:@//oracle:1521/DBDOCK_01
+  ORACLE_DATABASE: *ORACLE_DATABASE
+  ORACLE_PASSWORD: *ORACLE_PASSWORD
+  ORACLE_HOST: *ORACLE_HOST
+  APP_USER: *ORACLE_USER
+  APP_USER_PASSWORD: *ORACLE_PASSWORD
+  # used by the sync process
+  ORACLE_SYNC_PASSWORD: *ORACLE_PASSWORD
+  ORACLE_SYNC_USER: *ORACLE_USER
+  FLYWAY_URL: *ORACLE_FLYWAY_URL
 
 services:
   postgres:
-    image: postgis/postgis:15-master
+    #image: postgis/postgis:15-master
+    image: postgis/postgis:17-3.5-alpine
     container_name: postgres
     environment:
       <<: *postgres-vars
     volumes:
-      - ./migrations_spar/init.sql:/initdb/init.sql
+      # - ./migrations_spar/init.sql:/initdb/init.sql
       - /var/lib/postgresql/data
     healthcheck:
       test: ["CMD", "pg_isready", "-U", postgres]
     ports: ["5432:5432"]
 
+  postgres-getmigrations:
+    image: alpine:3.14
+    container_name: postgres-getmigrations
+    volumes:
+      - "postgres-migrations-volume:/flyway"
+      - "./getmigrations.sh:/getmigrations.sh"
+    command: sh ./getmigrations.sh
+    # command: sleep 10000
+    depends_on:
+        postgres:
+          condition: service_healthy
+
+  # used to verify that the get migrations worked
+  postgres-getmig-test:
+    image: alpine:3.14
+    container_name: postgres-getmig-test
+    volumes:
+      - "postgres-migrations-volume:/flyway:ro"
+      - "./getmigrations.sh:/getmigrations.sh"
+    command: sleep 10000
+    depends_on:
+        postgres-getmigrations:
+          condition: service_completed_successfully
+
   postgres-migrations:
     image: flyway/flyway:10-alpine
     container_name: postgres-migrations
     command: info migrate info
-    volumes: ["./migrations_spar/sql:/flyway/sql:ro"]
+    volumes:
+      # this is the migrations from spar... the one to use moving forward
+      - "postgres-migrations-volume:/flyway:ro"
+      #- "./migrations_spar/sql:/flyway/sql:ro"
     environment:
-      FLYWAY_URL: *FLYWAY_URL_POSTGRES
+      <<: [*postgres-vars]
+      FLYWAY_URL: *POSTGRES_FLYWAY_URL_POSTGRES
       FLYWAY_USER: *POSTGRES_USER
       FLYWAY_PASSWORD: *POSTGRES_PASSWORD
       FLYWAY_BASELINE_ON_MIGRATE: true
-      FLYWAY_DEFAULT_SCHEMA: spar
+      FLYWAY_DEFAULT_SCHEMA: *POSTGRES_SCHEMA
     depends_on:
-      postgres:
-        condition: service_healthy
+      postgres-getmigrations:
+        condition: service_completed_successfully
 
   postgres-data-load:
     image: python:3.13.0-slim-bookworm
@@ -67,10 +117,10 @@ services:
       - "./pyproject.toml:/application/pyproject.toml"
       - "./docker-compose.yml:/application/docker-compose.yml"
       - "./data:/application/data"
-    environment:
-      <<: [*postgres-vars]
     env_file:
       - ".env"
+    environment:
+      <<: [*postgres-vars]
     depends_on:
       postgres-migrations:
         condition: service_completed_successfully
@@ -105,16 +155,16 @@ services:
       - "./migrations_ora/sql:/flyway/sql:ro"
     environment:
       <<: *oracle-vars
-      FLYWAY_USER: THE
-      FLYWAY_PASSWORD: default
-      FLYWAY_DEFAULT_SCHEMA: THE
+      FLYWAY_USER: *ORACLE_USER
+      FLYWAY_PASSWORD: *ORACLE_PASSWORD
+      FLYWAY_DEFAULT_SCHEMA: *ORACLE_USER
       FLYWAY_BASELINE_ON_MIGRATE: true
     depends_on:
       oracle:
         condition: service_healthy
 
   oracle-data-load:
-    image: python:3.13
+    image: python:3.13-slim-bookworm
     container_name: oracle-data-load
     # "CMD",
     entrypoint: [ "/application/docker_run_ORA_TEST.sh"]
@@ -144,6 +194,27 @@ services:
       postgres-data-load:
         condition: service_completed_successfully
 
+  sync:
+    container_name: sync
+    build:
+      context: sync
+      dockerfile: Dockerfile.slim
+    environment:
+      <<: [*postgres-vars, *oracle-vars]
+      TEST_MODE: false
+      EXECUTION_ID: 9999
+      ORACLE_PORT: *ORACLE_PORT
+      ORACLE_SERVICE: *ORACLE_DATABASE
+    command: ["python", "/app/src/main.py"]
+    # command: ["sleep", "10000"]
+    volumes:
+    - "./sync/src:/app/src"
+    - "./sync/poetry.lock:/application/poetry.lock"
+    - "./sync/pyproject.toml:/application/pyproject.toml"
+    depends_on:
+      etl:
+        condition: service_completed_successfully
+
   cloudbeaver:
     profiles: ["cloudbeaver"]
     image: dbeaver/cloudbeaver:latest
@@ -170,3 +241,4 @@ services:
 
 volumes:
   oracle-data:
+  postgres-migrations-volume:
