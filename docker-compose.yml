@@ -93,8 +93,8 @@ services:
     command: info migrate info
     volumes:
       # this is the migrations from spar... the one to use moving forward
-      #- "postgres-migrations-volume:/flyway:ro"
-      - "./migrations_spar/sql:/flyway/sql:ro"
+      - "postgres-migrations-volume:/flyway:ro"
+      #- "./migrations_spar/sql:/flyway/sql:ro"
     environment:
       <<: [*postgres-vars]
       FLYWAY_URL: *POSTGRES_FLYWAY_URL_POSTGRES
