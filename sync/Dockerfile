@@ -3,7 +3,6 @@ FROM python:3.13-slim-bookworm as base
 # using slim for development as the wheels are not always compat with
 # alpine, and builds can be slow as a result
 # FROM python:3.12-slim as base
-USER nonroot
 
 ARG DEV=false
 ENV VIRTUAL_ENV=/app/docker_venv \
