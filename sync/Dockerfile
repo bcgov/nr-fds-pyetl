@@ -47,6 +47,8 @@ RUN poetry install --without dev --no-root -v && rm -rf $POETRY_CACHE_DIR
 
 # ----------------- STAGE 3 -----------------
 FROM base as runtime
+WORKDIR /app
+
 
 # install the postgres client, required by psycopg2
 RUN apt update && apt install -y --no-install-recommends postgresql-client
@@ -55,8 +57,7 @@ RUN apt update && apt install -y --no-install-recommends postgresql-client
 COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # RUN apk add bash
-COPY . ./app
+COPY src /app/src
 
-WORKDIR /app
 
 CMD ["python", "src/main.py"]
