@@ -18,6 +18,18 @@ def env_var_is_filled(variable):
 
 
 def generate_db_config(type_, schema_, settings):
+    """
+    Generate database connection configuration.
+
+    :param type_: the type of database to connect to
+    :type type_: oracle | postgres
+    :param schema_: the schema or user to connect to
+    :type schema_: str
+    :param settings: a settings configuration
+    :type settings: _type_
+    :return: _description_
+    :rtype: _type_
+    """
     dbconfig = {}
     ssl_required = settings["ssl_required"]
     version_column = settings["version_column"]
