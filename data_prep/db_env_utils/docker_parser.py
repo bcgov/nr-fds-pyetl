@@ -40,13 +40,80 @@ class ReadDockerCompose:
             that the script was executed from.
         :type compose_file_path: str, path
         """
-        self.compose_file_path = compose_file_path
 
-        if self.compose_file_path is None:
-            self.compose_file_path = "./docker-compose.yml"
+        self.compose_file_path = self.get_composefile_path(compose_file_path)
 
         with pathlib.Path(self.compose_file_path).open("r") as fh:
             self.docker_comp = yaml.safe_load(fh)
+
+    def get_composefile_path(self, comp_file_path: str) -> str:
+        """
+        Return the path to the docker-compose file.
+
+        Expects the docker compose file to exist in either the current working
+        or back a single directory relative to this script.
+
+        :return: the path to the docker-compose file
+        :rtype: str
+        """
+        if not comp_file_path:
+            docker_comp_file_path = pathlib.Path(
+                "./docker-compose.yml"
+            ).resolve()
+        else:
+            docker_comp_file_path = pathlib.Path(comp_file_path)
+
+        if not docker_comp_file_path.exists():
+            LOGGER.debug(
+                "1. docker compose file does not exist: %s",
+                docker_comp_file_path,
+            )
+
+            # try to find the docker-compose file one file back from this files
+            # path
+            docker_comp_file_path = (
+                pathlib.Path(__file__)
+                .parent.joinpath("..", "docker-compose.yml")
+                .resolve()
+            )
+
+            if not docker_comp_file_path.exists():
+                LOGGER.debug(
+                    "2. docker compose file does not exist: %s",
+                    docker_comp_file_path,
+                )
+                # try going back one more directory
+                docker_comp_file_path = (
+                    pathlib.Path(__file__)
+                    .parent.joinpath("..", "..", "docker-compose.yml")
+                    .resolve()
+                )
+                if not docker_comp_file_path.exists():
+                    LOGGER.debug(
+                        "3. docker compose file does not exist: %s",
+                        docker_comp_file_path,
+                    )
+
+                    # try going back one more directory
+                    docker_comp_file_path = (
+                        pathlib.Path(__file__)
+                        .parent.joinpath(
+                            "..",
+                            "..",
+                            "..",
+                            "docker-compose.yml",
+                        )
+                        .resolve()
+                    )
+
+        if not docker_comp_file_path.exists():
+            raise FileNotFoundError(
+                "Could not find the docker-compose file in the current or parent directory, %s",
+                docker_comp_file_path,
+            )
+
+        LOGGER.info(f"Using docker-compose file: {docker_comp_file_path}")
+        return docker_comp_file_path
 
     def get_spar_conn_params(self) -> env_config.ConnectionParameters:
         """

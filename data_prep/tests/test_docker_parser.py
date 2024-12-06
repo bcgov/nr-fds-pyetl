@@ -4,7 +4,7 @@ Test the docker_parser module.
 
 import logging
 
-import docker_parser
+import data_prep.db_env_utils.docker_parser as docker_parser
 
 LOGGER = logging.getLogger(__name__)
 

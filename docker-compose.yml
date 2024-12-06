@@ -107,16 +107,14 @@ services:
         condition: service_completed_successfully
 
   postgres-data-load:
-    image: python:3.13.0-slim-bookworm
     container_name: postgres-data-load
-    entrypoint: ["/application/docker_run_SPAR_TEST.sh"]
-    working_dir: /application
+    build:
+      context: .
+      dockerfile: Dockerfile.pg_ingest
+    command: ["python", "db_env_utils/main_spar_ingest.py", "TEST"]
+    working_dir: /app
     volumes:
-      - "./data_prep:/application"
-      - "./poetry.lock:/application/poetry.lock"
-      - "./pyproject.toml:/application/pyproject.toml"
-      - "./docker-compose.yml:/application/docker-compose.yml"
-      - "./data:/application/data"
+      - "./data_prep/docker_data:/app/data"
     env_file:
       - ".env"
     environment:
@@ -152,7 +150,7 @@ services:
     container_name: oracle-migrations
     command: info migrate info
     volumes:
-      - "./migrations_ora/sql:/flyway/sql:ro"
+      - "./data_prep/migrations_ora/sql:/flyway/sql:ro"
     environment:
       <<: *oracle-vars
       FLYWAY_USER: *ORACLE_USER
@@ -164,17 +162,14 @@ services:
         condition: service_healthy
 
   oracle-data-load:
-    image: python:3.13-slim-bookworm
     container_name: oracle-data-load
-    # "CMD",
-    entrypoint: [ "/application/docker_run_ORA_TEST.sh"]
-    working_dir: /application
+    build:
+      context: .
+      dockerfile: Dockerfile.ora_ingest
+    command: ["python", "db_env_utils/main_ora_ingest.py", "TEST"]
+    # working_dir: /app
     volumes:
-      - "./data_prep:/application"
-      - "./poetry.lock:/application/poetry.lock"
-      - "./pyproject.toml:/application/pyproject.toml"
-      - "./docker-compose.yml:/application/docker-compose.yml"
-      - "./data:/application/data"
+      - "./data_prep/docker_data:/app/data"
     environment:
       <<: [*oracle-vars]
     env_file:

@@ -68,6 +68,17 @@
             ]
         },
         {
+            "name": "oracle-extract-test",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/data_prep/main_ora_extract.py",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.env",
+            "args": [
+                "TEST"
+            ]
+        },
+        {
             "name": "oracle-ingest-test",
             "type": "python",
             "request": "launch",
