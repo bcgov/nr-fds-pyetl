@@ -49,7 +49,6 @@
     FROM base as runtime
     WORKDIR /app
 
-
     # install the postgres client, required by psycopg2
     RUN apt update && apt install -y --no-install-recommends postgresql-client
 
