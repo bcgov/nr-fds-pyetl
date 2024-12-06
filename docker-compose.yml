@@ -150,7 +150,7 @@ services:
     container_name: oracle-migrations
     command: info migrate info
     volumes:
-      - "./migrations_ora/sql:/flyway/sql:ro"
+      - "./data_prep/migrations_ora/sql:/flyway/sql:ro"
     environment:
       <<: *oracle-vars
       FLYWAY_USER: *ORACLE_USER
