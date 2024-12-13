@@ -64,7 +64,7 @@ services:
     ports: ["5432:5432"]
 
   postgres-getmigrations:
-    image: alpine:3.14
+    image: alpine:3.21
     container_name: postgres-getmigrations
     volumes:
       - "postgres-migrations-volume:/flyway"
@@ -77,7 +77,7 @@ services:
 
   # used to verify that the get migrations worked
   postgres-getmig-test:
-    image: alpine:3.14
+    image: alpine:3.21
     container_name: postgres-getmig-test
     volumes:
       - "postgres-migrations-volume:/flyway:ro"
