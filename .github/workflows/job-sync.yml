@@ -12,7 +12,7 @@ jobs:
   sync-test:
     environment: test
     name: Sync (TEST)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: redhat-actions/openshift-tools-installer@v1
@@ -24,7 +24,7 @@ jobs:
   sync-prod:
     environment: prod
     name: Sync (PROD)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: redhat-actions/openshift-tools-installer@v1
