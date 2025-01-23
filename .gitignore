@@ -164,7 +164,6 @@ junk.txt
 data/**
 data_prep/junk.py
 data_prep/docker_data/**
-data_prep/docker_venv/**
-data_prep/data/**
-data_prep/.venv/**
+data_prep/poetry.toml
+
 sync/src/junk.py

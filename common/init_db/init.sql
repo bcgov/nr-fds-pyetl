@@ -1,9 +1,3 @@
-/*
-Not currently in use... but may be useful in the future.
-
-Contains sample code that could be used for test cases.
-*/
-
 CREATE EXTENSION postgis;
 
 CREATE database spar;
@@ -1499,14 +1493,14 @@ create table spar.seedlot_genetic_worth (
   genetic_worth_code             varchar(3) not null,
   genetic_quality_value          decimal(4, 1) not null,
   tested_parent_tree_cont_pct    decimal(6, 2),
-  entry_userid                   varchar(30) not null,
-  entry_timestamp                timestamp not null,
-  update_userid                  varchar(30) not null,
-  update_timestamp               timestamp not null,
+  entry_userid                   varchar(30) not null, 
+  entry_timestamp                timestamp not null, 
+  update_userid                  varchar(30) not null, 
+  update_timestamp               timestamp not null, 
   revision_count                 int not null,
-  constraint seedlot_genetic_worth_pk
+  constraint seedlot_genetic_worth_pk 
     primary key(seedlot_number, genetic_worth_code),
-  constraint seedlot_genet_worth_seedlot_fk
+  constraint seedlot_genet_worth_seedlot_fk 
     foreign key(seedlot_number) references spar.seedlot(seedlot_number)
 );
 
@@ -1540,9 +1534,9 @@ create table spar.seedlot_parent_tree (
   update_userid                 varchar(30) not null,
   update_timestamp              timestamp not null,
   revision_count                int not null,
-  constraint seedlot_parent_tree_pk
+  constraint seedlot_parent_tree_pk 
     primary key(seedlot_number, parent_tree_id),
-  constraint seedlot_parent_tree_seedlot_fk
+  constraint seedlot_parent_tree_seedlot_fk 
     foreign key(seedlot_number) references spar.seedlot(seedlot_number)
 );
 
@@ -1568,16 +1562,16 @@ create table spar.seedlot_parent_tree_gen_qlty (
   genetic_type_code     varchar(2) not null,
   genetic_worth_code    varchar(3) not null,
   genetic_quality_value decimal(4, 1) not null,
-  estimated_ind         boolean,
-  untested_ind          boolean,
+  estimated_ind         boolean, 
+  untested_ind          boolean, 
   entry_userid          varchar(30) not null,
   entry_timestamp       timestamp not null,
   update_userid         varchar(30) not null,
   update_timestamp      timestamp not null,
   revision_count        int,
-  constraint seedlot_parent_tree_gen_qlt_pk
+  constraint seedlot_parent_tree_gen_qlt_pk 
     primary key(seedlot_number, parent_tree_id, genetic_type_code, genetic_worth_code),
-  constraint sl_ptree_genqly_sl_ptree_fk
+  constraint sl_ptree_genqly_sl_ptree_fk 
     foreign key(seedlot_number, parent_tree_id) references spar.seedlot_parent_tree(seedlot_number, parent_tree_id)
 );
 
@@ -1606,9 +1600,9 @@ create table spar.seedlot_parent_tree_smp_mix (
   update_userid         varchar(30) not null,
   update_timestamp      timestamp not null,
   revision_count        int not null,
-  constraint seedlot_parent_tree_smp_mix_pk
+  constraint seedlot_parent_tree_smp_mix_pk 
     primary key(seedlot_number, parent_tree_id, genetic_type_code, genetic_worth_code),
-  constraint sl_ptree_smp_mix_sl_ptree_fk
+  constraint sl_ptree_smp_mix_sl_ptree_fk 
     foreign key(seedlot_number, parent_tree_id) references spar.seedlot_parent_tree(seedlot_number, parent_tree_id)
 );
 
@@ -1634,14 +1628,14 @@ create table spar.smp_mix (
   parent_tree_number varchar(5) not null,
   amount_of_material int not null,
   proportion         decimal(20,10),
-  entry_userid       varchar(30) not null,
-  entry_timestamp    timestamp not null,
-  update_userid      varchar(30) not null,
-  update_timestamp   timestamp not null,
+  entry_userid       varchar(30) not null, 
+  entry_timestamp    timestamp not null, 
+  update_userid      varchar(30) not null, 
+  update_timestamp   timestamp not null, 
   revision_count     int not null,
-  constraint smp_mix_pk
+  constraint smp_mix_pk 
     primary key(seedlot_number, parent_tree_id),
-  constraint smp_mix_seedlot_fk
+  constraint smp_mix_seedlot_fk 
     foreign key(seedlot_number) references spar.seedlot(seedlot_number)
 );
 
@@ -1664,15 +1658,15 @@ create table spar.smp_mix_gen_qlty (
   genetic_type_code     varchar(2) not null,
   genetic_worth_code    varchar(3) not null,
   genetic_quality_value decimal(4, 1) not null,
-  estimated_ind         boolean,
+  estimated_ind         boolean, 
   entry_userid          varchar(30) not null,
   entry_timestamp       timestamp not null,
   update_userid         varchar(30) not null,
   update_timestamp      timestamp not null,
   revision_count        int not null,
-  constraint smp_mix_gen_qlty_pk
+  constraint smp_mix_gen_qlty_pk 
     primary key(seedlot_number, parent_tree_id, genetic_type_code, genetic_worth_code),
-  constraint smp_mix_gen_qlty_smp_mix_pk
+  constraint smp_mix_gen_qlty_smp_mix_pk 
     foreign key(seedlot_number, parent_tree_id) references spar.smp_mix(seedlot_number, parent_tree_id)
 );
 
@@ -1784,14 +1778,14 @@ comment on column spar.seedlot.smp_mean_bv_growth is 'The breeding value for the
 comment on column spar.seedlot.area_of_use_comment is 'Comments on Seedlot area of use.';
 
 create table spar.seedlot_seed_plan_zone (
-  seedlot_number      varchar(5) not null,
-  seed_plan_zone_code varchar(3) not null,
-  entry_userid        varchar(30) not null,
+  seedlot_number      varchar(5) not null, 
+  seed_plan_zone_code varchar(3) not null, 
+  entry_userid        varchar(30) not null, 
   entry_timestamp     timestamp not null,
   update_userid       varchar(30) not null,
   update_timestamp    timestamp not null,
   revision_count      int not null,
-  constraint seedlot_seed_plan_zone_pk
+  constraint seedlot_seed_plan_zone_pk 
     primary key(seedlot_number, seed_plan_zone_code),
   constraint seedlot_seedplan_zn_seedlot_fk
     foreign key(seedlot_number) references spar.seedlot(seedlot_number)
@@ -2029,7 +2023,7 @@ create table if not exists spar.seedlot_audit (
 
 
 comment on column spar.seedlot_audit.seedlot_audit_id               is 'Serial Incremental number referring to a unique primary key for this table';
-comment on column spar.seedlot_audit.audit_date                     is 'Date when this audit record was created (representing with some precision when the statement was executed)';
+comment on column spar.seedlot_audit.audit_date                     is 'Date when this audit record was created (representing with some precision when the statement was executed)'; 
 comment on column spar.seedlot_audit.spar_audit_code                is 'Type of statement executed in spar.seedlot table: I=INSERT, U=UPDATE, D=DELETE. Note that DELETE record represents only the latest data whiped out from the seedlot table';
 comment on column spar.seedlot_audit.db_user                 		is 'Postgres database user who executed the statement in spar.seedlot table';
 comment on column spar.seedlot_audit.audit_revision_version         is 'Record registered version for audit purposes.';
@@ -2083,7 +2077,7 @@ comment on column spar.seedlot_audit.entry_userid                   is 'Referrin
 comment on column spar.seedlot_audit.entry_timestamp                is 'Referring value for spar.seedlot.entry_timestamp column';
 comment on column spar.seedlot_audit.update_userid                  is 'Referring value for spar.seedlot.update_userid column';
 comment on column spar.seedlot_audit.update_timestamp               is 'Referring value for spar.seedlot.update_timestamp column';
-comment on column spar.seedlot_audit.revision_count                 is 'Referring value for spar.seedlot.revision_count column';/*
+comment on column spar.seedlot_audit.revision_count                 is 'Referring value for spar.seedlot.revision_count column';/*  
 -- Function to catch Insert/Update/Delete staments executed in seedlot table.
 -- Should be used in a trigger in seedlot table
 -- trigger statement in the bottom part of this script
@@ -2094,14 +2088,14 @@ DECLARE
     v_new_data TEXT;
 	v_auditrevision int;
 BEGIN
-
+    
 
     if (TG_OP = 'UPDATE') then
         v_old_data := ROW(OLD.*);
         v_new_data := ROW(NEW.*);
-		/* AUDIT REVISION number used to order the statements executed in the row */
+		/* AUDIT REVISION number used to order the statements executed in the row */ 
 		v_auditrevision := (SELECT MAX(COALESCE(audit_revision_version,1))+1 FROM spar.seedlot_audit WHERE seedlot_number = NEW.seedlot_number) ;
-        INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,declared_userid,declared_timestamp,entry_userid,entry_timestamp,update_userid,update_timestamp,revision_count)
+        INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,declared_userid,declared_timestamp,entry_userid,entry_timestamp,update_userid,update_timestamp,revision_count)               
 		VALUES(
 		/*spar_audit_code                */ 'U',
 		/*db_user                 	     */ session_user::TEXT,
@@ -2164,9 +2158,9 @@ BEGIN
         v_old_data := ROW(OLD.*);
         /*nsert into spar.logged_actions (schema_name,table_name,user_name,action,original_data,query)
         values (TG_TABLE_SCHEMA::TEXT,TG_TABLE_NAME::TEXT,session_user::TEXT,substring(TG_OP,1,1),v_old_data, current_query());*/
-		/* AUDIT REVISION number used to order the statements executed in the row */
+		/* AUDIT REVISION number used to order the statements executed in the row */ 
 		v_auditrevision := (SELECT MAX(COALESCE(audit_revision_version,1))+1 FROM spar.seedlot_audit WHERE seedlot_number = NEW.seedlot_number) ;
-		INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,interm_strg_locn,declared_userid,declared_timestamp,entry_userid,entry_timestamp,update_userid,update_timestamp,revision_count)
+		INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,interm_strg_locn,declared_userid,declared_timestamp,entry_userid,entry_timestamp,update_userid,update_timestamp,revision_count)               
 		VALUES(
 		/*spar_audit_code                */ 'D',
 		/*db_user                 	     */ session_user::TEXT,
@@ -2227,7 +2221,7 @@ BEGIN
         RETURN OLD;
     elsif (TG_OP = 'INSERT') then
         v_new_data := ROW(NEW.*);
-        INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,interm_strg_locn,declared_userid,declared_timestamp,entry_userid,entry_timestamp,update_userid,update_timestamp,revision_count)
+        INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,interm_strg_locn,declared_userid,declared_timestamp,entry_userid,entry_timestamp,update_userid,update_timestamp,revision_count)               
 		VALUES(
 		/*spar_audit_code                */ 'I',
 		/*db_user                 	     */ session_user::TEXT,
@@ -2293,15 +2287,15 @@ BEGIN
 
 EXCEPTION
     WHEN data_exception then
-        --insert into spar.error_catch (erro) VALUES(CONCAT('DATA EXCEPTION ',SQLERRM));
+        --insert into spar.error_catch (erro) VALUES(CONCAT('DATA EXCEPTION ',SQLERRM));       
         RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [DATA EXCEPTION] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
         RETURN NULL;
     WHEN unique_violation then
-	    --insert into spar.error_catch (erro) VALUES(CONCAT('UNIQUE EXCEPTION ',SQLERRM));
+	    --insert into spar.error_catch (erro) VALUES(CONCAT('UNIQUE EXCEPTION ',SQLERRM));	   
         RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [UNIQUE] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
         RETURN NULL;
     WHEN others then
-        --insert into spar.error_catch (erro) VALUES(CONCAT(v_auditrevision, CONCAT('OTHER EXCEPTION ',SQLERRM)));
+        --insert into spar.error_catch (erro) VALUES(CONCAT(v_auditrevision, CONCAT('OTHER EXCEPTION ',SQLERRM)));       
         RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [OTHER] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
         RETURN NULL;
 END;
@@ -2312,7 +2306,7 @@ SET search_path = pg_catalog, spar;
 
 -- Trigger to be attached on spar.seedlot table
 CREATE TRIGGER trg_seedlot_audit_DIU
- AFTER INSERT OR UPDATE OR DELETE ON spar.seedlot
+ AFTER INSERT OR UPDATE OR DELETE ON spar.seedlot 
  FOR EACH ROW EXECUTE PROCEDURE spar.seedlot_if_modified_func();
  alter table spar.seedlot_audit
   add column seed_plan_unit_id         smallint,
@@ -2395,7 +2389,7 @@ comment on column spar.seedlot_audit.longitude_sec_max          is 'Referring va
 comment on column spar.seedlot_audit.smp_mean_bv_growth         is 'Referring value for spar.seedlot.smp_mean_bv_growth column';
 comment on column spar.seedlot_audit.area_of_use_comment        is 'Referring value for spar.seedlot.area_of_use_comment column';
 
-/*
+/*  
 -- Function to fix Insert/Update/Delete staments executed on seedlot the table.
 -- Should be used in a trigger on the seedlot table
 -- trigger statement in the bottom part of this script
@@ -2409,7 +2403,7 @@ BEGIN
     if (TG_OP = 'UPDATE') then
         v_old_data := ROW(OLD.*);
         v_new_data := ROW(NEW.*);
-    /* AUDIT REVISION number used to order the statements executed in the row */
+    /* AUDIT REVISION number used to order the statements executed in the row */ 
     v_auditrevision := (SELECT MAX(COALESCE(audit_revision_version,1))+1 FROM spar.seedlot_audit WHERE seedlot_number = NEW.seedlot_number);
         INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,interm_strg_locn,declared_userid,declared_timestamp,entry_userid,entry_timestamp,update_userid,update_timestamp,revision_count)
     VALUES(
@@ -2474,9 +2468,9 @@ BEGIN
         v_old_data := ROW(OLD.*);
     /* insert into spar.logged_actions (schema_name,table_name,user_name,action,original_data,query)
         values (TG_TABLE_SCHEMA::TEXT,TG_TABLE_NAME::TEXT,session_user::TEXT,substring(TG_OP,1,1),v_old_data, current_query());*/
-    /* AUDIT REVISION number used to order the statements executed in the row */
+    /* AUDIT REVISION number used to order the statements executed in the row */ 
     v_auditrevision := (SELECT MAX(COALESCE(audit_revision_version,1))+1 FROM spar.seedlot_audit WHERE seedlot_number = NEW.seedlot_number) ;
-    INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,interm_strg_locn,declared_userid,declared_timestamp,entry_userid,entry_timestamp,update_userid,update_timestamp,revision_count)
+    INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,interm_strg_locn,declared_userid,declared_timestamp,entry_userid,entry_timestamp,update_userid,update_timestamp,revision_count)               
     VALUES(
     /*spar_audit_code                */ 'D',
     /*db_user                 	     */ session_user::TEXT,
@@ -2537,7 +2531,7 @@ BEGIN
         RETURN OLD;
     elsif (TG_OP = 'INSERT') then
         v_new_data := ROW(NEW.*);
-        INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,interm_strg_locn,declared_userid,declared_timestamp,entry_userid,entry_timestamp,update_userid,update_timestamp,revision_count)
+        INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,interm_strg_locn,declared_userid,declared_timestamp,entry_userid,entry_timestamp,update_userid,update_timestamp,revision_count)               
     VALUES(
     /*spar_audit_code                */ 'I',
     /*db_user                 	     */ session_user::TEXT,
@@ -2603,15 +2597,15 @@ BEGIN
 
 EXCEPTION
     WHEN data_exception then
-        --insert into spar.error_catch (erro) VALUES(CONCAT('DATA EXCEPTION ',SQLERRM));
+        --insert into spar.error_catch (erro) VALUES(CONCAT('DATA EXCEPTION ',SQLERRM));       
         RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [DATA EXCEPTION] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
         RETURN NULL;
     WHEN unique_violation then
-      --insert into spar.error_catch (erro) VALUES(CONCAT('UNIQUE EXCEPTION ',SQLERRM));
+      --insert into spar.error_catch (erro) VALUES(CONCAT('UNIQUE EXCEPTION ',SQLERRM));	   
         RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [UNIQUE] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
         RETURN NULL;
     WHEN others then
-        --insert into spar.error_catch (erro) VALUES(CONCAT(v_auditrevision, CONCAT('OTHER EXCEPTION ',SQLERRM)));
+        --insert into spar.error_catch (erro) VALUES(CONCAT(v_auditrevision, CONCAT('OTHER EXCEPTION ',SQLERRM)));       
         RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [OTHER] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
         RETURN NULL;
 END;
@@ -2625,7 +2619,7 @@ DROP TRIGGER trg_seedlot_audit_DIU ON spar.seedlot;
 
 -- Trigger to be attached on spar.seedlot table
 CREATE TRIGGER trg_seedlot_audit_DIU
- AFTER INSERT OR UPDATE OR DELETE ON spar.seedlot
+ AFTER INSERT OR UPDATE OR DELETE ON spar.seedlot 
  FOR EACH ROW EXECUTE PROCEDURE spar.seedlot_if_modified_func();
 
 alter table spar.seedlot
@@ -2642,7 +2636,7 @@ alter table spar.seedlot_audit
 comment on column spar.seedlot_audit.approved_timestamp          is 'Referring value for spar.seedlot.approved_timestamp column';
 comment on column spar.seedlot_audit.approved_userid              is 'Referring value for spar.seedlot.approved_userid column';
 
-/*
+/*  
 -- Function to fix Insert/Update/Delete staments executed on seedlot the table.
 -- Should be used in a trigger on the seedlot table
 -- trigger statement in the bottom part of this script
@@ -2658,7 +2652,7 @@ BEGIN
     if (TG_OP = 'UPDATE') then
         v_old_data := ROW(OLD.*);
         v_new_data := ROW(NEW.*);
-    /* AUDIT REVISION number used to order the statements executed in the row */
+    /* AUDIT REVISION number used to order the statements executed in the row */ 
     v_auditrevision := (SELECT MAX(COALESCE(audit_revision_version,1))+1 FROM spar.seedlot_audit WHERE seedlot_number = NEW.seedlot_number);
         INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,interm_strg_locn,declared_userid,declared_timestamp,entry_userid,entry_timestamp,seed_plan_unit_id,bgc_zone_code,bgc_subzone_code,variant,bec_version_id,elevation,latitude_degrees,latitude_minutes,latitude_seconds,longitude_degrees,longitude_minutes,longitude_seconds,collection_elevation,collection_elevation_min,collection_elevation_max,collection_latitude_deg,collection_latitude_min,collection_latitude_sec,collection_latitude_code,collection_longitude_deg,collection_longitude_min,collection_longitude_sec,collection_longitude_code,elevation_min,elevation_max,latitude_deg_min,latitude_min_min,latitude_sec_min,latitude_deg_max,latitude_min_max,latitude_sec_max,longitude_deg_min,longitude_min_min,longitude_sec_min,longitude_deg_max,longitude_min_max,longitude_sec_max,smp_mean_bv_growth,area_of_use_comment,approved_timestamp,approved_userid,update_userid,update_timestamp,revision_count)
     VALUES(
@@ -2714,7 +2708,7 @@ BEGIN
     /*declared_timestamp             */ NEW.declared_timestamp,
     /*entry_userid                   */ NEW.entry_userid,
     /*entry_timestamp                */ NEW.entry_timestamp,
-
+	
     /*seed_plan_unit_id              */ NEW.seed_plan_unit_id,
     /*bgc_zone_code                  */ NEW.bgc_zone_code,
     /*bgc_subzone_code               */ NEW.bgc_subzone_code,
@@ -2756,7 +2750,7 @@ BEGIN
     /*area_of_use_comment            */ NEW.area_of_use_comment,
     /*approved_timestamp             */ NEW.approved_timestamp,
     /*approved_userid                */ NEW.approved_userid,
-
+	
     /*update_userid                  */ NEW.update_userid,
     /*update_timestamp               */ NEW.update_timestamp,
     /*revision_count                 */ NEW.revision_count
@@ -2766,9 +2760,9 @@ BEGIN
         v_old_data := ROW(OLD.*);
     /* insert into spar.logged_actions (schema_name,table_name,user_name,action,original_data,query)
         values (TG_TABLE_SCHEMA::TEXT,TG_TABLE_NAME::TEXT,session_user::TEXT,substring(TG_OP,1,1),v_old_data, current_query());*/
-    /* AUDIT REVISION number used to order the statements executed in the row */
+    /* AUDIT REVISION number used to order the statements executed in the row */ 
     v_auditrevision := (SELECT MAX(COALESCE(audit_revision_version,1))+1 FROM spar.seedlot_audit WHERE seedlot_number = NEW.seedlot_number) ;
-    INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,interm_strg_locn,declared_userid,declared_timestamp,entry_userid,entry_timestamp,seed_plan_unit_id,bgc_zone_code,bgc_subzone_code,variant,bec_version_id,elevation,latitude_degrees,latitude_minutes,latitude_seconds,longitude_degrees,longitude_minutes,longitude_seconds,collection_elevation,collection_elevation_min,collection_elevation_max,collection_latitude_deg,collection_latitude_min,collection_latitude_sec,collection_latitude_code,collection_longitude_deg,collection_longitude_min,collection_longitude_sec,collection_longitude_code,elevation_min,elevation_max,latitude_deg_min,latitude_min_min,latitude_sec_min,latitude_deg_max,latitude_min_max,latitude_sec_max,longitude_deg_min,longitude_min_min,longitude_sec_min,longitude_deg_max,longitude_min_max,longitude_sec_max,smp_mean_bv_growth,area_of_use_comment,approved_timestamp,approved_userid,update_userid,update_timestamp,revision_count)
+    INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,interm_strg_locn,declared_userid,declared_timestamp,entry_userid,entry_timestamp,seed_plan_unit_id,bgc_zone_code,bgc_subzone_code,variant,bec_version_id,elevation,latitude_degrees,latitude_minutes,latitude_seconds,longitude_degrees,longitude_minutes,longitude_seconds,collection_elevation,collection_elevation_min,collection_elevation_max,collection_latitude_deg,collection_latitude_min,collection_latitude_sec,collection_latitude_code,collection_longitude_deg,collection_longitude_min,collection_longitude_sec,collection_longitude_code,elevation_min,elevation_max,latitude_deg_min,latitude_min_min,latitude_sec_min,latitude_deg_max,latitude_min_max,latitude_sec_max,longitude_deg_min,longitude_min_min,longitude_sec_min,longitude_deg_max,longitude_min_max,longitude_sec_max,smp_mean_bv_growth,area_of_use_comment,approved_timestamp,approved_userid,update_userid,update_timestamp,revision_count)               
     VALUES(
     /*spar_audit_code                */ 'D',
     /*db_user                 	     */ session_user::TEXT,
@@ -2822,7 +2816,7 @@ BEGIN
     /*declared_timestamp             */ OLD.declared_timestamp,
     /*entry_userid                   */ OLD.entry_userid,
     /*entry_timestamp                */ OLD.entry_timestamp,
-
+	
 	/*seed_plan_unit_id              */ OLD.seed_plan_unit_id,
     /*bgc_zone_code                  */ OLD.bgc_zone_code,
     /*bgc_subzone_code               */ OLD.bgc_subzone_code,
@@ -2864,7 +2858,7 @@ BEGIN
     /*area_of_use_comment            */ OLD.area_of_use_comment,
     /*approved_timestamp             */ OLD.approved_timestamp,
     /*approved_userid                */ OLD.approved_userid,
-
+	
     /*update_userid                  */ OLD.update_userid,
     /*update_timestamp               */ OLD.update_timestamp,
     /*revision_count                 */ OLD.revision_count
@@ -2872,7 +2866,7 @@ BEGIN
         RETURN OLD;
     elsif (TG_OP = 'INSERT') then
         v_new_data := ROW(NEW.*);
-        INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,interm_strg_locn,declared_userid,declared_timestamp,entry_userid,entry_timestamp,seed_plan_unit_id,bgc_zone_code,bgc_subzone_code,variant,bec_version_id,elevation,latitude_degrees,latitude_minutes,latitude_seconds,longitude_degrees,longitude_minutes,longitude_seconds,collection_elevation,collection_elevation_min,collection_elevation_max,collection_latitude_deg,collection_latitude_min,collection_latitude_sec,collection_latitude_code,collection_longitude_deg,collection_longitude_min,collection_longitude_sec,collection_longitude_code,elevation_min,elevation_max,latitude_deg_min,latitude_min_min,latitude_sec_min,latitude_deg_max,latitude_min_max,latitude_sec_max,longitude_deg_min,longitude_min_min,longitude_sec_min,longitude_deg_max,longitude_min_max,longitude_sec_max,smp_mean_bv_growth,area_of_use_comment,approved_timestamp,approved_userid,update_userid,update_timestamp,revision_count)
+        INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,interm_strg_locn,declared_userid,declared_timestamp,entry_userid,entry_timestamp,seed_plan_unit_id,bgc_zone_code,bgc_subzone_code,variant,bec_version_id,elevation,latitude_degrees,latitude_minutes,latitude_seconds,longitude_degrees,longitude_minutes,longitude_seconds,collection_elevation,collection_elevation_min,collection_elevation_max,collection_latitude_deg,collection_latitude_min,collection_latitude_sec,collection_latitude_code,collection_longitude_deg,collection_longitude_min,collection_longitude_sec,collection_longitude_code,elevation_min,elevation_max,latitude_deg_min,latitude_min_min,latitude_sec_min,latitude_deg_max,latitude_min_max,latitude_sec_max,longitude_deg_min,longitude_min_min,longitude_sec_min,longitude_deg_max,longitude_min_max,longitude_sec_max,smp_mean_bv_growth,area_of_use_comment,approved_timestamp,approved_userid,update_userid,update_timestamp,revision_count)               
     VALUES(
     /*spar_audit_code                */ 'I',
     /*db_user                 	     */ session_user::TEXT,
@@ -2926,7 +2920,7 @@ BEGIN
     /*declared_timestamp             */ NEW.declared_timestamp,
     /*entry_userid                   */ NEW.entry_userid,
     /*entry_timestamp                */ NEW.entry_timestamp,
-
+	
 	/*seed_plan_unit_id              */ NEW.seed_plan_unit_id,
     /*bgc_zone_code                  */ NEW.bgc_zone_code,
     /*bgc_subzone_code               */ NEW.bgc_subzone_code,
@@ -2968,7 +2962,7 @@ BEGIN
     /*area_of_use_comment            */ NEW.area_of_use_comment,
     /*approved_timestamp             */ NEW.approved_timestamp,
     /*approved_userid                */ NEW.approved_userid,
-
+	
     /*update_userid                  */ NEW.update_userid,
     /*update_timestamp               */ NEW.update_timestamp,
     /*revision_count                 */ NEW.revision_count
@@ -2981,15 +2975,15 @@ BEGIN
 
 EXCEPTION
     WHEN data_exception then
-        --insert into spar.error_catch (erro) VALUES(CONCAT('DATA EXCEPTION ',SQLERRM));
+        --insert into spar.error_catch (erro) VALUES(CONCAT('DATA EXCEPTION ',SQLERRM));       
         RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [DATA EXCEPTION] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
         RETURN NULL;
     WHEN unique_violation then
-      --insert into spar.error_catch (erro) VALUES(CONCAT('UNIQUE EXCEPTION ',SQLERRM));
+      --insert into spar.error_catch (erro) VALUES(CONCAT('UNIQUE EXCEPTION ',SQLERRM));	   
         RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [UNIQUE] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
         RETURN NULL;
     WHEN others then
-        --insert into spar.error_catch (erro) VALUES(CONCAT(v_auditrevision, CONCAT('OTHER EXCEPTION ',SQLERRM)));
+        --insert into spar.error_catch (erro) VALUES(CONCAT(v_auditrevision, CONCAT('OTHER EXCEPTION ',SQLERRM)));       
         RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [OTHER] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
         RETURN NULL;
 END;
@@ -3040,7 +3034,7 @@ comment on column spar.seedlot_audit.longitude_sec_max          is 'Referring va
 comment on column spar.seedlot_audit.smp_mean_bv_growth         is 'Referring value for spar.seedlot.smp_mean_bv_growth column';
 comment on column spar.seedlot_audit.area_of_use_comment        is 'Referring value for spar.seedlot.area_of_use_comment column';
 
-/*
+/*  
 -- Function to fix Insert/Update/Delete staments executed on seedlot the table.
 -- Should be used in a trigger on the seedlot table
 -- trigger statement in the bottom part of this script
@@ -3054,7 +3048,7 @@ BEGIN
     if (TG_OP = 'UPDATE') then
         v_old_data := ROW(OLD.*);
         v_new_data := ROW(NEW.*);
-    /* AUDIT REVISION number used to order the statements executed in the row */
+    /* AUDIT REVISION number used to order the statements executed in the row */ 
     v_auditrevision := (SELECT MAX(COALESCE(audit_revision_version,1))+1 FROM spar.seedlot_audit WHERE seedlot_number = NEW.seedlot_number);
         INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,interm_strg_locn,declared_userid,declared_timestamp,entry_userid,entry_timestamp,update_userid,update_timestamp,revision_count)
     VALUES(
@@ -3119,9 +3113,9 @@ BEGIN
         v_old_data := ROW(OLD.*);
     /* insert into spar.logged_actions (schema_name,table_name,user_name,action,original_data,query)
         values (TG_TABLE_SCHEMA::TEXT,TG_TABLE_NAME::TEXT,session_user::TEXT,substring(TG_OP,1,1),v_old_data, current_query());*/
-    /* AUDIT REVISION number used to order the statements executed in the row */
+    /* AUDIT REVISION number used to order the statements executed in the row */ 
     v_auditrevision := (SELECT MAX(COALESCE(audit_revision_version,1))+1 FROM spar.seedlot_audit WHERE seedlot_number = NEW.seedlot_number) ;
-    INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,interm_strg_locn,declared_userid,declared_timestamp,entry_userid,entry_timestamp,update_userid,update_timestamp,revision_count)
+    INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,interm_strg_locn,declared_userid,declared_timestamp,entry_userid,entry_timestamp,update_userid,update_timestamp,revision_count)               
     VALUES(
     /*spar_audit_code                */ 'D',
     /*db_user                 	     */ session_user::TEXT,
@@ -3182,7 +3176,7 @@ BEGIN
         RETURN OLD;
     elsif (TG_OP = 'INSERT') then
         v_new_data := ROW(NEW.*);
-        INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,interm_strg_locn,declared_userid,declared_timestamp,entry_userid,entry_timestamp,update_userid,update_timestamp,revision_count)
+        INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,interm_strg_locn,declared_userid,declared_timestamp,entry_userid,entry_timestamp,update_userid,update_timestamp,revision_count)               
     VALUES(
     /*spar_audit_code                */ 'I',
     /*db_user                 	     */ session_user::TEXT,
@@ -3248,15 +3242,15 @@ BEGIN
 
 EXCEPTION
     WHEN data_exception then
-        --insert into spar.error_catch (erro) VALUES(CONCAT('DATA EXCEPTION ',SQLERRM));
+        --insert into spar.error_catch (erro) VALUES(CONCAT('DATA EXCEPTION ',SQLERRM));       
         RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [DATA EXCEPTION] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
         RETURN NULL;
     WHEN unique_violation then
-      --insert into spar.error_catch (erro) VALUES(CONCAT('UNIQUE EXCEPTION ',SQLERRM));
+      --insert into spar.error_catch (erro) VALUES(CONCAT('UNIQUE EXCEPTION ',SQLERRM));	   
         RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [UNIQUE] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
         RETURN NULL;
     WHEN others then
-        --insert into spar.error_catch (erro) VALUES(CONCAT(v_auditrevision, CONCAT('OTHER EXCEPTION ',SQLERRM)));
+        --insert into spar.error_catch (erro) VALUES(CONCAT(v_auditrevision, CONCAT('OTHER EXCEPTION ',SQLERRM)));       
         RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [OTHER] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
         RETURN NULL;
 END;
@@ -3270,15 +3264,15 @@ DROP TRIGGER trg_seedlot_audit_DIU ON spar.seedlot;
 
 -- Trigger to be attached on spar.seedlot table
 CREATE TRIGGER trg_seedlot_audit_DIU
- AFTER INSERT OR UPDATE OR DELETE ON spar.seedlot
+ AFTER INSERT OR UPDATE OR DELETE ON spar.seedlot 
  FOR EACH ROW EXECUTE PROCEDURE spar.seedlot_if_modified_func();
-
+ 
 comment on column spar.seedlot_audit.seed_plan_unit_id          is 'Referring value for spar.seedlot.approved_timestamp column';
 comment on column spar.seedlot_audit.bgc_zone_code              is 'Referring value for spar.seedlot.approved_userid column';
 comment on column spar.seedlot_audit.approved_timestamp          is 'Referring value for spar.seedlot.approved_timestamp column';
 comment on column spar.seedlot_audit.approved_userid              is 'Referring value for spar.seedlot.approved_userid column';
 
-/*
+/*  
 -- Function to fix Insert/Update/Delete staments executed on seedlot the table.
 -- Should be used in a trigger on the seedlot table
 -- trigger statement in the bottom part of this script
@@ -3294,7 +3288,7 @@ BEGIN
     if (TG_OP = 'UPDATE') then
         v_old_data := ROW(OLD.*);
         v_new_data := ROW(NEW.*);
-    /* AUDIT REVISION number used to order the statements executed in the row */
+    /* AUDIT REVISION number used to order the statements executed in the row */ 
     v_auditrevision := (SELECT MAX(COALESCE(audit_revision_version,1))+1 FROM spar.seedlot_audit WHERE seedlot_number = NEW.seedlot_number);
         INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,interm_strg_locn,declared_userid,declared_timestamp,entry_userid,entry_timestamp,seed_plan_unit_id,bgc_zone_code,bgc_subzone_code,variant,bec_version_id,elevation,latitude_degrees,latitude_minutes,latitude_seconds,longitude_degrees,longitude_minutes,longitude_seconds,collection_elevation,collection_elevation_min,collection_elevation_max,collection_latitude_deg,collection_latitude_min,collection_latitude_sec,collection_latitude_code,collection_longitude_deg,collection_longitude_min,collection_longitude_sec,collection_longitude_code,elevation_min,elevation_max,latitude_deg_min,latitude_min_min,latitude_sec_min,latitude_deg_max,latitude_min_max,latitude_sec_max,longitude_deg_min,longitude_min_min,longitude_sec_min,longitude_deg_max,longitude_min_max,longitude_sec_max,smp_mean_bv_growth,area_of_use_comment,approved_timestamp,approved_userid,update_userid,update_timestamp,revision_count)
     VALUES(
@@ -3350,7 +3344,7 @@ BEGIN
     /*declared_timestamp             */ NEW.declared_timestamp,
     /*entry_userid                   */ NEW.entry_userid,
     /*entry_timestamp                */ NEW.entry_timestamp,
-
+	
     /*seed_plan_unit_id              */ NEW.seed_plan_unit_id,
     /*bgc_zone_code                  */ NEW.bgc_zone_code,
     /*bgc_subzone_code               */ NEW.bgc_subzone_code,
@@ -3392,7 +3386,7 @@ BEGIN
     /*area_of_use_comment            */ NEW.area_of_use_comment,
     /*approved_timestamp             */ NEW.approved_timestamp,
     /*approved_userid                */ NEW.approved_userid,
-
+	
     /*update_userid                  */ NEW.update_userid,
     /*update_timestamp               */ NEW.update_timestamp,
     /*revision_count                 */ NEW.revision_count
@@ -3402,9 +3396,9 @@ BEGIN
         v_old_data := ROW(OLD.*);
     /* insert into spar.logged_actions (schema_name,table_name,user_name,action,original_data,query)
         values (TG_TABLE_SCHEMA::TEXT,TG_TABLE_NAME::TEXT,session_user::TEXT,substring(TG_OP,1,1),v_old_data, current_query());*/
-    /* AUDIT REVISION number used to order the statements executed in the row */
+    /* AUDIT REVISION number used to order the statements executed in the row */ 
     v_auditrevision := (SELECT MAX(COALESCE(audit_revision_version,1))+1 FROM spar.seedlot_audit WHERE seedlot_number = NEW.seedlot_number) ;
-    INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,interm_strg_locn,declared_userid,declared_timestamp,entry_userid,entry_timestamp,seed_plan_unit_id,bgc_zone_code,bgc_subzone_code,variant,bec_version_id,elevation,latitude_degrees,latitude_minutes,latitude_seconds,longitude_degrees,longitude_minutes,longitude_seconds,collection_elevation,collection_elevation_min,collection_elevation_max,collection_latitude_deg,collection_latitude_min,collection_latitude_sec,collection_latitude_code,collection_longitude_deg,collection_longitude_min,collection_longitude_sec,collection_longitude_code,elevation_min,elevation_max,latitude_deg_min,latitude_min_min,latitude_sec_min,latitude_deg_max,latitude_min_max,latitude_sec_max,longitude_deg_min,longitude_min_min,longitude_sec_min,longitude_deg_max,longitude_min_max,longitude_sec_max,smp_mean_bv_growth,area_of_use_comment,approved_timestamp,approved_userid,update_userid,update_timestamp,revision_count)
+    INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,interm_strg_locn,declared_userid,declared_timestamp,entry_userid,entry_timestamp,seed_plan_unit_id,bgc_zone_code,bgc_subzone_code,variant,bec_version_id,elevation,latitude_degrees,latitude_minutes,latitude_seconds,longitude_degrees,longitude_minutes,longitude_seconds,collection_elevation,collection_elevation_min,collection_elevation_max,collection_latitude_deg,collection_latitude_min,collection_latitude_sec,collection_latitude_code,collection_longitude_deg,collection_longitude_min,collection_longitude_sec,collection_longitude_code,elevation_min,elevation_max,latitude_deg_min,latitude_min_min,latitude_sec_min,latitude_deg_max,latitude_min_max,latitude_sec_max,longitude_deg_min,longitude_min_min,longitude_sec_min,longitude_deg_max,longitude_min_max,longitude_sec_max,smp_mean_bv_growth,area_of_use_comment,approved_timestamp,approved_userid,update_userid,update_timestamp,revision_count)               
     VALUES(
     /*spar_audit_code                */ 'D',
     /*db_user                 	     */ session_user::TEXT,
@@ -3458,7 +3452,7 @@ BEGIN
     /*declared_timestamp             */ OLD.declared_timestamp,
     /*entry_userid                   */ OLD.entry_userid,
     /*entry_timestamp                */ OLD.entry_timestamp,
-
+	
 	/*seed_plan_unit_id              */ OLD.seed_plan_unit_id,
     /*bgc_zone_code                  */ OLD.bgc_zone_code,
     /*bgc_subzone_code               */ OLD.bgc_subzone_code,
@@ -3500,7 +3494,7 @@ BEGIN
     /*area_of_use_comment            */ OLD.area_of_use_comment,
     /*approved_timestamp             */ OLD.approved_timestamp,
     /*approved_userid                */ OLD.approved_userid,
-
+	
     /*update_userid                  */ OLD.update_userid,
     /*update_timestamp               */ OLD.update_timestamp,
     /*revision_count                 */ OLD.revision_count
@@ -3508,7 +3502,7 @@ BEGIN
         RETURN OLD;
     elsif (TG_OP = 'INSERT') then
         v_new_data := ROW(NEW.*);
-        INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,interm_strg_locn,declared_userid,declared_timestamp,entry_userid,entry_timestamp,seed_plan_unit_id,bgc_zone_code,bgc_subzone_code,variant,bec_version_id,elevation,latitude_degrees,latitude_minutes,latitude_seconds,longitude_degrees,longitude_minutes,longitude_seconds,collection_elevation,collection_elevation_min,collection_elevation_max,collection_latitude_deg,collection_latitude_min,collection_latitude_sec,collection_latitude_code,collection_longitude_deg,collection_longitude_min,collection_longitude_sec,collection_longitude_code,elevation_min,elevation_max,latitude_deg_min,latitude_min_min,latitude_sec_min,latitude_deg_max,latitude_min_max,latitude_sec_max,longitude_deg_min,longitude_min_min,longitude_sec_min,longitude_deg_max,longitude_min_max,longitude_sec_max,smp_mean_bv_growth,area_of_use_comment,approved_timestamp,approved_userid,update_userid,update_timestamp,revision_count)
+        INSERT INTO spar.seedlot_audit (spar_audit_code,db_user,audit_revision_version,seedlot_number,seedlot_status_code,applicant_client_number,applicant_locn_code,applicant_email_address,vegetation_code,genetic_class_code,seedlot_source_code,to_be_registrd_ind,bc_source_ind,collection_client_number,collection_locn_code,collection_start_date,collection_end_date,no_of_containers,vol_per_container,clctn_volume,seedlot_comment,interm_strg_client_number,interm_strg_locn_code,interm_strg_st_date,interm_strg_end_date,interm_facility_code,female_gametic_mthd_code,male_gametic_mthd_code,controlled_cross_ind,biotech_processes_ind,pollen_contamination_ind,pollen_contamination_pct,contaminant_pollen_bv,pollen_contamination_mthd_code,total_parent_trees,smp_success_pct,effective_pop_size,smp_parents_outside,non_orchard_pollen_contam_pct,extractory_client_number,extractory_locn_code,extraction_st_date,extraction_end_date,temporary_strg_client_number,temporary_strg_locn_code,temporary_strg_start_date,temporary_strg_end_date,interm_strg_locn,declared_userid,declared_timestamp,entry_userid,entry_timestamp,seed_plan_unit_id,bgc_zone_code,bgc_subzone_code,variant,bec_version_id,elevation,latitude_degrees,latitude_minutes,latitude_seconds,longitude_degrees,longitude_minutes,longitude_seconds,collection_elevation,collection_elevation_min,collection_elevation_max,collection_latitude_deg,collection_latitude_min,collection_latitude_sec,collection_latitude_code,collection_longitude_deg,collection_longitude_min,collection_longitude_sec,collection_longitude_code,elevation_min,elevation_max,latitude_deg_min,latitude_min_min,latitude_sec_min,latitude_deg_max,latitude_min_max,latitude_sec_max,longitude_deg_min,longitude_min_min,longitude_sec_min,longitude_deg_max,longitude_min_max,longitude_sec_max,smp_mean_bv_growth,area_of_use_comment,approved_timestamp,approved_userid,update_userid,update_timestamp,revision_count)               
     VALUES(
     /*spar_audit_code                */ 'I',
     /*db_user                 	     */ session_user::TEXT,
@@ -3562,7 +3556,7 @@ BEGIN
     /*declared_timestamp             */ NEW.declared_timestamp,
     /*entry_userid                   */ NEW.entry_userid,
     /*entry_timestamp                */ NEW.entry_timestamp,
-
+	
 	/*seed_plan_unit_id              */ NEW.seed_plan_unit_id,
     /*bgc_zone_code                  */ NEW.bgc_zone_code,
     /*bgc_subzone_code               */ NEW.bgc_subzone_code,
@@ -3604,7 +3598,7 @@ BEGIN
     /*area_of_use_comment            */ NEW.area_of_use_comment,
     /*approved_timestamp             */ NEW.approved_timestamp,
     /*approved_userid                */ NEW.approved_userid,
-
+	
     /*update_userid                  */ NEW.update_userid,
     /*update_timestamp               */ NEW.update_timestamp,
     /*revision_count                 */ NEW.revision_count
@@ -3617,15 +3611,15 @@ BEGIN
 
 EXCEPTION
     WHEN data_exception then
-        --insert into spar.error_catch (erro) VALUES(CONCAT('DATA EXCEPTION ',SQLERRM));
+        --insert into spar.error_catch (erro) VALUES(CONCAT('DATA EXCEPTION ',SQLERRM));       
         RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [DATA EXCEPTION] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
         RETURN NULL;
     WHEN unique_violation then
-      --insert into spar.error_catch (erro) VALUES(CONCAT('UNIQUE EXCEPTION ',SQLERRM));
+      --insert into spar.error_catch (erro) VALUES(CONCAT('UNIQUE EXCEPTION ',SQLERRM));	   
         RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [UNIQUE] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
         RETURN NULL;
     WHEN others then
-        --insert into spar.error_catch (erro) VALUES(CONCAT(v_auditrevision, CONCAT('OTHER EXCEPTION ',SQLERRM)));
+        --insert into spar.error_catch (erro) VALUES(CONCAT(v_auditrevision, CONCAT('OTHER EXCEPTION ',SQLERRM)));       
         RAISE WARNING '[AUDIT.IF_MODIFIED_FUNC] - UDF ERROR [OTHER] - SQLSTATE: %, SQLERRM: %',SQLSTATE,SQLERRM;
         RETURN NULL;
 END;
@@ -4351,7 +4345,7 @@ DROP TRIGGER trg_seedlot_audit_DIU ON spar.seedlot;
 
 -- Trigger to be attached on spar.seedlot table
 CREATE TRIGGER trg_seedlot_audit_DIU
- AFTER INSERT OR UPDATE OR DELETE ON spar.seedlot
+ AFTER INSERT OR UPDATE OR DELETE ON spar.seedlot 
  FOR EACH ROW EXECUTE PROCEDURE spar.seedlot_if_modified_func();
 
 
@@ -4420,13 +4414,13 @@ ADD CONSTRAINT unique_seedlot_orchard_key UNIQUE (seedlot_number, orchard_id);
 
 
 
-/*
+/* 
 ----- ETL Tool Changes after PoC (LATEST VERSION=V_36)
 */
 
 /* ---------------------------
-DDL
-------------------------------   */
+DDL 
+------------------------------   */ 
 
 DROP TABLE IF EXISTS spar.ETL_EXECUTION_MAP;
 DROP TABLE IF EXISTS spar.ETL_EXECUTION_LOG;
@@ -4464,21 +4458,21 @@ comment on column spar.ETL_EXECUTION_MAP.interface_id               is 'Unique i
 comment on column spar.ETL_EXECUTION_MAP.execution_id               is 'Execution ID number to represent a instance of interface_id. Part of the composite PK, with interface_id column.';
 comment on column spar.ETL_EXECUTION_MAP.execution_parent_id        is 'Reference to a parent execution ID that groups one or more execution_id in a batch run. If null, then this execution_id is a parent.';
 comment on column spar.ETL_EXECUTION_MAP.execution_order            is 'Order of execution of this instance in a collection of same execution_parent_id. Execution runs in ascending order. If it is less than 0, it will not run.';
-comment on column spar.ETL_EXECUTION_MAP.source_file                is 'Source instruction file for batch execution';
-comment on column spar.ETL_EXECUTION_MAP.source_db_type             is 'Database type of the source connection. Expected ORACLE or POSTGRES.';
-comment on column spar.ETL_EXECUTION_MAP.source_name                is 'Source name of this batch execution';
+comment on column spar.ETL_EXECUTION_MAP.source_file                is 'Source instruction file for batch execution'; 
+comment on column spar.ETL_EXECUTION_MAP.source_db_type             is 'Database type of the source connection. Expected ORACLE or POSTGRES.'; 
+comment on column spar.ETL_EXECUTION_MAP.source_name                is 'Source name of this batch execution'; 
 comment on column spar.ETL_EXECUTION_MAP.source_table               is 'Source table (if it is a single table) of this batch execution';
-comment on column spar.ETL_EXECUTION_MAP.target_file                is 'Target instruction file for batch execution';
-comment on column spar.ETL_EXECUTION_MAP.target_db_type             is 'Database type of the target connection. Expected ORACLE or POSTGRES.';
-comment on column spar.ETL_EXECUTION_MAP.target_name                is 'Target name of this batch execution';
-comment on column spar.ETL_EXECUTION_MAP.target_table               is 'Target table (if it is a single table) of this batch execution';
-comment on column spar.ETL_EXECUTION_MAP.target_primary_key         is 'Primary key of the target table of this batch execution';
-comment on column spar.ETL_EXECUTION_MAP.run_mode                   is 'Identifies how data is replicated:DELETE_INSERT,UPSERT,UPSERT_WTIH_DELETE';
-comment on column spar.ETL_EXECUTION_MAP.upsert_with_delete_key     is 'For run_mode UPSERT_WTIH_DELETE, specifies the WHERE clause columns for delete';
-comment on column spar.ETL_EXECUTION_MAP.ignore_columns_on_update   is 'Comma seperated list of columns to ignore when updating';
-comment on column spar.ETL_EXECUTION_MAP.retry_errors        		    is 'If true, this process will execute again old instances with errors in ETL_EXECUTION_LOG_HIST';
-comment on column spar.ETL_EXECUTION_MAP.updated_at                 is 'Timestamp of the last time this record was updated';
-comment on column spar.ETL_EXECUTION_MAP.created_at                 is 'Timestamp of the time this record was created';
+comment on column spar.ETL_EXECUTION_MAP.target_file                is 'Target instruction file for batch execution'; 
+comment on column spar.ETL_EXECUTION_MAP.target_db_type             is 'Database type of the target connection. Expected ORACLE or POSTGRES.'; 
+comment on column spar.ETL_EXECUTION_MAP.target_name                is 'Target name of this batch execution'; 
+comment on column spar.ETL_EXECUTION_MAP.target_table               is 'Target table (if it is a single table) of this batch execution'; 
+comment on column spar.ETL_EXECUTION_MAP.target_primary_key         is 'Primary key of the target table of this batch execution'; 
+comment on column spar.ETL_EXECUTION_MAP.run_mode                   is 'Identifies how data is replicated:DELETE_INSERT,UPSERT,UPSERT_WTIH_DELETE'; 
+comment on column spar.ETL_EXECUTION_MAP.upsert_with_delete_key     is 'For run_mode UPSERT_WTIH_DELETE, specifies the WHERE clause columns for delete'; 
+comment on column spar.ETL_EXECUTION_MAP.ignore_columns_on_update   is 'Comma seperated list of columns to ignore when updating'; 
+comment on column spar.ETL_EXECUTION_MAP.retry_errors        		    is 'If true, this process will execute again old instances with errors in ETL_EXECUTION_LOG_HIST'; 
+comment on column spar.ETL_EXECUTION_MAP.updated_at                 is 'Timestamp of the last time this record was updated'; 
+comment on column spar.ETL_EXECUTION_MAP.created_at                 is 'Timestamp of the time this record was created'; 
 
 create table spar.ETL_EXECUTION_LOG(
 from_timestamp timestamp not null,
@@ -4490,11 +4484,11 @@ created_at  timestamp   default now() not null
 
 
 comment on table spar.ETL_EXECUTION_LOG is 'ETL Tool monitoring table to store execution current instance of batch processing interfaces';
-comment on column spar.ETL_EXECUTION_LOG.from_timestamp             is 'From timestamp for the run (i.e. update_timestamp between from_timestamp and to_timetsamp)';
-comment on column spar.ETL_EXECUTION_LOG.to_timestamp               is 'To timestamp for the run (i.e. update_timestamp between from_timestamp and to_timetsamp)';
-comment on column spar.ETL_EXECUTION_LOG.run_status                 is 'Status of ETL execution';
-comment on column spar.ETL_EXECUTION_LOG.updated_at                 is 'Timestamp of the last time this record was updated';
-comment on column spar.ETL_EXECUTION_LOG.created_at                 is 'Timestamp of the time this record was created';
+comment on column spar.ETL_EXECUTION_LOG.from_timestamp             is 'From timestamp for the run (i.e. update_timestamp between from_timestamp and to_timetsamp)'; 
+comment on column spar.ETL_EXECUTION_LOG.to_timestamp               is 'To timestamp for the run (i.e. update_timestamp between from_timestamp and to_timetsamp)'; 
+comment on column spar.ETL_EXECUTION_LOG.run_status                 is 'Status of ETL execution'; 
+comment on column spar.ETL_EXECUTION_LOG.updated_at                 is 'Timestamp of the last time this record was updated'; 
+comment on column spar.ETL_EXECUTION_LOG.created_at                 is 'Timestamp of the time this record was created'; 
 
 
 create table spar.ETL_EXECUTION_SCHEDULE(
@@ -4511,10 +4505,10 @@ constraint etl_execution_schedule_pk
 comment on table  spar.ETL_EXECUTION_SCHEDULE 				is 'ETL Tool schedule table to define what delta time should be used in the next execution';
 comment on column spar.ETL_EXECUTION_SCHEDULE.interface_id       is 'Unique interface name to represent a batch execution. Refer to EXECUTION_MAP table PK';
 comment on column spar.ETL_EXECUTION_SCHEDULE.execution_id       is 'The execution ID that represent a batch execution. Refer to EXECUTION_MAP table PK';
-comment on column spar.ETL_EXECUTION_SCHEDULE.last_run_ts        is 'Last timestamp this interface/execution_id was executed for batch execution';
-comment on column spar.ETL_EXECUTION_SCHEDULE.current_run_ts     is 'Current timestamp this interface was executed of this batch execution. It will be the next last_run_ts for this execution.';
-comment on column spar.ETL_EXECUTION_SCHEDULE.updated_at         is 'Timestamp of the last time this record was updated';
-comment on column spar.ETL_EXECUTION_SCHEDULE.created_at         is 'Timestamp of the time this record was created';
+comment on column spar.ETL_EXECUTION_SCHEDULE.last_run_ts        is 'Last timestamp this interface/execution_id was executed for batch execution'; 
+comment on column spar.ETL_EXECUTION_SCHEDULE.current_run_ts     is 'Current timestamp this interface was executed of this batch execution. It will be the next last_run_ts for this execution.'; 
+comment on column spar.ETL_EXECUTION_SCHEDULE.updated_at         is 'Timestamp of the last time this record was updated'; 
+comment on column spar.ETL_EXECUTION_SCHEDULE.created_at         is 'Timestamp of the time this record was created'; 
 
 
 create table spar.etl_execution_log_hist
@@ -4525,266 +4519,266 @@ comment on table  spar.ETL_EXECUTION_LOG_HIST is 'ETL Tool monitoring table to s
 comment on column spar.ETL_EXECUTION_LOG_HIST.entry_timestamp      		  is 'The timestamp when the record was inserted';
 comment on column spar.ETL_EXECUTION_LOG_HIST.log_details       		    is 'JSON document with step statistics';
 
-/*
+/* 
 -- DML for Generic interface_id for generic running
 */
 
 /* ORACLE TO POSTGRES ORCHESTRATION: TEST EXECUTION */
 insert into spar.etl_execution_map(execution_id, execution_parent_id ,interface_id, source_file,source_name, source_table, source_db_type,
                                    target_file,target_name, target_table, target_db_type,target_primary_key, execution_order)
-select 0 				as execution_id,
+select 0 				as execution_id, 
        null 			as execution_parent_id ,
-       'ETL-RUN-ORACLE-TO-POSTGRES-TEST' 		as interface_id,
+       'ETL-RUN-ORACLE-TO-POSTGRES-TEST' 		as interface_id, 
        null 			as source_file,
-       'MAIN PROCESS FROM ORACLE' 	as source_name,
+       'MAIN PROCESS FROM ORACLE' 	as source_name, 
        null 			as source_table,
        null 			as source_db_type,
        null 			as target_file,
-       'MAIN PROCESS TO POSTGRES' 	as target_name,
-       null 			as target_table,
+       'MAIN PROCESS TO POSTGRES' 	as target_name, 
+       null 			as target_table, 
        null 			as target_db_type,
-       null 			as target_primary_key,
+       null 			as target_primary_key, 
 	   0 				as execution_order
 where not exists (select 1 from spar.etl_execution_map where interface_id = 'ETL-RUN-ORACLE-TO-POSTGRES-TEST');
 
 insert into spar.etl_execution_map(execution_id, execution_parent_id ,interface_id, source_file,source_name, source_table, source_db_type,
                                    target_file,target_name, target_table, target_db_type,target_primary_key, execution_order)
-select 1 										as execution_id,
+select 1 										as execution_id, 
        0 										as execution_parent_id ,
-       'SPAR-SEEDLOT-ORACLE-TO-POSTGRES-TEST' 	    as interface_id,
+       'SPAR-SEEDLOT-ORACLE-TO-POSTGRES-TEST' 	    as interface_id, 
        '/SQL/SPAR/ORACLE_SEEDLOT_EXTRACT.sql'   as source_file,
-       'ORACLE THE'                 			as source_name,
+       'ORACLE THE'                 			as source_name, 
        'SEEDLOT'               	    			as source_table,
        'ORACLE'               	    			as source_db_type,
        '/SQL/SPAR/POSTGRES_SEEDLOT_UPSERT.sql' 	as target_file,
-       'NEW SPAR' 								as target_name,
-       'spar.seedlot' 							as target_table,
-       'POSTGRES' 								as target_db_type,
-       'seedlot_number' 						as target_primary_key,
+       'NEW SPAR' 								as target_name, 
+       'spar.seedlot' 							as target_table, 
+       'POSTGRES' 								as target_db_type, 
+       'seedlot_number' 						as target_primary_key, 
 	   1 										as execution_order
 where not exists (select 1 from spar.etl_execution_map where interface_id = 'SPAR-SEEDLOT-ORACLE-TO-POSTGRES-TEST');
 
 /* POSTGRES TO ORACLE ORCHESTRATION: TEST EXECUTION */
 insert into spar.etl_execution_map(execution_id, execution_parent_id ,interface_id, source_file,source_name, source_table, source_db_type,
                                    target_file,target_name, target_table, target_db_type,target_primary_key, execution_order)
-select 2 				as execution_id,
+select 2 				as execution_id, 
        null 			as execution_parent_id ,
-       'ETL-RUN-POSTGRES-TO-ORACLE-TEST' 		as interface_id,
+       'ETL-RUN-POSTGRES-TO-ORACLE-TEST' 		as interface_id, 
        null 			as source_file,
-       'MAIN PROCESS FROM `POSTGRES' 	    as source_name,
+       'MAIN PROCESS FROM `POSTGRES' 	    as source_name, 
        null 			as source_table,
        null 			as source_db_type,
        null 			as target_file,
-       'MAIN PROCESS TO ORACLE' 	        as target_name,
-       null 			as target_table,
-       null 			as target_db_type,
-       null 			as target_primary_key,
+       'MAIN PROCESS TO ORACLE' 	        as target_name, 
+       null 			as target_table, 
+       null 			as target_db_type, 
+       null 			as target_primary_key, 
 	   0 				as execution_order
 where not exists (select 1 from spar.etl_execution_map where interface_id = 'ETL-RUN-POSTGRES-TO-ORACLE-TEST');
 
 insert into spar.etl_execution_map(execution_id, execution_parent_id ,interface_id, source_file,source_name, source_table, source_db_type,
                                    target_file,target_name, target_table, target_db_type,target_primary_key, execution_order)
-select 3 										as execution_id,
+select 3 										as execution_id, 
        2 										as execution_parent_id ,
-       'SEEDLOT-ORACLE-TO-SPAR-POSTGRES-TEST' 	    as interface_id,
+       'SEEDLOT-ORACLE-TO-SPAR-POSTGRES-TEST' 	    as interface_id, 
        '/SQL/SPAR/POSTGRES_SEEDLOT_EXTRACT.sql' as source_file,
-       'NEW SPAR'                    			as source_name,
+       'NEW SPAR'                    			as source_name, 
        'spar.seedlot'          	    			as source_table,
        'POSTGRES'          	    				as source_db_type,
        '/SQL/SPAR/ORACLE_SEEDLOT_LOAD.sql' 	    as target_file,
-       'ORACLE THE' 							as target_name,
-       'SEEDLOT' 							    as target_table,
-       'ORACLE' 							    as target_db_type,
-       'seedlot_number' 						as target_primary_key,
+       'ORACLE THE' 							as target_name, 
+       'SEEDLOT' 							    as target_table, 
+       'ORACLE' 							    as target_db_type, 
+       'seedlot_number' 						as target_primary_key, 
 	   1 										as execution_order
 where not exists (select 1 from spar.etl_execution_map where interface_id = 'SEEDLOT-ORACLE-TO-SPAR-POSTGRES-TEST');
 
 ---- MAIN EXECUTION
 -- Processes gathering data from Oracle to Postgres (First to bring all historical data)
 
--- INCLUDING PROCESS SMP_MIX from Oracle to Postgres in EXECUTION_ID=0
+-- INCLUDING PROCESS SMP_MIX from Oracle to Postgres in EXECUTION_ID=0 
 insert into spar.etl_execution_map(execution_id, execution_parent_id ,interface_id, source_file,source_name, source_table, source_db_type,
                                    target_file,target_name, target_table, target_db_type,target_primary_key, execution_order)
-select 4 										as execution_id,
+select 4 										as execution_id, 
        0 										as execution_parent_id ,
-       'SPAR-SMPMIX-ORACLE-TO-POSTGRES-TEST' 	    as interface_id,
+       'SPAR-SMPMIX-ORACLE-TO-POSTGRES-TEST' 	    as interface_id, 
        '/SQL/SPAR/ORACLE_SMP_MIX_EXTRACT.sql'   as source_file,
-       'ORACLE THE'                 			as source_name,
+       'ORACLE THE'                 			as source_name, 
        'SMP_MIX'               	    			as source_table,
        'ORACLE'               	    			as source_db_type,
        '/SQL/SPAR/POSTGRES_SMP_MIX_UPSERT.sql' 	as target_file,
-       'NEW SPAR' 								as target_name,
-       'spar.smp_mix' 							as target_table,
-       'POSTGRES' 								as target_db_type,
-       'seedlot_number,parent_tree_id' 			as target_primary_key,
+       'NEW SPAR' 								as target_name, 
+       'spar.smp_mix' 							as target_table, 
+       'POSTGRES' 								as target_db_type, 
+       'seedlot_number,parent_tree_id' 			as target_primary_key, 
 	   2 										as execution_order
 where not exists (select 1 from spar.etl_execution_map where interface_id = 'SPAR-SMPMIX-ORACLE-TO-POSTGRES-TEST');
 
 insert into spar.etl_execution_map(execution_id, execution_parent_id ,interface_id, source_file,source_name, source_table, source_db_type,
                                    target_file,target_name, target_table, target_db_type,target_primary_key, execution_order)
-select 5 										as execution_id,
+select 5 										as execution_id, 
        0 										as execution_parent_id ,
-       'SPAR-SMPMIX-GEN-QLTY-ORACLE-TO-POSTGRES-TEST' 	    as interface_id,
+       'SPAR-SMPMIX-GEN-QLTY-ORACLE-TO-POSTGRES-TEST' 	    as interface_id, 
        '/SQL/SPAR/ORACLE_SMP_MIX_GEN_QLTY_EXTRACT.sql'   as source_file,
-       'ORACLE THE'                 			as source_name,
+       'ORACLE THE'                 			as source_name, 
        'SMP_MIX_GEN_QLTY'               	    			as source_table,
        'ORACLE'               	    			as source_db_type,
        '/SQL/SPAR/POSTGRES_SMP_MIX_GEN_QLTY_UPSERT.sql' 	as target_file,
-       'NEW SPAR' 								as target_name,
-       'spar.smp_mix_gen_qlty' 							as target_table,
-       'POSTGRES' 								as target_db_type,
-       'seedlot_number,parent_tree_id,genetic_type_code,genetic_worth_code' 					as target_primary_key,
+       'NEW SPAR' 								as target_name, 
+       'spar.smp_mix_gen_qlty' 							as target_table, 
+       'POSTGRES' 								as target_db_type, 
+       'seedlot_number,parent_tree_id,genetic_type_code,genetic_worth_code' 					as target_primary_key, 
 	   3 										as execution_order
 where not exists (select 1 from spar.etl_execution_map where interface_id = 'SPAR-SMPMIX-GEN-QLTY-ORACLE-TO-POSTGRES-TEST');
 
 
--- INCLUDING PROCESS SEEDLOT_PARENT_TREE_SMP_MIX from Oracle to Postgres in EXECUTION_ID=0
+-- INCLUDING PROCESS SEEDLOT_PARENT_TREE_SMP_MIX from Oracle to Postgres in EXECUTION_ID=0 
 insert into spar.etl_execution_map(execution_id, execution_parent_id ,interface_id, source_file,source_name, source_table, source_db_type,
                                    target_file,target_name, target_table, target_db_type,target_primary_key, execution_order)
-select 6 										as execution_id,
+select 6 										as execution_id, 
        0 										as execution_parent_id ,
-       'SPAR-SEEDLOT-PARENT-TREE-ORACLE-TO-POSTGRES-TEST' 	    as interface_id,
-       '/SQL/SPAR/ORACLE_SEEDLOT_PARENT_TREE_EXTRACT.sql'   as source_file,
-       'ORACLE THE'                 			as source_name,
+       'SPAR-SEEDLOT-PARENT-TREE-ORACLE-TO-POSTGRES-TEST' 	    as interface_id, 
+       '/SQL/SPAR/ORACLE_SEEDLOT_PARENT_TREE_EXTRACT.sql'   as source_file, 
+       'ORACLE THE'                 			as source_name, 
        'SEEDLOT_PARENT_TREE'               	    as source_table,
        'ORACLE'               	    			as source_db_type,
        '/SQL/SPAR/POSTGRES_SEEDLOT_PARENT_TREE_UPSERT.sql' 	as target_file,
-       'NEW SPAR' 								as target_name,
-       'spar.seedlot_parent_tree' 				as target_table,
-       'POSTGRES' 								as target_db_type,
-       'seedlot_number,parent_tree_id'          as target_primary_key,
+       'NEW SPAR' 								as target_name, 
+       'spar.seedlot_parent_tree' 				as target_table, 
+       'POSTGRES' 								as target_db_type, 
+       'seedlot_number,parent_tree_id'          as target_primary_key, 
 	   4 										as execution_order
 where not exists (select 1 from spar.etl_execution_map where interface_id = 'SPAR-SEEDLOT-PARENT-TREE-ORACLE-TO-POSTGRES-TEST');
 
--- INCLUDING PROCESS SEEDLOT_PARENT_TREE_SMP_MIX from Oracle to Postgres in EXECUTION_ID=0
+-- INCLUDING PROCESS SEEDLOT_PARENT_TREE_SMP_MIX from Oracle to Postgres in EXECUTION_ID=0 
 insert into spar.etl_execution_map(execution_id, execution_parent_id ,interface_id, source_file,source_name, source_table, source_db_type,
                                    target_file,target_name, target_table, target_db_type,target_primary_key, execution_order)
-select 7 										as execution_id,
+select 7 										as execution_id, 
        0 										as execution_parent_id ,
-       'SPAR-SEEDLOT-PARENT-TREE-SMPMIX-ORACLE-TO-POSTGRES-TEST' 	    as interface_id,
-       '/SQL/SPAR/ORACLE_PARENT_TREE_SMPMIX_EXTRACT.sql'   as source_file,
-       'ORACLE THE'                 			as source_name,
+       'SPAR-SEEDLOT-PARENT-TREE-SMPMIX-ORACLE-TO-POSTGRES-TEST' 	    as interface_id, 
+       '/SQL/SPAR/ORACLE_PARENT_TREE_SMPMIX_EXTRACT.sql'   as source_file, 
+       'ORACLE THE'                 			as source_name, 
        'SMP_MIX_GEN_QLTY'               	   	as source_table,
        'ORACLE'               	    			as source_db_type,
        '/SQL/SPAR/POSTGRES_PARENT_TREE_SMPMIX_UPSERT.sql' 	as target_file,
-       'NEW SPAR' 								as target_name,
-       'spar.seedlot_parent_tree_smp_mix' 							as target_table,
-       'POSTGRES' 								as target_db_type,
-       'seedlot_number,parent_tree_id,genetic_type_code,genetic_worth_code' 					as target_primary_key,
+       'NEW SPAR' 								as target_name, 
+       'spar.seedlot_parent_tree_smp_mix' 							as target_table, 
+       'POSTGRES' 								as target_db_type, 
+       'seedlot_number,parent_tree_id,genetic_type_code,genetic_worth_code' 					as target_primary_key, 
 	   5 										as execution_order
 where not exists (select 1 from spar.etl_execution_map where interface_id = 'SPAR-SEEDLOT-PARENT-TREE-SMPMIX-ORACLE-TO-POSTGRES-TEST');
 
--- INCLUDING PROCESS SEEDLOT_ORCHARD from Oracle to Postgres in EXECUTION_ID=0
+-- INCLUDING PROCESS SEEDLOT_ORCHARD from Oracle to Postgres in EXECUTION_ID=0  
 insert into spar.etl_execution_map(execution_id, execution_parent_id ,interface_id, source_file,source_name, source_table, source_db_type,
                                    target_file,target_name, target_table, target_db_type,target_primary_key, execution_order)
-select 8 										as execution_id,
+select 8 										as execution_id, 
        0 										as execution_parent_id ,
-       'SPAR-SEEDLOT-ORCHARD-ORACLE-TO-POSTGRES-TEST' 	    as interface_id,
+       'SPAR-SEEDLOT-ORCHARD-ORACLE-TO-POSTGRES-TEST' 	    as interface_id, 
        '/SQL/SPAR/ORACLE_SEEDLOT_ORCHARD_EXTRACT.sql'   as source_file, -- SAME AS SMP_MIX_GEN_QLTY Extract (same structure)
-       'ORACLE THE'                 			as source_name,
+       'ORACLE THE'                 			as source_name, 
        'SEEDLOT'               	    			as source_table,
        'ORACLE'               	    			as source_db_type,
        '/SQL/SPAR/POSTGRES_SEEDLOT_ORCHARD_UPSERT.sql' 	as target_file,
-       'NEW SPAR' 								as target_name,
-       'spar.seedlot_orchard' 					as target_table,
-       'POSTGRES' 								as target_db_type,
-       'seedlot_number,primary_ind' 			as target_primary_key,
+       'NEW SPAR' 								as target_name, 
+       'spar.seedlot_orchard' 					as target_table, 
+       'POSTGRES' 								as target_db_type, 
+       'seedlot_number,primary_ind' 			as target_primary_key, 
 	   6 										as execution_order
 where not exists (select 1 from spar.etl_execution_map where interface_id = 'SPAR-SEEDLOT-ORCHARD-ORACLE-TO-POSTGRES-TEST');
 
--- INCLUDING PROCESS SEEDLOT_GENETIC_WORTH from Oracle to Postgres in EXECUTION_ID=0
+-- INCLUDING PROCESS SEEDLOT_GENETIC_WORTH from Oracle to Postgres in EXECUTION_ID=0  
 insert into spar.etl_execution_map(execution_id, execution_parent_id ,interface_id, source_file,source_name, source_table, source_db_type,
                                    target_file,target_name, target_table, target_db_type,target_primary_key, execution_order)
-select 9 										as execution_id,
+select 9 										as execution_id, 
        0 										as execution_parent_id ,
-       'SPAR-SEEDLOT-GENETIC-WORTH-ORACLE-TO-POSTGRES-TEST' 	    as interface_id,
-       '/SQL/SPAR/ORACLE_SEEDLOT_GENETIC_WORTH_EXTRACT.sql'   as source_file,
-       'ORACLE THE'                 			as source_name,
+       'SPAR-SEEDLOT-GENETIC-WORTH-ORACLE-TO-POSTGRES-TEST' 	    as interface_id, 
+       '/SQL/SPAR/ORACLE_SEEDLOT_GENETIC_WORTH_EXTRACT.sql'   as source_file, 
+       'ORACLE THE'                 			as source_name, 
        'SMP_MIX_GEN_QLTY'           			as source_table,
        'ORACLE'               	    			as source_db_type,
        '/SQL/SPAR/POSTGRES_SEEDLOT_GENETIC_WORTH_UPSERT.sql' 	as target_file,
-       'NEW SPAR' 								as target_name,
-       'spar.seedlot_genetic_worth' 			as target_table,
-       'POSTGRES' 								as target_db_type,
-       'seedlot_number,genetic_worth_code' 		as target_primary_key,
+       'NEW SPAR' 								as target_name, 
+       'spar.seedlot_genetic_worth' 			as target_table, 
+       'POSTGRES' 								as target_db_type, 
+       'seedlot_number,genetic_worth_code' 		as target_primary_key, 
 	   7 										as execution_order
 where not exists (select 1 from spar.etl_execution_map where interface_id = 'SPAR-SEEDLOT-GENETIC-WORTH-ORACLE-TO-POSTGRES-TEST');
 
 
 
--- INCLUDING PROCESS SEEDLOT_OWNER_QUANTITY from Oracle to Postgres in EXECUTION_ID=0
+-- INCLUDING PROCESS SEEDLOT_OWNER_QUANTITY from Oracle to Postgres in EXECUTION_ID=0  
 insert into spar.etl_execution_map(execution_id, execution_parent_id ,interface_id, source_file,source_name, source_table, source_db_type,
                                    target_file,target_name, target_table, target_db_type,target_primary_key, execution_order)
-select 10 										as execution_id,
+select 10 										as execution_id, 
        0 										as execution_parent_id ,
-       'SPAR-SEEDLOT-OWNER-QUANTITY-ORACLE-TO-POSTGRES-TEST' 	    as interface_id,
+       'SPAR-SEEDLOT-OWNER-QUANTITY-ORACLE-TO-POSTGRES-TEST' 	    as interface_id, 
        '/SQL/SPAR/ORACLE_SEEDLOT_OWNER_QUANTITY_EXTRACT.sql'   as source_file, -- SAME AS SMP_MIX_GEN_QLTY Extract (same structure)
-       'ORACLE THE'                 			as source_name,
+       'ORACLE THE'                 			as source_name, 
        'SEEDLOT_OWNER_QUANTITY'           			as source_table,
        'ORACLE'               	    			as source_db_type,
        '/SQL/SPAR/POSTGRES_SEEDLOT_OWNER_QUANTITY_UPSERT.sql' 	as target_file,
-       'NEW SPAR' 								as target_name,
-       'spar.seedlot_owner_quantity' 			as target_table,
-       'POSTGRES' 								as target_db_type,
-       'seedlot_number,owner_client_number,owner_locn_code' 		as target_primary_key,
+       'NEW SPAR' 								as target_name, 
+       'spar.seedlot_owner_quantity' 			as target_table, 
+       'POSTGRES' 								as target_db_type, 
+       'seedlot_number,owner_client_number,owner_locn_code' 		as target_primary_key, 
 	   8 										as execution_order
 where not exists (select 1 from spar.etl_execution_map where interface_id = 'SPAR-SEEDLOT-OWNER-QUANTITY-ORACLE-TO-POSTGRES-TEST');
 
 
 
 
--- INCLUDING PROCESS seedlot_collection_method from Oracle to Postgres in EXECUTION_ID=0
+-- INCLUDING PROCESS seedlot_collection_method from Oracle to Postgres in EXECUTION_ID=0  
 insert into spar.etl_execution_map(execution_id, execution_parent_id ,interface_id, source_file,source_name, source_table, source_db_type,
                                    target_file,target_name, target_table, target_db_type,target_primary_key, execution_order)
-select 11 										as execution_id,
+select 11 										as execution_id, 
        0 										as execution_parent_id ,
-       'SPAR-SEEDLOT-COLLECTION-METHOD-ORACLE-TO-POSTGRES-TEST' 	    as interface_id,
+       'SPAR-SEEDLOT-COLLECTION-METHOD-ORACLE-TO-POSTGRES-TEST' 	    as interface_id, 
        '/SQL/SPAR/ORACLE_SEEDLOT_COLLECTION_METHOD_EXTRACT.sql'   as source_file, -- SAME AS SMP_MIX_GEN_QLTY Extract (same structure)
-       'ORACLE THE'                 			as source_name,
+       'ORACLE THE'                 			as source_name, 
        'CONE_COLLECTION_METHOD_CODE'       		as source_table,
        'ORACLE'               	    			as source_db_type,
        '/SQL/SPAR/POSTGRES_SEEDLOT_COLLECTION_METHOD_UPSERT.sql' 	as target_file,
-       'NEW SPAR' 								as target_name,
-       'spar.seedlot_collection_method' 		as target_table,
-       'POSTGRES' 								as target_db_type,
-       'seedlot_number,cone_collection_method_code' 		as target_primary_key,
+       'NEW SPAR' 								as target_name, 
+       'spar.seedlot_collection_method' 		as target_table, 
+       'POSTGRES' 								as target_db_type, 
+       'seedlot_number,cone_collection_method_code' 		as target_primary_key, 
 	   9 										as execution_order
 where not exists (select 1 from spar.etl_execution_map where interface_id = 'SPAR-SEEDLOT-COLLECTION-METHOD-ORACLE-TO-POSTGRES-TEST');
 
 
--- INCLUDING PROCESS SEEDLOT_PARENT_TREE_GEN_QLTY from Oracle to Postgres in EXECUTION_ID=0
+-- INCLUDING PROCESS SEEDLOT_PARENT_TREE_GEN_QLTY from Oracle to Postgres in EXECUTION_ID=0  
 insert into spar.etl_execution_map(execution_id, execution_parent_id ,interface_id, source_file,source_name, source_table, source_db_type,
                                    target_file,target_name, target_table, target_db_type,target_primary_key, execution_order)
-select 12 										as execution_id,
+select 12 										as execution_id, 
        0 										as execution_parent_id ,
-       'SPAR-SEEDLOT-PARENT-TREE-GEN-QLTY-ORACLE-TO-POSTGRES-TEST' 	    as interface_id,
+       'SPAR-SEEDLOT-PARENT-TREE-GEN-QLTY-ORACLE-TO-POSTGRES-TEST' 	    as interface_id, 
        '/SQL/SPAR/ORACLE_SEEDLOT_PARENT_TREE_GEN_QLTY_EXTRACT.sql'   as source_file, -- SAME AS SMP_MIX_GEN_QLTY Extract (same structure)
-       'ORACLE THE'                 			as source_name,
+       'ORACLE THE'                 			as source_name, 
        'SEEDLOT_PARENT_TREE_GEN_QLTY'       		as source_table,
        'ORACLE'               	    			as source_db_type,
        '/SQL/SPAR/POSTGRES_SEEDLOT_COLLECTION_METHOD_UPSERT.sql' 	as target_file,
-       'NEW SPAR' 								as target_name,
-       'spar.seedlot_parent_tree_gen_qlty' 		as target_table,
-       'POSTGRES' 								as target_db_type,
-       'seedlot_number,parent_tree_id,genetic_type_code,genetic_worth_code' 	as target_primary_key,
+       'NEW SPAR' 								as target_name, 
+       'spar.seedlot_parent_tree_gen_qlty' 		as target_table, 
+       'POSTGRES' 								as target_db_type, 
+       'seedlot_number,parent_tree_id,genetic_type_code,genetic_worth_code' 	as target_primary_key, 
 	   10 										as execution_order
 where not exists (select 1 from spar.etl_execution_map where interface_id = 'SPAR-SEEDLOT-PARENT-TREE-GEN-QLTY-ORACLE-TO-POSTGRES-TEST');
 
 
--- INCLUDING PROCESS SEEDLOT_SEED_PLAN_ZONE from Oracle to Postgres in EXECUTION_ID=0
+-- INCLUDING PROCESS SEEDLOT_SEED_PLAN_ZONE from Oracle to Postgres in EXECUTION_ID=0  
 insert into spar.etl_execution_map(execution_id, execution_parent_id ,interface_id, source_file,source_name, source_table, source_db_type,
                                    target_file,target_name, target_table, target_db_type,target_primary_key, execution_order)
-select 13 										as execution_id,
+select 13 										as execution_id, 
        0 										as execution_parent_id ,
-       'SPAR-SEEDLOT-SEED-PLAN-ZONE-ORACLE-TO-POSTGRES-TEST' 	    as interface_id,
+       'SPAR-SEEDLOT-SEED-PLAN-ZONE-ORACLE-TO-POSTGRES-TEST' 	    as interface_id, 
        '/SQL/SPAR/ORACLE_SEEDLOT_SEED_PLAN_ZONE_EXTRACT.sql'   as source_file, -- SAME AS SMP_MIX_GEN_QLTY Extract (same structure)
-       'ORACLE THE'                 			as source_name,
+       'ORACLE THE'                 			as source_name, 
        'SEEDLOT_PLAN_ZONE'       				as source_table,
        'ORACLE'               	    			as source_db_type,
        '/SQL/SPAR/POSTGRES_SEEDLOT_SEED_PLAN_ZONE_UPSERT.sql' 	as target_file,
-       'NEW SPAR' 								as target_name,
-       'spar.seedlot_seed_plan_zone' 			as target_table,
-       'POSTGRES' 								as target_db_type,
-       'seedlot_number,seed_plan_zone_code' 	as target_primary_key,
+       'NEW SPAR' 								as target_name, 
+       'spar.seedlot_seed_plan_zone' 			as target_table, 
+       'POSTGRES' 								as target_db_type, 
+       'seedlot_number,seed_plan_zone_code' 	as target_primary_key, 
 	   11 										as execution_order
 where not exists (select 1 from spar.etl_execution_map where interface_id = 'SPAR-SEEDLOT-SEED-PLAN-ZONE-ORACLE-TO-POSTGRES-TEST');

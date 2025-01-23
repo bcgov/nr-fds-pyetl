@@ -184,23 +184,6 @@ class DB(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_triggers(
-        self,
-    ) -> list[
-        str
-    ]:  # TODO: return here and confirm the type that is returned is str
-        """
-        Return the triggers for the schema.
-
-        Queries the schema for all the triggers and returns a list of trigger
-        names.
-
-        :return: a list of trigger names
-        :rtype: list[str]
-        """
-        raise NotImplementedError
-
-    @abstractmethod
     def disable_fk_constraints(
         self,
         constraint_list: list[TableConstraints],
@@ -213,35 +196,6 @@ class DB(ABC):
         :param constraint_list: list of strings describing foreign key
             constraints
         :type constraint_list: list[TableConstraints]
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def disable_trigs(
-        self,
-        trigger_list: list[str],
-    ) -> None:
-        """
-        Disable triggers.
-
-        Recieves a list of triggers that are to be disabled.
-
-        :param trigger_list: list of strings describing triggers
-        :type trigger_list: list[str]
-        """
-        raise NotImplementedError
-
-    def enable_trigs(
-        self,
-        trigger_list: list[str],
-    ) -> None:
-        """
-        Enable triggers.
-
-        Recieves a list of triggers that are to be enabled.
-
-        :param trigger_list: list of strings describing triggers
-        :type trigger_list: list[str]
         """
         raise NotImplementedError
 
@@ -430,10 +384,6 @@ class DB(ABC):
         cons_list = self.get_fk_constraints()
         self.disable_fk_constraints(cons_list)
 
-        trigs_list = self.get_triggers()
-        LOGGER.debug("trigs_list: %s", trigs_list)
-        self.disable_trigs(trigs_list)
-
         failed_tables = []
         LOGGER.debug("table list: %s", table_list)
         LOGGER.debug("retries: %s", retries)
@@ -479,9 +429,6 @@ class DB(ABC):
                 raise sqlalchemy.exc.IntegrityError
         else:
             self.enable_constraints(cons_list)
-
-            trigs_list = self.get_triggers()
-            self.enable_trigs(trigs_list)
 
     def get_record_count(self, table: str) -> int:
         """

@@ -36,8 +36,8 @@ class Utility:
         self.curdir = pathlib.Path(__file__).parents[0]
         self.datadir = pathlib.Path(
             constants.DATA_DIR,
-            self.env_str.upper(),
-            db.name.upper(),
+            self.env_str,
+            db.name.lower(),
         )
         self.db_type = db
         self.kube_client = None
