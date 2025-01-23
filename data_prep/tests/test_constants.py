@@ -1,7 +1,7 @@
 import logging
 import pathlib
 
-import constants
+from db_env_utils import constants
 
 LOGGER = logging.getLogger(__name__)
 

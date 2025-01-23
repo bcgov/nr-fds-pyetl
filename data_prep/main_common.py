@@ -404,5 +404,5 @@ class Utility:
             data_dir=self.datadir,
             table_list=tables_to_import,
             env_str=self.env_obj.current_env,
-            purge=False,
+            purge=True,
         )

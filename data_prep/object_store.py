@@ -61,6 +61,11 @@ class OStore:
             Bucket=self.conn_params.bucket,
             Prefix=str(ostore_dir),
         )
+        LOGGER.debug("remote files: %s", remote_files)
+        if "Contents" not in remote_files:
+            msg = f"no files found in the object store directory {ostore_dir}"
+            raise FileNotFoundError(msg)
+
         remote_file_names = [
             remote_file["Key"] for remote_file in remote_files["Contents"]
         ]

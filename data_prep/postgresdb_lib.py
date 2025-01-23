@@ -113,6 +113,30 @@ class PostgresDatabase(db_lib.DB):
             raise DatabaseError(schema)
         return tables
 
+    def get_triggers(self) -> list[str]:
+        """
+        Return a list of triggers in the schema.
+
+        :return: a list of triggers
+        :rtype: list[str]
+        """
+        self.get_connection()
+        cursor = self.connection.cursor()
+        query = (
+            "SELECT trigger_name FROM information_schema.triggers WHERE "
+            "trigger_schema = %(schema)s"
+        )
+        cursor.execute(query, {"schema": self.schema_2_sync})
+        triggers = [row[0] for row in cursor]
+        cursor.close()
+        return triggers
+
+    def disable_trigs(self, trigger_list):
+        LOGGER.debug("NOT IMPLEMENTED.. SKIPPING")
+
+    def enable_trigs(self, trigger_list):
+        LOGGER.debug("NOT IMPLEMENTED.. SKIPPING")
+
     def truncate_table(self, table: str, *, cascade: bool = False) -> None:
         """
         Delete all the data from the table.
@@ -567,6 +591,28 @@ class ConstraintBackup:
         :return: the alter statement
         :rtype: str
         """
+        if (
+            len(cons.referenced_columns) > 1
+        ) and cons.referenced_columns != cons.column_names:
+            LOGGER.warning("The column order is not the same.")
+            srccols = cons.column_names[0:]
+            destcols = cons.referenced_columns[0:]
+            srccols.sort()
+            destcols.sort()
+            if srccols == destcols:
+                cons.column_names.sort()
+                cons.referenced_columns.sort()
+            else:
+                LOGGER.error(
+                    "The columns referenced in the constraint %s are "
+                    "different for source and destination.  Source "
+                    " cols are: %s  AND dest cols are: %s",
+                    cons.constraint_name,
+                    cons.column_names,
+                    cons.referenced_columns,
+                )
+                raise ValueError()
+
         alter_statement = (
             f"ALTER TABLE "
             f"{self.connection_params.schema_to_sync}.{cons.table_name} "

@@ -54,7 +54,11 @@ class OracleDatabase(db_lib.DB):
         populated by the object constructor.
         """
         if self.connection is None:
-            LOGGER.info("connecting the oracle database: %s", self.service_name)
+            LOGGER.info(
+                "connecting the oracle database / host: %s / %s",
+                self.service_name,
+                self.host,
+            )
             self.connection = oracledb.connect(
                 user=self.username,
                 password=self.password,
@@ -71,6 +75,47 @@ class OracleDatabase(db_lib.DB):
         Sets the db_type variable to SPAR.
         """
         self.db_type = constants.DBType.ORA
+
+    def disable_trigs(self, trigger_list: list[str]) -> None:
+        """
+        Disable triggers.
+
+        Disables the triggers that are in the trigger_list parameter.
+
+        :param trigger_list: a list of triggers to disable
+        :type trigger_list: list[str]
+        """
+        query = """
+        ALTER TRIGGER {trigger_name} DISABLE
+        """
+
+        self.get_connection()
+        cursor = self.connection.cursor()
+        for trigger_name in trigger_list:
+            LOGGER.info("disabling trigger %s", trigger_name)
+            cursor.execute(query.format(trigger_name=trigger_name))
+            LOGGER.debug("trigger %s disabled", trigger_name)
+        cursor.close()
+
+    def enable_trigs(self, trigger_list: list[str]) -> None:
+        """
+        Enable triggers.
+
+        Enables the triggers that are in the trigger_list parameter.
+
+        :param trigger_list: a list of triggers to enable
+        :type trigger_list: list[str]
+        """
+        query = """
+        ALTER TRIGGER {trigger_name} ENABLE
+        """
+        self.get_connection()
+        cursor = self.connection.cursor()
+        for trigger_name in trigger_list:
+            LOGGER.info("enabling trigger %s", trigger_name)
+            cursor.execute(query.format(trigger_name=trigger_name))
+            LOGGER.debug("trigger %s enabled", trigger_name)
+        cursor.close()
 
     def get_sqlalchemy_engine(self) -> None:
         """
@@ -231,6 +276,10 @@ class OracleDatabase(db_lib.DB):
         cons_list = self.get_fk_constraints()
         self.disable_fk_constraints(cons_list)
 
+        trigs_list = self.get_triggers()
+        LOGGER.debug("trigs_list: %s", trigs_list)
+        self.disable_trigs(trigs_list)
+
         failed_tables = []
         LOGGER.debug("table list: %s", table_list)
         LOGGER.debug("retries: %s", retries)
@@ -246,6 +295,7 @@ class OracleDatabase(db_lib.DB):
                 self.load_data(table, import_file, purge=purge)
             except (
                 sqlalchemy.exc.IntegrityError,
+                sqlalchemy.exc.DatabaseError,
                 DatabaseError,
             ) as e:
 
@@ -276,6 +326,9 @@ class OracleDatabase(db_lib.DB):
                 raise sqlalchemy.exc.IntegrityError
         else:
             self.enable_constraints(cons_list)
+
+            trigs_list = self.get_triggers()
+            self.enable_trigs(trigs_list)
 
     def purge_data(
         self,
@@ -365,6 +418,20 @@ class OracleDatabase(db_lib.DB):
             tab_con = db_lib.TableConstraints(*row)
             constraint_list.append(tab_con)
         return constraint_list
+
+    def get_triggers(self) -> list[str]:
+        self.get_connection()
+        query = """
+        SELECT TRIGGER_NAME FROM ALL_TRIGGERS WHERE owner = :schema
+        """
+        cursor = self.connection.cursor()
+        cursor.execute(query, schema=self.schema_2_sync.upper())
+        trigger_list = []
+        for row in cursor:
+            LOGGER.debug("trigger row: %s", row)
+            trigger_name = row[0]
+            trigger_list.append(trigger_name)
+        return trigger_list
 
     def disable_fk_constraints(
         self,

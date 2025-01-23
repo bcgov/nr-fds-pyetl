@@ -1,6 +1,6 @@
 import logging
 
-import object_store
+from db_env_utils import object_store
 
 LOGGER = logging.getLogger(__name__)
 

@@ -21,11 +21,11 @@ x-var:
   - &ORACLE_DATABASE
     DBDOCK_01
   - &ORACLE_HOST
-    oracle
+    oracle-spar
   - &ORACLE_PORT
     1521
   - &ORACLE_FLYWAY_URL
-    jdbc:oracle:thin:@//oracle:1521/DBDOCK_01
+    jdbc:oracle:thin:@//oracle-spar:1521/DBDOCK_01
 
 
 
@@ -126,11 +126,11 @@ services:
         condition: service_completed_successfully
 
   # Name of the Docker Compose service
-  oracle:
+  oracle-spar:
     # Docker Hub image (feel free to change the tag "latest" to any other available one)
     image: gvenzl/oracle-free:latest
     # Forward Oracle port to localhost
-    container_name: oracle
+    container_name: oracle-spar
     ports:
       - "1521:1521"
     # Provide passwords and other environment variables to the container
@@ -145,7 +145,7 @@ services:
     # Mount a local SQL file to initialize your schema at startup
     volumes:
       - oracle-data:/opt/oracle/oradata  # Mount the volume to the Oracle data directory
-      - ./oradb/db_init/db_init.sql:/container-entrypoint-initdb.d/my-init.sql:ro
+      - ./data_prep/oradb_demo/db_init/db_init.sql:/container-entrypoint-initdb.d/my-init.sql:ro
 
   oracle-migrations:
     image: flyway/flyway:10-alpine
@@ -160,7 +160,7 @@ services:
       FLYWAY_DEFAULT_SCHEMA: *ORACLE_USER
       FLYWAY_BASELINE_ON_MIGRATE: true
     depends_on:
-      oracle:
+      oracle-spar:
         condition: service_healthy
 
   oracle-data-load:
@@ -198,7 +198,7 @@ services:
     container_name: sync
     build:
       context: sync
-      dockerfile: Dockerfile.slim
+      dockerfile: Dockerfile
     environment:
       <<: [*postgres-vars, *oracle-vars]
       TEST_MODE: false

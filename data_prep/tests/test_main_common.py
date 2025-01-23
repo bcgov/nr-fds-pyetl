@@ -1,7 +1,6 @@
 import logging
 
-import constants
-import main_common
+from db_env_utils import constants, main_common
 
 LOGGER = logging.getLogger(__name__)
 
