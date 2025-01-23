@@ -145,14 +145,14 @@ services:
     # Mount a local SQL file to initialize your schema at startup
     volumes:
       - oracle-data:/opt/oracle/oradata  # Mount the volume to the Oracle data directory
-      - ./data_prep/oradb_demo/db_init/db_init.sql:/container-entrypoint-initdb.d/my-init.sql:ro
+      - ./data_prep/ora_db_init/db_init/db_init.sql:/container-entrypoint-initdb.d/my-init.sql:ro
 
   oracle-migrations:
     image: flyway/flyway:10-alpine
     container_name: oracle-migrations
     command: info migrate info
     volumes:
-      - "./migrations_ora/sql:/flyway/sql:ro"
+      - "./data_prep/migrations_ora/sql:/flyway/sql:ro"
     environment:
       <<: *oracle-vars
       FLYWAY_USER: *ORACLE_USER
