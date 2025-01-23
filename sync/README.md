@@ -39,6 +39,8 @@ to run the sync process locally you need run from the sync directory.
 
 ```bash
 cd sync
+# load env vars:
+
 poetry install
 # activate env
 source $(poetry env info --path)/bin/activate
