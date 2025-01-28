@@ -15,12 +15,11 @@ ORACLE_SERVICE - database service
 
 from __future__ import annotations
 
+import functools
 import logging
 import logging.config
+import re
 from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    import pathlib
 
 import constants
 import db_lib
@@ -28,6 +27,9 @@ import oracledb
 import pandas as pd
 import sqlalchemy
 from oracledb.exceptions import DatabaseError
+
+if TYPE_CHECKING:
+    import pathlib
 
 LOGGER = logging.getLogger(__name__)
 
@@ -85,6 +87,47 @@ class OracleDatabase(db_lib.DB):
                 dsn,
                 arraysize=1000,
             )
+
+    def disable_trigs(self, trigger_list: list[str]) -> None:
+        """
+        Disable triggers.
+
+        Disables the triggers that are in the trigger_list parameter.
+
+        :param trigger_list: a list of triggers to disable
+        :type trigger_list: list[str]
+        """
+        query = """
+        ALTER TRIGGER {trigger_name} DISABLE
+        """
+
+        self.get_connection()
+        cursor = self.connection.cursor()
+        for trigger_name in trigger_list:
+            LOGGER.info("disabling trigger %s", trigger_name)
+            cursor.execute(query.format(trigger_name=trigger_name))
+            LOGGER.debug("trigger %s disabled", trigger_name)
+        cursor.close()
+
+    def enable_trigs(self, trigger_list: list[str]) -> None:
+        """
+        Enable triggers.
+
+        Enables the triggers that are in the trigger_list parameter.
+
+        :param trigger_list: a list of triggers to enable
+        :type trigger_list: list[str]
+        """
+        query = """
+        ALTER TRIGGER {trigger_name} ENABLE
+        """
+        self.get_connection()
+        cursor = self.connection.cursor()
+        for trigger_name in trigger_list:
+            LOGGER.info("enabling trigger %s", trigger_name)
+            cursor.execute(query.format(trigger_name=trigger_name))
+            LOGGER.debug("trigger %s enabled", trigger_name)
+        cursor.close()
 
     def get_tables(
         self,
@@ -231,6 +274,10 @@ class OracleDatabase(db_lib.DB):
         cons_list = self.get_fk_constraints()
         self.disable_fk_constraints(cons_list)
 
+        trigs_list = self.get_triggers()
+        LOGGER.debug("trigs_list: %s", trigs_list)
+        self.disable_trigs(trigs_list)
+
         failed_tables = []
         LOGGER.debug("table list: %s", table_list)
         LOGGER.debug("retries: %s", retries)
@@ -246,6 +293,7 @@ class OracleDatabase(db_lib.DB):
                 self.load_data(table, import_file, purge=purge)
             except (
                 sqlalchemy.exc.IntegrityError,
+                sqlalchemy.exc.DatabaseError,
                 DatabaseError,
             ) as e:
 
@@ -275,7 +323,11 @@ class OracleDatabase(db_lib.DB):
                 self.enable_constraints(cons_list)
                 raise sqlalchemy.exc.IntegrityError
         else:
+            self.fix_sequences()
             self.enable_constraints(cons_list)
+
+            trigs_list = self.get_triggers()
+            self.enable_trigs(trigs_list)
 
     def purge_data(
         self,
@@ -366,6 +418,20 @@ class OracleDatabase(db_lib.DB):
             constraint_list.append(tab_con)
         return constraint_list
 
+    def get_triggers(self) -> list[str]:
+        self.get_connection()
+        query = """
+        SELECT TRIGGER_NAME FROM ALL_TRIGGERS WHERE owner = :schema
+        """
+        cursor = self.connection.cursor()
+        cursor.execute(query, schema=self.schema_2_sync.upper())
+        trigger_list = []
+        for row in cursor:
+            LOGGER.debug("trigger row: %s", row)
+            trigger_name = row[0]
+            trigger_list.append(trigger_name)
+        return trigger_list
+
     def disable_fk_constraints(
         self,
         constraint_list: list[db_lib.TableConstraints],
@@ -415,3 +481,271 @@ class OracleDatabase(db_lib.DB):
             )
             cursor.execute(query)
         cursor.close()
+
+    def fix_sequences(self) -> None:
+        """
+        Fix the sequences.
+
+        Identify triggers that use sequences, then identify the table and column
+        that the triggers populate, and make sure the sequences nextval is
+        higher than the max() value for that column.
+        """
+        seq_fix = FixOracleSequences(self)
+        seq_fix.fix_sequences()
+
+
+class FixOracleSequences:
+
+    def __init__(self, dbcls: OracleDatabase):
+        self.dbcls = dbcls
+
+    def get_triggers_with_sequences(self):
+        query = """
+            SELECT
+                owner,
+                name AS trigger_name,
+                referenced_name AS sequence_name
+            FROM
+                all_dependencies
+            WHERE
+                owner = 'THE' AND
+                TYPE = 'TRIGGER'
+                AND REFERENCED_TYPE = 'SEQUENCE'
+        """
+        self.dbcls.get_connection()
+        cursor = self.dbcls.connection.cursor()
+        cursor.execute(query)
+        trig_seq_list = []
+        for row in cursor:
+            owner = row[0]
+            trigger_name = row[1]
+            sequence_name = row[2]
+            trig_seq_dict = {}
+            trig_seq_dict["owner"] = row[0]
+            trig_seq_dict["trigger_name"] = row[1]
+            trig_seq_dict["sequence_name"] = row[2]
+            trig_seq_list.append(trig_seq_dict)
+        return trig_seq_list
+
+    def get_trigger_body(
+        self,
+        trigger_name,
+        trigger_owner,
+    ):
+        LOGGER.debug("getting trigger body")
+        query = """
+            SELECT
+                table_owner,
+                table_name,
+                trigger_body
+            FROM
+                all_triggers
+            WHERE
+                trigger_name = :trigger_name
+                AND owner = :trigger_owner
+        """
+        self.dbcls.get_connection()
+        cursor = self.dbcls.connection.cursor()
+        cursor.execute(
+            query, trigger_name=trigger_name, trigger_owner=trigger_owner
+        )
+        trigger_struct = cursor.fetchone()
+        cursor.close()
+
+        trigger_body = trigger_struct[2]
+        table_name = trigger_struct[1]
+        ret_dict = {}
+        ret_dict["trigger_body"] = trigger_body
+        ret_dict["table_name"] = table_name
+        return ret_dict
+
+    def extract_inserts(self, trigger_body, table_name):
+        # find the position of the insert statements
+        # then from there find the first ';' character
+        # LOGGER.debug("trigger body: %s", trigger_body)
+        # regex_exp = (
+        #     rf"INSERT\s+INTO\s+\w*\.*{table_name}\s*\(.*?\)\s*VALUES\s*\(.*?\);"
+        # )
+        LOGGER.debug("trigger body: %s ...", trigger_body[0:400])
+        LOGGER.debug("table name: %s", table_name)
+        regex_exp = (
+            rf"INSERT\s+INTO\s+\w*\.?\w+\s*\([^)]*\)\s*VALUES\s*\([^;]*\);"
+        )
+        LOGGER.debug("extracting insert statement")
+        pattern = re.compile(regex_exp, re.IGNORECASE | re.DOTALL)
+        insert_statements = pattern.findall(trigger_body)
+        LOGGER.debug("insert statements: %s", len(insert_statements))
+        # for match in insert_statements:
+        #     LOGGER.debug("match is %s", match)
+
+        return insert_statements
+
+    def fix_sequences(self):
+        LOGGER.debug("fixing sequences")
+        trig_seq_list = self.get_triggers_with_sequences()
+        LOGGER.debug("sequences found: %s", len(trig_seq_list))
+        for trig_seq in trig_seq_list:
+            trigger_struct = self.get_trigger_body(
+                trig_seq["trigger_name"], trig_seq["owner"]
+            )
+
+            inserts = self.extract_inserts(
+                trigger_struct["trigger_body"], trigger_struct["table_name"]
+            )
+            for insert in inserts:
+                sequence_column = self.extract_sequence_column(
+                    insert, trigger_struct["table_name"]
+                )
+                LOGGER.debug("sequence column %s", sequence_column)
+                insert_statement_table = self.extract_table_name(insert)
+
+                current_max_value = self.get_max_value(
+                    table=insert_statement_table,
+                    column=sequence_column,
+                    schema=trig_seq["owner"],
+                )
+                sequence_next_val = self.get_sequence_nextval(
+                    sequence_name=trig_seq["sequence_name"],
+                    sequence_owner=trig_seq["owner"],
+                )
+                LOGGER.debug("max value: %s", current_max_value)
+                LOGGER.debug("sequence nextval: %s", sequence_next_val)
+                if current_max_value > sequence_next_val:
+                    LOGGER.debug(
+                        "fixing sequence: %s", trig_seq["sequence_name"]
+                    )
+                    self.set_sequence_nextval(
+                        sequence_name=trig_seq["sequence_name"],
+                        sequence_owner=trig_seq["owner"],
+                        new_value=current_max_value + 1,
+                    )
+
+    def set_sequence_nextval(self, sequence_name, sequence_owner, new_value):
+        query = f"ALTER SEQUENCE {sequence_owner}.{sequence_name} restart start with {new_value}"
+        LOGGER.debug("alter statement: %s", query)
+        LOGGER.info(
+            "updating the sequence %s to have a nextval of %s",
+            sequence_name,
+            new_value,
+        )
+        LOGGER.debug("query: %s", query)
+        self.dbcls.get_connection()
+        cur = self.dbcls.connection.cursor()
+        cur.execute(query)
+        self.dbcls.connection.commit()
+
+    def get_sequence_nextval(self, sequence_name, sequence_owner):
+        query = "SELECT last_number + increment_by FROM all_sequences WHERE sequence_name = :sequence_name AND sequence_owner = :sequence_owner"
+        LOGGER.debug("query: %s ", query)
+        self.dbcls.get_connection()
+        cur = self.dbcls.connection.cursor()
+        cur.execute(
+            query, sequence_name=sequence_name, sequence_owner=sequence_owner
+        )
+        row = cur.fetchone()
+        return row[0]
+
+    def get_max_value(self, schema, table, column):
+        query = f"SELECT MAX({column}) FROM {schema}.{table}"
+        self.dbcls.get_connection()
+        cur = self.dbcls.connection.cursor()
+        cur.execute(query)
+        row = cur.fetchone()
+        return row[0]
+
+    def extract_table_name(self, insert_statement):
+        insert_pattern_str = (
+            r"INSERT\s+INTO\s+(\w*\.?\w+)\s*\(.*?\)\s*VALUES\s*\(.*?\);"
+        )
+        insert_pattern = re.compile(
+            insert_pattern_str, re.IGNORECASE | re.DOTALL
+        )
+        match = insert_pattern.search(insert_statement)
+
+        if match:
+            table_name = match.group(1)
+            return table_name
+        else:
+            return None
+
+    def extract_sequence_column(self, insert_statement, table_name):
+        insert_pattern_str = (
+            rf"INSERT\s+INTO\s+\w*\.?\w+\s*\((.*?)\)\s*VALUES\s*\((.*?)\);"
+        )
+        insert_pattern = re.compile(
+            insert_pattern_str, re.IGNORECASE | re.DOTALL
+        )
+        insert_match = insert_pattern.search(insert_statement)
+        sequence_column = None
+        if insert_match:
+            columns_str = insert_match.group(1)
+            values_str = insert_match.group(2)
+
+            # Split the columns and values by comma and strip whitespace
+            columns = [col.strip() for col in columns_str.split(",")]
+            values = [val.strip() for val in values_str.split(",")]
+            LOGGER.debug(columns)
+            LOGGER.debug(values)
+            val_cnt = 0
+            for val in values:
+                if val.upper().endswith(".NEXTVAL"):
+                    LOGGER.debug(val)
+                    break
+                val_cnt += 1
+            sequence_column = columns[val_cnt]
+            LOGGER.debug(sequence_column)
+        return sequence_column
+
+
+# if __name__ == ("__main__"):
+
+# class TestDecorator:
+
+#     def __init__(self):
+#         self.var = "test"
+
+#     @FixSequences
+#     def testing(self, schema, table, other):
+#         print("testing %s %s %s", schema, table, other)
+
+# tester = TestDecorator()
+# tester.testing(schema="the", table="seedlot", other="something")
+
+# class FixSequences:
+#     """
+#     Fix sequences after data has been loaded.
+
+#     After the data has been loaded this decorator class will identify all
+#     the sequences that are used by triggers in the database, and ensure that
+#     the nextval is greater than the current max value for the column that they
+#     are populating.
+#     """
+
+#     def __init__(self, func) -> None:
+#         functools.update_wrapper(self, func)
+#         self.func = func
+
+#     def __get__(self, instance, owner):
+#         """
+#         Allow the decorator to be used on class methods.
+
+#         :param instance: contains the object reference that needs to be
+#             prepended when calling the function
+#         :type instance: object
+#         :param owner: the class that owns the method.
+#         :type owner: class
+#         :return: Method call that is tied to the instance of the object.
+#         :rtype: function
+#         """
+#         return functools.partial(self.__call__, instance)
+
+#     def __call__(self, *args, **kwargs) -> None:
+#         self.fix_sequences(*args, **kwargs)
+#         retval = self.func(*args, **kwargs)
+#         self.fix_sequences(*args, **kwargs)
+#         return retval
+
+#     def fix_sequences(self, *args, **kwargs) -> None:
+#         print("fixing sequences")
+#         print("args: %s", args)
+#         print("kwargs: %s", kwargs)

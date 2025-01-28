@@ -113,6 +113,30 @@ class PostgresDatabase(db_lib.DB):
             raise DatabaseError(schema)
         return tables
 
+    def get_triggers(self) -> list[str]:
+        """
+        Return a list of triggers in the schema.
+
+        :return: a list of triggers
+        :rtype: list[str]
+        """
+        self.get_connection()
+        cursor = self.connection.cursor()
+        query = (
+            "SELECT trigger_name FROM information_schema.triggers WHERE "
+            "trigger_schema = %(schema)s"
+        )
+        cursor.execute(query, {"schema": self.schema_2_sync})
+        triggers = [row[0] for row in cursor]
+        cursor.close()
+        return triggers
+
+    def disable_trigs(self, trigger_list):
+        LOGGER.debug("NOT IMPLEMENTED.. SKIPPING")
+
+    def enable_trigs(self, trigger_list):
+        LOGGER.debug("NOT IMPLEMENTED.. SKIPPING")
+
     def truncate_table(self, table: str, *, cascade: bool = False) -> None:
         """
         Delete all the data from the table.
@@ -567,13 +591,19 @@ class ConstraintBackup:
         :return: the alter statement
         :rtype: str
         """
+        column_names = cons.column_names
+        column_names.sort()
+        ref_col_names = cons.referenced_columns
+        ref_col_names.sort()
+        # f"{cons.referenced_table}({','.join(cons.referenced_columns)}) "
+
         alter_statement = (
             f"ALTER TABLE "
             f"{self.connection_params.schema_to_sync}.{cons.table_name} "
             f"ADD CONSTRAINT {cons.constraint_name} FOREIGN KEY "
-            f"({','.join(cons.column_names)}) "
+            f"({','.join(column_names)}) "
             f"REFERENCES {self.connection_params.schema_to_sync}."
-            f"{cons.referenced_table}({','.join(cons.referenced_columns)}) "
+            f"{cons.referenced_table}({','.join(ref_col_names)}) "
             " ;\n"
         )
         LOGGER.debug("alter statement: %s", alter_statement)
