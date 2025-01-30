@@ -131,11 +131,36 @@ class PostgresDatabase(db_lib.DB):
         cursor.close()
         return triggers
 
-    def disable_trigs(self, trigger_list):
-        LOGGER.debug("NOT IMPLEMENTED.. SKIPPING")
+    def disable_trigs(self, trigger_list: list[str]) -> None:
+        """
+        Disable triggers.
 
-    def enable_trigs(self, trigger_list):
-        LOGGER.debug("NOT IMPLEMENTED.. SKIPPING")
+        Method is required to enable the db_lib interface, currently this is a
+        shell method and does not do anything.
+
+
+        :param trigger_list: List of triggers that should be disabled
+        :type trigger_list: list[str]
+        """
+        LOGGER.debug(
+            "NOT IMPLEMENTED.. SKIPPING.. trigger names: %s",
+            trigger_list,
+        )
+
+    def enable_trigs(self, trigger_list: list[str]) -> None:
+        """
+        Enable triggers.
+
+        Method is required to enable the db_lib interface, currently this is a
+        shell method and does not do anything.
+
+        :param trigger_list: List of trigger names that should be enabled.
+        :type trigger_list: list[str]
+        """
+        LOGGER.debug(
+            "NOT IMPLEMENTED.. SKIPPING.. trigger list: %s",
+            trigger_list,
+        )
 
     def truncate_table(self, table: str, *, cascade: bool = False) -> None:
         """
@@ -367,6 +392,7 @@ class PostgresDatabase(db_lib.DB):
         """
         # debugging to view the data before it gets loaded
         LOGGER.debug("input file to load: %s", import_file)
+        LOGGER.debug("purge not implemented yet... recieved value: %s", purge)
         if not import_file.exists():
             LOGGER.error("sql dump file not found: %s", import_file)
             raise FileNotFoundError
@@ -374,6 +400,11 @@ class PostgresDatabase(db_lib.DB):
         LOGGER.debug(
             "loading data from csv using sql_dump file, %s",
             import_file,
+        )
+        LOGGER.debug(
+            "arguement table recieved, but not used as the table name"
+            "is embedded in the database dump file.. recieved table: %s",
+            table,
         )
 
         my_env = os.environ.copy()
@@ -595,7 +626,6 @@ class ConstraintBackup:
         column_names.sort()
         ref_col_names = cons.referenced_columns
         ref_col_names.sort()
-        # f"{cons.referenced_table}({','.join(cons.referenced_columns)}) "
 
         alter_statement = (
             f"ALTER TABLE "
