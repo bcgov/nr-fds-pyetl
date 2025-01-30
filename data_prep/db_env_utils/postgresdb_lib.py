@@ -113,6 +113,55 @@ class PostgresDatabase(db_lib.DB):
             raise DatabaseError(schema)
         return tables
 
+    def get_triggers(self) -> list[str]:
+        """
+        Return a list of triggers in the schema.
+
+        :return: a list of triggers
+        :rtype: list[str]
+        """
+        self.get_connection()
+        cursor = self.connection.cursor()
+        query = (
+            "SELECT trigger_name FROM information_schema.triggers WHERE "
+            "trigger_schema = %(schema)s"
+        )
+        cursor.execute(query, {"schema": self.schema_2_sync})
+        triggers = [row[0] for row in cursor]
+        cursor.close()
+        return triggers
+
+    def disable_trigs(self, trigger_list: list[str]) -> None:
+        """
+        Disable triggers.
+
+        Method is required to enable the db_lib interface, currently this is a
+        shell method and does not do anything.
+
+
+        :param trigger_list: List of triggers that should be disabled
+        :type trigger_list: list[str]
+        """
+        LOGGER.debug(
+            "NOT IMPLEMENTED.. SKIPPING.. trigger names: %s",
+            trigger_list,
+        )
+
+    def enable_trigs(self, trigger_list: list[str]) -> None:
+        """
+        Enable triggers.
+
+        Method is required to enable the db_lib interface, currently this is a
+        shell method and does not do anything.
+
+        :param trigger_list: List of trigger names that should be enabled.
+        :type trigger_list: list[str]
+        """
+        LOGGER.debug(
+            "NOT IMPLEMENTED.. SKIPPING.. trigger list: %s",
+            trigger_list,
+        )
+
     def truncate_table(self, table: str, *, cascade: bool = False) -> None:
         """
         Delete all the data from the table.
@@ -343,6 +392,7 @@ class PostgresDatabase(db_lib.DB):
         """
         # debugging to view the data before it gets loaded
         LOGGER.debug("input file to load: %s", import_file)
+        LOGGER.debug("purge not implemented yet... recieved value: %s", purge)
         if not import_file.exists():
             LOGGER.error("sql dump file not found: %s", import_file)
             raise FileNotFoundError
@@ -350,6 +400,11 @@ class PostgresDatabase(db_lib.DB):
         LOGGER.debug(
             "loading data from csv using sql_dump file, %s",
             import_file,
+        )
+        LOGGER.debug(
+            "arguement table recieved, but not used as the table name"
+            "is embedded in the database dump file.. recieved table: %s",
+            table,
         )
 
         my_env = os.environ.copy()
@@ -567,13 +622,18 @@ class ConstraintBackup:
         :return: the alter statement
         :rtype: str
         """
+        column_names = cons.column_names
+        column_names.sort()
+        ref_col_names = cons.referenced_columns
+        ref_col_names.sort()
+
         alter_statement = (
             f"ALTER TABLE "
             f"{self.connection_params.schema_to_sync}.{cons.table_name} "
             f"ADD CONSTRAINT {cons.constraint_name} FOREIGN KEY "
-            f"({','.join(cons.column_names)}) "
+            f"({','.join(column_names)}) "
             f"REFERENCES {self.connection_params.schema_to_sync}."
-            f"{cons.referenced_table}({','.join(cons.referenced_columns)}) "
+            f"{cons.referenced_table}({','.join(ref_col_names)}) "
             " ;\n"
         )
         LOGGER.debug("alter statement: %s", alter_statement)

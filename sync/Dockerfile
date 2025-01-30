@@ -58,6 +58,6 @@ COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # RUN apk add bash
 COPY src /app/src
-
+COPY config /app/config
 
 CMD ["python", "src/main.py"]
