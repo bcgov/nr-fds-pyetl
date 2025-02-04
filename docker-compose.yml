@@ -180,7 +180,7 @@ services:
     entrypoint: ["python", "db_env_utils/main_ora_ingest.py", TEST]
     volumes:
       # - "./data_prep:/app"
-      # - "./docker-compose.yml:/app/docker-compose.yml"
+      - "./docker-compose.yml:/app/docker-compose.yml"
       - "./data:/app/data"
     environment:
       <<: [*oracle-vars]
