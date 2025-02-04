@@ -98,7 +98,7 @@ class DB(ABC):
 
         # methods that implement retries how many times to allow the errors to
         # be caught and retried
-        self.max_retries = 6
+        self.max_retries = 10
 
     @abstractmethod
     def get_connection(self) -> None:
