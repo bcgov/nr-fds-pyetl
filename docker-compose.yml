@@ -166,7 +166,8 @@ services:
 
   # doesnt work, references non existing shell script
   oracle-data-load:
-    image: uv-data-load:latest
+    #image: uv-data-load:latest
+    image: nr-fds-pyetl-oracle-data-load:latest
     build:
         context: ./  # Path to the directory containing the Dockerfile
         dockerfile: Dockerfile.tmp  # Name of the Dockerfile (optional if named "Dockerfile")
@@ -178,8 +179,8 @@ services:
 
     entrypoint: ["python", "db_env_utils/main_ora_ingest.py", TEST]
     volumes:
-      - "./data_prep:/app"
-      - "./docker-compose.yml:/app/docker-compose.yml"
+      # - "./data_prep:/app"
+      # - "./docker-compose.yml:/app/docker-compose.yml"
       - "./data:/app/data"
     environment:
       <<: [*oracle-vars]
