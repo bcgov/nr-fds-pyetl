@@ -6,7 +6,7 @@ WORKDIR /app
 
 # get the build dependencies
 RUN apt-get update && \
-    apt install -y \
+    apt-get --no-install-recommends install -y \
         build-essential
 
 # Enable bytecode compilation
@@ -22,7 +22,7 @@ RUN uv sync --frozen --no-install-project --no-dev
 FROM  ghcr.io/astral-sh/uv:python3.13-bookworm-slim as runtime
 
 RUN apt-get update && \
-    apt install -y \
+    apt-get --no-install-recommends install -y \
     postgresql-client \
     && apt-get clean
 
