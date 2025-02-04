@@ -76,16 +76,18 @@ attempting to connect to:L
 
 `ping <database host>`
 
-## Install Dependencies and Activate Environment
+## Install Dependencies
+
+For all of the below commands make sure you are in the `data_prep` folder.
 
 ```bash
-poetry install
-source $(poetry env info --path)/bin/activate
+cd data_prep # make sure in data_prep folder
+uv sync
 ```
 
 ## Run the script
 
-`python data_prep/main_ora_extract.py TEST`
+`uv run python db_env_utils/main_ora_extract.py TEST`
 
 # POSTGRES - spar2 extract
 
@@ -117,12 +119,14 @@ env can be either TEST|PROD, depending on which env is being extracted:
 
 ## Install / configure dependencies
 
-Install dependencies using poetry
-`poetry install`
+Like the oracle commands make sure all of the following are run from the
+`data_prep` folder.
 
-Activate the poetry environment.
-`source $(poetry env info --path)/bin/activate`
+`cd data_prep`
+
+Install dependencies using poetry
+`uv sync`
 
 ## Running script
 
-`python data_prep/main_spar_extract.py <env: TEST|PROD>`
+`uv run python db_env_utils/main_spar_extract.py <env: TEST|PROD>`

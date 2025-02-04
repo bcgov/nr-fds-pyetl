@@ -106,21 +106,23 @@ services:
       postgres-getmigrations:
         condition: service_completed_successfully
 
+  # data-load here doesn't work references non existing shell script
   postgres-data-load:
-    image: python:3.13.0-slim-bookworm
+    image: nr-fds-pyetl-oracle-data-load:latest
+    build:
+        context: ./  # Path to the directory containing the Dockerfile
+        dockerfile: Dockerfile.data_load  # Name of the Dockerfile (optional if named "Dockerfile")
+    # image: python:3.13-slim-bookworm
     container_name: postgres-data-load
-    entrypoint: ["/application/docker_run_SPAR_TEST.sh"]
-    working_dir: /application
+    working_dir: /app
+    entrypoint: ["python", "db_env_utils/main_spar_ingest.py", TEST]
     volumes:
-      - "./data_prep:/application"
-      - "./poetry.lock:/application/poetry.lock"
-      - "./pyproject.toml:/application/pyproject.toml"
-      - "./docker-compose.yml:/application/docker-compose.yml"
-      - "./data:/application/data"
-    env_file:
-      - ".env"
+      - "./docker-compose.yml:/app/docker-compose.yml"
+      - "./data:/app/data"
     environment:
       <<: [*postgres-vars]
+    env_file:
+      - ".env"
     depends_on:
       postgres-migrations:
         condition: service_completed_successfully
@@ -163,18 +165,23 @@ services:
       oracle-spar:
         condition: service_healthy
 
+  # doesnt work, references non existing shell script
   oracle-data-load:
-    image: python:3.13-slim-bookworm
+    image: nr-fds-pyetl-oracle-data-load:latest
+    build:
+        context: ./  # Path to the directory containing the Dockerfile
+        dockerfile: Dockerfile.data_load  # Name of the Dockerfile (optional if named "Dockerfile")
+    # image: python:3.13-slim-bookworm
     container_name: oracle-data-load
     # "CMD",
-    entrypoint: [ "/application/docker_run_ORA_TEST.sh"]
-    working_dir: /application
+    # entrypoint: [ "/application/docker_run_ORA_TEST.sh"]
+    working_dir: /app
+
+    entrypoint: ["python", "db_env_utils/main_ora_ingest.py", TEST]
     volumes:
-      - "./data_prep:/application"
-      - "./poetry.lock:/application/poetry.lock"
-      - "./pyproject.toml:/application/pyproject.toml"
-      - "./docker-compose.yml:/application/docker-compose.yml"
-      - "./data:/application/data"
+      # - "./data_prep:/app"
+      - "./docker-compose.yml:/app/docker-compose.yml"
+      - "./data:/app/data"
     environment:
       <<: [*oracle-vars]
     env_file:

@@ -1,38 +1,3 @@
-[tool.poetry]
-name = "data_prep"
-version = "0.1.0"
-description = "code used to extract and load data to local dev env"
-authors = ["Your Name <you@example.com>"]
-license = "Apache License 2.0"
-readme = "README.md"
-package-mode = false
-
-[tool.poetry.dependencies]
-python = "^3.11"
-oracledb = "^2.4.1"
-numpy = "^2.1.1"
-SQLAlchemy = "^2.0.35"
-PyYAML = "^6.0.2"
-pandas = "^2.2.3"
-pyarrow = "^18.0.0"
-pypika = "^0.48.9"
-boto3 = {extras = ["s3"], version = "^1.35.37"}
-kubernetes = "^31.0.0"
-requests = "^2.32.3"
-openshift-client = "^2.0.4"
-kr8s = "^0.18.0"
-
-psycopg2-binary = "^2.9.10"
-[tool.poetry.group.dev.dependencies]
-black = "^24.8.0"
-ruff = "^0.8.0"
-mypy-boto3 = "^1.35.38"
-
-pytest = "^8.3.3"
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
 [tool.ruff.lint]
 select = ["ALL"]
 
@@ -53,4 +18,40 @@ line-length = 80
     # The below are debateable
     "PLR2004", # Magic value used in comparison, ...
     "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+]
+
+[project]
+authors = [
+    {name = "Your Name", email = "you@example.com"},
+]
+license = {text = "Apache License 2.0"}
+requires-python = "<4.0,>=3.11"
+dependencies = [
+    "oracledb<3.0.0,>=2.4.1",
+    "numpy<3.0.0,>=2.1.1",
+    "SQLAlchemy<3.0.0,>=2.0.35",
+    "pyyaml>=6.0.2,<7.0.0",
+    "pandas<3.0.0,>=2.2.3",
+    "pyarrow>=18.0.0,<19.0.0",
+    "pypika<1.0.0,>=0.48.9",
+    "boto3[s3]<2.0.0,>=1.35.37",
+    "kubernetes<32.0.0,>=31.0.0",
+    "requests<3.0.0,>=2.32.3",
+    "openshift-client<3.0.0,>=2.0.4",
+    "kr8s<1.0.0,>=0.18.0",
+    "psycopg2-binary<3.0.0,>=2.9.10",
+    "fastparquet>=2024.11.0",
+]
+name = "data_prep"
+version = "0.1.0"
+description = "code used to extract and load data to local dev env"
+readme = "README.md"
+package-mode = false
+
+[dependency-groups]
+dev = [
+    "black<25.0.0,>=24.8.0",
+    "ruff<1.0.0,>=0.8.0",
+    "mypy-boto3<2.0.0,>=1.35.38",
+    "pytest<9.0.0,>=8.3.3",
 ]

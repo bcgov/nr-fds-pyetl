@@ -23,15 +23,11 @@ The other is the data load / extraction processes that are setup to use poetry.
 The purpose of data load / extraction processes is to enable an environment that
 can be used to further develop and debug the `sync` process.  Once the data load
 portion of this repo has been completed, the sync script will be update to use
-poetry.  In the mean time the two approaches remain in place.
+uv.  In the mean time the two approaches remain in place.
 
 Install dependencies for first time
 
-`poetry install`
-
-## activate local env
-
-`source $(poetry env info --path)/bin/activate`
+`uv sync`
 
 ## configure local environment variables
 
@@ -61,7 +57,10 @@ will be populated by subsequent scripts.
 
 #### run the data ingestion
 
-`python data_prep/main_ingest.py <env>`
+```bash
+cd data_prep
+uv run python db_env_utils/main_ingest.py <env>
+```
 
 Where env is either `TEST` or `PROD`.  Env indicates which object store bucket
 to load data from.
@@ -97,7 +96,7 @@ At this stage connect to VPN and ensure you can ping the database host.
 
 #### run the data ingestion
 
-`python data_prep/main_ingest.py <env>`
+`uv run python db_env_utils/main_ingest.py <env>`
 
 Where env is either `TEST` or `PROD`.  The env indicates which on prem database
 to connect to, as well as which object store bucket to write data to.
