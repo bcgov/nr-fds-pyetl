@@ -1,21 +1,26 @@
 # Use a Python image with uv pre-installed
-FROM ghcr.io/astral-sh/uv:python3.13-alpine as builder
-
+# FROM ghcr.io/astral-sh/uv:python3.13-alpine as builder
+FROM  ghcr.io/astral-sh/uv:python3.13-bookworm-slim as builder
 # Install the project into `/app`
 WORKDIR /app
 
-RUN apk add --no-cache \
-    cmake \
-    make \
-    gcc \
-    g++ \
-    musl-dev \
-    linux-headers \
-    git \
-    bash \
-    libstdc++ \
-    apache-arrow \
-    apache-arrow-dev
+# RUN apk add --no-cache \
+#     cmake \
+#     make \
+#     gcc \
+#     g++ \
+#     musl-dev \
+#     linux-headers \
+#     git \
+#     bash \
+#     libstdc++ \
+#     apache-arrow \
+#     apache-arrow-dev
+
+RUN apt-get update && \
+    apt install -y \
+        build-essential
+
 
 # Enable bytecode compilation
 ENV UV_COMPILE_BYTECODE=1
@@ -33,12 +38,18 @@ COPY data_prep/pyproject.toml data_prep/uv.lock /app/
 RUN uv sync --frozen --no-install-project --no-dev
 
 # arrow version is 1801
-FROM ghcr.io/astral-sh/uv:python3.13-alpine as runtime
+# FROM ghcr.io/astral-sh/uv:python3.13-alpine as runtime
+FROM  ghcr.io/astral-sh/uv:python3.13-bookworm-slim as runtime
 
-RUN apk add --no-cache \
-    libstdc++ \
-    apache-arrow \
-    bash
+# RUN apt-get update && \
+#     apt install -y \
+#         libarrow \
+#         libparquet
+
+# RUN apk add --no-cache \
+#     libstdc++ \
+#     apache-arrow \
+#     bash
 
 COPY --from=builder /app/.venv /app/.venv
 
