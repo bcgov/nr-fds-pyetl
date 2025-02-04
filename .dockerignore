@@ -1,0 +1,13 @@
+data_prep/.venv
+data_prep/data
+data_prep/.pdm-build
+data_prep/.pytest_cache
+data_prep/migrations_ora
+data_prep/ora_db_init
+data_prep/tests
+.github/**
+.pytest_cache/**
+.vscode/**
+data/**
+.env
+
