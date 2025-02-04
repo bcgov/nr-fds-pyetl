@@ -4,8 +4,6 @@ FROM ghcr.io/astral-sh/uv:python3.13-alpine as builder
 # Install the project into `/app`
 WORKDIR /app
 
-
-
 RUN apk add --no-cache \
     cmake \
     make \
@@ -48,10 +46,6 @@ COPY --from=builder /app/.venv /app/.venv
 # Installing separately from its dependencies allows optimal layer caching
 # ADD . /app
 COPY data_prep/ /app/
-# needs to be able to read the dorker comp file for the creds used to spin up
-# the local container
-COPY docker-compose.yml /app/
-
 
 # RUN --mount=type=cache,target=/root/.cache/uv \
 #     uv sync --frozen --no-dev
