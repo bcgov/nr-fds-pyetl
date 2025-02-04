@@ -13,27 +13,27 @@ support for debugging when trying to resolve issues that may come up with the pr
 
 #### Init project
 
-This is a run once per project, and had already been run for this project.  Its inits a project
+This is a run once per project, and had already been run for this project.  It inits a project
 and allows for the definition of the requirements for the project, through an interactive prompting
 system.
 
 ```
-poetry init
+uv init
 ```
 
 #### Create lock file
 ```
-poetry lock
+uv lock
 ```
 
 #### Create the venv
-```
-poetry install --no-root
-```
+
+* `uv lock` will do this for you or...
+* `uv sync`
 
 #### Run a script
 
-poetry python <path to script>
+`uv run python <path to script>`
 
 
 # Run Local Spar Database
@@ -50,6 +50,11 @@ Need a local database to load the data to, so start the spar database by running
 `docker compose up spar-db-migrations`
 
 ## Populate Env Var / Secrets
+
+Different processes need different credentials.  See the env_sample as it breaks
+up the credentials required for different processes.
+
+
 
 
 
