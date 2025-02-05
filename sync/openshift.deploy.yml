@@ -8,6 +8,10 @@ parameters:
   - name: ZONE
     description: Deployment zone, e.g. pr-###, test or prod
     required: true
+  - name: ORACLE_SYNC_PASSWORD
+    required: true
+  - name: POSTGRES_PASSWORD
+    required: true
 
   ### Recommended - suggest hard coding
   - name: APP
@@ -24,10 +28,20 @@ parameters:
     value: bcgov
   - name: REPO
     description: Repository name
-    value: nr-spar
+    value: nr-fds-pyetl
   - name: TEST_MODE
     description: "Run in test mode"
     value: "false"
+  - name: ORACLE_HOST
+    value: nrcdb03.bcgov
+  - name: ORACLE_SERVICE
+    value: dbq01.nrs.bcgov
+  - name: ORACLE_SYNC_USER
+    value: proxy_fsa_spar_sync_user
+  - name: POSTGRES_DB
+    value: nr-spar
+  - name: POSTGRES_USER
+    value: nr-spar
 
   ### Usually a bad idea - not recommended
   - name: JOB_BACKOFF_LIMIT
@@ -42,6 +56,8 @@ parameters:
   - name: REGISTRY
     description: Source container registry
     value: ghcr.io
+  - name: POSTGRES_PORT
+    value: "5432"
 
 objects:
   - kind: CronJob
@@ -53,7 +69,7 @@ objects:
         cronjob: ${REPO}-${ZONE}
     spec:
       # 00:00 on day-of-month 1 in every 12000th month from January through December
-      schedule: "0 0 1 1/12000 *" # https://crontab.guru/#0_0_1_1/12000_*
+      schedule: "0 0 31 2/12000 0" # https://crontab.guru/#0_0_1_1/12000_*
       startingDeadlineSeconds: 60
       concurrencyPolicy: "Replace"
       successfulJobsHistoryLimit: "${{JOB_HISTORY_SUCCESS}}"
@@ -80,49 +96,25 @@ objects:
                     - name: EXECUTION_ID
                       value: "${EXECUTION_ID}"
                     - name: ORACLE_HOST
-                      valueFrom:
-                        secretKeyRef:
-                          name: ${REPO}-${ZONE}-sync
-                          key: oracle-host
+                      value: "${ORACLE_HOST}"
                     - name: ORACLE_SYNC_PASSWORD
-                      valueFrom:
-                        secretKeyRef:
-                          name: ${REPO}-${ZONE}-sync
-                          key: oracle-sync-password
+                      value: "${ORACLE_SYNC_PASSWORD}"
                     - name: ORACLE_PORT
                       value: ${ORACLE_PORT}
                     - name: ORACLE_SERVICE
-                      valueFrom:
-                        secretKeyRef:
-                          name: ${REPO}-${ZONE}-sync
-                          key: oracle-service
+                      value: "${ORACLE_SERVICE}"
                     - name: ORACLE_SYNC_USER
-                      valueFrom:
-                        secretKeyRef:
-                          name: ${REPO}-${ZONE}-sync
-                          key: oracle-sync-user
+                      value: "${ORACLE_SYNC_USER}"
                     - name: POSTGRES_HOST
                       value: ${REPO}-${ZONE}-database
                     - name: POSTGRES_DB
-                      valueFrom:
-                        secretKeyRef:
-                          name: ${REPO}-${ZONE}-database
-                          key: database-name
+                      value: "${POSTGRES_DB}"
                     - name: POSTGRES_PASSWORD
-                      valueFrom:
-                        secretKeyRef:
-                          name: ${REPO}-${ZONE}-database
-                          key: database-password
+                      value: "${POSTGRES_PASSWORD}"
                     - name: POSTGRES_PORT
-                      valueFrom:
-                        secretKeyRef:
-                          name: ${REPO}-${ZONE}-database
-                          key: database-port
+                      value: "${POSTGRES_PORT}"
                     - name: POSTGRES_USER
-                      valueFrom:
-                        secretKeyRef:
-                          name: ${REPO}-${ZONE}-database
-                          key: database-user
+                      value: "${POSTGRES_USER}"
                   resources:
                     limits:
                       cpu: 250m
