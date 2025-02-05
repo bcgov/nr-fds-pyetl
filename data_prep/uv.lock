@@ -320,6 +320,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "boto3" },
+    { name = "click" },
     { name = "fastparquet" },
     { name = "kr8s" },
     { name = "kubernetes" },
@@ -345,7 +346,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "boto3", extras = ["s3"], specifier = ">=1.35.37,<2.0.0" },
+    { name = "boto3", specifier = ">=1.35.37,<2.0.0" },
+    { name = "click", specifier = ">=8.1.8" },
     { name = "fastparquet", specifier = ">=2024.11.0" },
     { name = "kr8s", specifier = ">=0.18.0,<1.0.0" },
     { name = "kubernetes", specifier = ">=31.0.0,<32.0.0" },

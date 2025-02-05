@@ -34,13 +34,14 @@ dependencies = [
     "pandas<3.0.0,>=2.2.3",
     "pyarrow>=18.0.0,<19.0.0",
     "pypika<1.0.0,>=0.48.9",
-    "boto3[s3]<2.0.0,>=1.35.37",
+    "boto3<2.0.0,>=1.35.37",
     "kubernetes<32.0.0,>=31.0.0",
     "requests<3.0.0,>=2.32.3",
     "openshift-client<3.0.0,>=2.0.4",
     "kr8s<1.0.0,>=0.18.0",
     "psycopg2-binary<3.0.0,>=2.9.10",
     "fastparquet>=2024.11.0",
+    "click>=8.1.8",
 ]
 name = "data_prep"
 version = "0.1.0"

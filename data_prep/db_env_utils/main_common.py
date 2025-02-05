@@ -319,10 +319,11 @@ class Utility:
         ).decode("utf-8")
         return db_conn_params
 
-    def run_extract(self) -> None:
+    def run_extract(self, refresh: bool) -> None:
         """
         Run the extract process.
         """
+
         self.make_dirs()
 
         # gets the table list from openshift database
@@ -359,7 +360,9 @@ class Utility:
             )
 
             LOGGER.debug("export_file: %s", export_file)
-            file_created = db_connection.extract_data(table, export_file)
+            file_created = db_connection.extract_data(
+                table, export_file, overwrite=refresh
+            )
 
             if file_created:
                 # push the file to object store, if a new file has been created
