@@ -33,7 +33,6 @@ jobs:
   sync:
     name: Deploy
     environment: ${{ inputs.environment }}
-    if: needs.init.outputs.deploy_sync == 'true'
     needs: [init]
     runs-on: ubuntu-24.04
     steps:
@@ -49,6 +48,7 @@ jobs:
             -p TAG=${{ inputs.tag }}
             -p ZONE=${{ inputs.target }}
             ${{ github.event_name == 'pull_request' && '-p TEST_MODE=true' || '' }}
+          triggers: ('sync/')
 
       - name: Run sync ETL
         if: github.event_name == 'pull_request'
@@ -57,5 +57,6 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
+          triggers: ('sync/')
           command: |
             ./sync/oc_run.sh ${{ inputs.tag }} ${{ secrets.oc_token }}
