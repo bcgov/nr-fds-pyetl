@@ -59,4 +59,4 @@ jobs:
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
           triggers: ('sync/')
-          command: ./sync/oc_run.sh ${{ inputs.tag }} ${{ secrets.oc_token }}
+          commands: ./sync/oc_run.sh ${{ inputs.tag }} ${{ secrets.oc_token }}
