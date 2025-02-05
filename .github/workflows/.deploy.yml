@@ -33,7 +33,6 @@ jobs:
   sync:
     name: Deploy
     environment: ${{ inputs.environment }}
-    needs: [init]
     runs-on: ubuntu-24.04
     steps:
       - name: Deploy (sync)
