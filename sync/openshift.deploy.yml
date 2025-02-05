@@ -8,6 +8,10 @@ parameters:
   - name: ZONE
     description: Deployment zone, e.g. pr-###, test or prod
     required: true
+  - name: ORACLE_SYNC_PASSWORD
+    required: true
+  - name: POSTGRES_PASSWORD
+    required: true
 
   ### Recommended - suggest hard coding
   - name: APP
@@ -27,7 +31,17 @@ parameters:
     value: nr-spar
   - name: TEST_MODE
     description: "Run in test mode"
-    value: "true"
+    value: "false"
+  - name: ORACLE_HOST
+    value: nrcdb03.bcgov
+  - name: ORACLE_SERVICE
+    value: dbq01.nrs.bcgov
+  - name: ORACLE_SYNC_USER
+    value: proxy_fsa_spar_sync_user
+  - name: POSTGRES_DB
+    value: nr-spar
+  - name: POSTGRES_USER
+    value: nr-spar
 
   ### Usually a bad idea - not recommended
   - name: JOB_BACKOFF_LIMIT
@@ -42,31 +56,8 @@ parameters:
   - name: REGISTRY
     description: Source container registry
     value: ghcr.io
-
-  ### TBD - I have no idea
-  - name: ORACLE_HOST
-    value: "dunno"
-  - name: ORACLE_SYNC_PASSWORD
-    description: Dunno
-    value: "dunno"
-  - name: ORACLE_SERVICE
-    description: Dunno
-    value: "dunno"
-  - name: ORACLE_SYNC_USER
-    description: Dunno
-    value: "dunno"
-  - name: POSTGRES_DB
-    description: Dunno
-    value: "dunno"
-  - name: POSTGRES_PASSWORD
-    description: Dunno
-    value: "dunno"
   - name: POSTGRES_PORT
-    description: Dunno
-    value: "dunno"
-  - name: POSTGRES_USER
-    description: Dunno
-    value: "dunno"
+    value: 5432
 
 objects:
   - kind: CronJob
