@@ -40,7 +40,6 @@ def main(environment, refresh):
     environment = environment.upper()  # Ensure uppercase for consistency
     click.echo(f"Selected environment: {environment}")
 
-    env_obj = env_config.Env(environment)
     db_type = constants.DBType.SPAR
     common_util = main_common.Utility(environment, db_type)
     common_util.configure_logging()
@@ -60,19 +59,3 @@ if __name__ == "__main__":
     if len(sys.argv) == 1:  # No arguments provided
         sys.argv.append("--help")  # Force help text if no args provided
     main()
-
-    # # get the environment
-    # env_str = "TEST"
-    # if len(sys.argv) > 1:
-    #     env_str = sys.argv[1]
-    # env_obj = env_config.Env(env_str)
-
-    # # configure logging
-    # db_type = constants.DBType.SPAR
-    # common_util = main_common.Utility(env_str, db_type)
-    # common_util.configure_logging()
-    # logger_name = pathlib.Path(__file__).stem
-    # LOGGER = logging.getLogger(logger_name)
-
-    # # new stuff
-    # common_util.run_extract()

@@ -47,22 +47,66 @@ import pathlib
 import sys
 from concurrent import futures  # noqa: F401
 
+import click
 import constants
 import main_common
 
 LOGGER = logging.getLogger(__name__)
 
 
-if __name__ == "__main__":
-    # dealing with args
-    # NOTE: if this gets more complex use a CLI framework
-    env_str = "TEST"
-    if len(sys.argv) > 1:
-        env_str = sys.argv[1]
+@click.command()
+@click.argument(
+    "environment",
+    type=click.Choice(
+        ["TEST", "PROD"],
+        case_sensitive=False,
+    ),
+)
+@click.option(
+    "--refresh", is_flag=True, help="Refresh the environment configuration."
+)
+def main(environment, refresh):
+    """
+    Extract data from on prem oracle database.
 
-    common_util = main_common.Utility(env_str, constants.DBType.ORA)
+    Identify the env to extract from... (TEST or PROD)
+
+    Add the --refresh flag if you want to purge and recreate local and remote
+    (object store) cached data.
+    """
+    global LOGGER
+    environment = environment.upper()  # Ensure uppercase for consistency
+    click.echo(f"Selected environment: {environment}")
+
+    db_type = constants.DBType.ORA
+    common_util = main_common.Utility(environment, db_type)
     common_util.configure_logging()
     logger_name = pathlib.Path(__file__).stem
     LOGGER = logging.getLogger(logger_name)
-    LOGGER.debug("log message in main")
-    common_util.run_extract()
+
+    if refresh:
+        click.echo("Refresh flag is enabled. Refreshing configuration...")
+    else:
+        click.echo("Refresh flag is not enabled.")
+
+    LOGGER.debug("refresh: %s %s", refresh, type(refresh))
+    common_util.run_extract(refresh=refresh)
+
+
+if __name__ == "__main__":
+    if len(sys.argv) == 1:  # No arguments provided
+        sys.argv.append("--help")  # Force help text if no args provided
+    main()
+
+    # # dealing with args
+    # # NOTE: if this gets more complex use a CLI framework
+    # env_str = "TEST"
+    # if len(sys.argv) > 1:
+    #     env_str = sys.argv[1]
+
+    # common_util = main_common.Utility(env_str, constants.DBType.ORA)
+    # common_util.configure_logging()
+    # logger_name = pathlib.Path(__file__).stem
+    # LOGGER = logging.getLogger(logger_name)
+    # LOGGER.debug("log message in main")
+    # common_util.run_extract()

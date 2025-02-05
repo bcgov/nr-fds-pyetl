@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 import boto3
 import botocore.exceptions
 import constants
+from boto3.s3.transfer import TransferConfig
 
 if TYPE_CHECKING:
     import pathlib
@@ -273,10 +274,39 @@ class OStore:
             checksum = self.calculate_sha256(file_path=local_data_file)
             LOGGER.debug("checksum: %s", checksum)
 
-            response = self.s3_client.upload_file(
-                str(local_data_file),
-                self.conn_params.bucket,
-                str(remote_data_file),
-                ExtraArgs={"ChecksumSHA256": checksum},
+            config = TransferConfig(
+                multipart_threshold=1024 * 25,
+                max_concurrency=10,
+                multipart_chunksize=1024 * 25,
+                use_threads=True,
             )
-            LOGGER.debug("response from object store upload: %s", response)
+            # note... probably don't need a lot of this code.. created it to address
+            # incompatibility between boto3 and our object store impleemntation.
+
+            retry = 1
+            retry_max = 3
+            while retry <= retry_max:
+                try:
+                    response = self.s3_client.upload_file(
+                        str(local_data_file),
+                        self.conn_params.bucket,
+                        str(remote_data_file),
+                        # ExtraArgs={"ChecksumSHA256": checksum},
+                        Config=config,
+                    )
+                    LOGGER.debug(
+                        "response from object store upload: %s", response
+                    )
+                    break
+                except (
+                    botocore.exceptions.ClientError,
+                    boto3.exceptions.S3UploadFailedError,
+                ) as e:
+                    LOGGER.exception(
+                        "Error uploading file: %s, %s", local_data_file, e
+                    )
+                    LOGGER.info("retrying upload... %s of %s", retry, retry_max)
+                    if retry > retry_max:
+                        raise e
+                    retry += 1
+                    time.sleep(1)

@@ -347,30 +347,62 @@ class Utility:
             db_connection = postgresdb_lib.PostgresDatabase(
                 connection_params=spar_db_params,
             )
-
+        # example of some of the tables that triggered the ostore upload issue
+        # SEEDLOT / CLIENT_LOCATION / PARENT_TREE / SMP_MIX
         for table in tables_to_export:
             LOGGER.info("Exporting table %s", table)
             # the export file type is different depending on the database.
             # originally wanted to keep to parquet, but loading the json data
             # used by spar doesn't work well with postgres.  So using pg_dump.
-            export_file = constants.get_default_export_file_path(
+            local_export_file = constants.get_default_export_file_path(
                 table,
                 self.env_obj.current_env,
                 self.db_type,
             )
 
-            LOGGER.debug("export_file: %s", export_file)
-            file_created = db_connection.extract_data(
-                table, export_file, overwrite=refresh
-            )
+            # if refresh is set to true the delete the local file if it exists
+            if refresh and local_export_file.exists():
+                local_export_file.unlink()
 
-            if file_created:
-                # push the file to object store, if a new file has been created
-                ostore.put_data_files(
-                    [table],
-                    self.env_obj.current_env,
-                    self.db_type,
+            LOGGER.debug("export_file: %s", local_export_file)
+
+            ostore_export_file = constants.get_default_export_file_ostore_path(
+                table,
+                self.db_type,
+            )
+            # if the remote export file exists and the refresh flag is not set
+            # then skip the export process
+            if (
+                ostore.object_exists(object_name=str(ostore_export_file))
+                and not refresh
+            ):
+
+                LOGGER.info(
+                    "Export file %s exists in object store, skipping export",
+                    ostore_export_file,
                 )
+                continue
+            # the remote file either does not exist, or the refresh flag is set
+            # to true, re-export the file and replace the local and remote data
+            else:
+                LOGGER.info(
+                    "Export file %s does not exist in object store, exporting",
+                    ostore_export_file,
+                )
+
+                file_created = db_connection.extract_data(
+                    table,
+                    local_export_file,
+                    overwrite=refresh,
+                )
+
+                if file_created:
+                    # push the file to object store, if a new file has been created
+                    ostore.put_data_files(
+                        [table],
+                        self.env_obj.current_env,
+                        self.db_type,
+                    )
         if self.db_type == constants.DBType.SPAR:
             self.kube_client.close_port_forward()
 
