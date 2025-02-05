@@ -50,10 +50,12 @@ jobs:
             -p ZONE=${{ inputs.target }}
             ${{ github.event_name == 'pull_request' && '-p TEST_MODE=true' || '' }}
 
-      - uses: redhat-actions/openshift-tools-installer@v1
-        with:
-          oc: "4"
-
       - name: Run sync ETL
         if: github.event_name == 'pull_request'
-        run: ./sync/oc_run.sh ${{ inputs.tag }} ${{ secrets.oc_token }}
+        uses: bcgov/action-oc-runner@v0.3.0
+        with:
+          oc_namespace: ${{ vars.OC_NAMESPACE }}
+          oc_server: ${{ vars.OC_SERVER }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          command: |
+            ./sync/oc_run.sh ${{ inputs.tag }} ${{ secrets.oc_token }}
