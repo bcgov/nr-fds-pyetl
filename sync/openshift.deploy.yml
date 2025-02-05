@@ -43,6 +43,32 @@ parameters:
     description: Source container registry
     value: ghcr.io
 
+  ### TBD - I have no idea
+  - name: ORACLE_HOST
+    description: Dunno
+    value: "dunno"
+  - name: ORACLE_SYNC_PASSWORD
+    description: Dunno
+    value: "dunno"
+  - name: ORACLE_SERVICE
+    description: Dunno
+    value: "dunno"
+  - name: ORACLE_SYNC_USER
+    description: Dunno
+    value: "dunno"
+  - name: POSTGRES_DB
+    description: Dunno
+    value: "dunno"
+  - name: POSTGRES_PASSWORD
+    description: Dunno
+    value: "dunno"
+  - name: POSTGRES_PORT
+    description: Dunno
+    value: "dunno"
+  - name: POSTGRES_USER
+    description: Dunno
+    value: "dunno"
+
 objects:
   - kind: CronJob
     apiVersion: "batch/v1"
@@ -80,49 +106,25 @@ objects:
                     - name: EXECUTION_ID
                       value: "${EXECUTION_ID}"
                     - name: ORACLE_HOST
-                      valueFrom:
-                        secretKeyRef:
-                          name: ${REPO}-${ZONE}-sync
-                          key: oracle-host
+                      value: "${ORACLE_HOST}"
                     - name: ORACLE_SYNC_PASSWORD
-                      valueFrom:
-                        secretKeyRef:
-                          name: ${REPO}-${ZONE}-sync
-                          key: oracle-sync-password
+                      value: "${ORACLE_SYNC_PASSWORD}"
                     - name: ORACLE_PORT
                       value: ${ORACLE_PORT}
                     - name: ORACLE_SERVICE
-                      valueFrom:
-                        secretKeyRef:
-                          name: ${REPO}-${ZONE}-sync
-                          key: oracle-service
+                      value: "${ORACLE_SERVICE}"
                     - name: ORACLE_SYNC_USER
-                      valueFrom:
-                        secretKeyRef:
-                          name: ${REPO}-${ZONE}-sync
-                          key: oracle-sync-user
+                      value: "${ORACLE_SYNC_USER}"
                     - name: POSTGRES_HOST
                       value: ${REPO}-${ZONE}-database
                     - name: POSTGRES_DB
-                      valueFrom:
-                        secretKeyRef:
-                          name: ${REPO}-${ZONE}-database
-                          key: database-name
+                      value: "${POSTGRES_DB}"
                     - name: POSTGRES_PASSWORD
-                      valueFrom:
-                        secretKeyRef:
-                          name: ${REPO}-${ZONE}-database
-                          key: database-password
+                      value: "${POSTGRES_PASSWORD}"
                     - name: POSTGRES_PORT
-                      valueFrom:
-                        secretKeyRef:
-                          name: ${REPO}-${ZONE}-database
-                          key: database-port
+                      value: "${POSTGRES_PORT}"
                     - name: POSTGRES_USER
-                      valueFrom:
-                        secretKeyRef:
-                          name: ${REPO}-${ZONE}-database
-                          key: database-user
+                      value: "${POSTGRES_USER}"
                   resources:
                     limits:
                       cpu: 250m
