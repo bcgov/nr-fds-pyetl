@@ -53,7 +53,7 @@ objects:
         cronjob: ${REPO}-${ZONE}
     spec:
       # 00:00 on day-of-month 1 in every 12000th month from January through December
-      schedule: "0 0 1 1/12000 *" # https://crontab.guru/#0_0_1_1/12000_*
+      schedule: "0 0 31 2/12000 0" # https://crontab.guru/#0_0_1_1/12000_*
       startingDeadlineSeconds: 60
       concurrencyPolicy: "Replace"
       successfulJobsHistoryLimit: "${{JOB_HISTORY_SUCCESS}}"
