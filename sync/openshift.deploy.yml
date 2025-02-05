@@ -27,7 +27,7 @@ parameters:
     value: nr-spar
   - name: TEST_MODE
     description: "Run in test mode"
-    value: "false"
+    value: "true"
 
   ### Usually a bad idea - not recommended
   - name: JOB_BACKOFF_LIMIT
@@ -45,7 +45,6 @@ parameters:
 
   ### TBD - I have no idea
   - name: ORACLE_HOST
-    description: Dunno
     value: "dunno"
   - name: ORACLE_SYNC_PASSWORD
     description: Dunno

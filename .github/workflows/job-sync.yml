@@ -23,16 +23,16 @@ jobs:
           triggers: ('sync/')
           command: ./sync/oc_run.sh test ${{ secrets.oc_token }}
 
-  sync-prod:
-    environment: prod
-    name:
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Sync (PROD)
-        uses: bcgov/action-oc-runner@v0.3.0
-        with:
-          oc_namespace: ${{ vars.OC_NAMESPACE }}
-          oc_server: ${{ vars.OC_SERVER }}
-          oc_token: ${{ secrets.OC_TOKEN }}
-          triggers: ('sync/')
-          command: ./sync/oc_run.sh prod ${{ secrets.oc_token }}
+  # sync-prod:
+  #   environment: prod
+  #   name:
+  #   runs-on: ubuntu-24.04
+  #   steps:
+  #     - name: Sync (PROD)
+  #       uses: bcgov/action-oc-runner@v0.3.0
+  #       with:
+  #         oc_namespace: ${{ vars.OC_NAMESPACE }}
+  #         oc_server: ${{ vars.OC_SERVER }}
+  #         oc_token: ${{ secrets.OC_TOKEN }}
+  #         triggers: ('sync/')
+  #         command: ./sync/oc_run.sh prod ${{ secrets.oc_token }}
