@@ -291,8 +291,9 @@ class DB(ABC):
             select_obj = sqlalchemy.select(table_obj)
 
             if export_file.exists():
+                # delete the local file if it exists
                 export_file.unlink()
-                # delete the file if it exists
+                # delete the local file if it exists
             LOGGER.debug("data_query_sql: %s", select_obj)
             LOGGER.debug("reading the %s", table)
             self.get_sqlalchemy_engine()

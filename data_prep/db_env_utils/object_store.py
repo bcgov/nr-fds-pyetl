@@ -4,12 +4,15 @@ Wrapper to object storage functionality.
 
 from __future__ import annotations
 
+import hashlib
 import logging
+import time
 from typing import TYPE_CHECKING
 
 import boto3
 import botocore.exceptions
 import constants
+from boto3.s3.transfer import TransferConfig
 
 if TYPE_CHECKING:
     import pathlib
@@ -122,8 +125,9 @@ class OStore:
         :rtype: bool
         """
         try:
+            LOGGER.debug("bucket: %s", self.conn_params.bucket)
             self.s3_client.get_object(
-                Bucket=self._bucket,
+                Bucket=self.conn_params.bucket,
                 Key=object_name,
             )
             return True  # noqa: TRY300
@@ -208,6 +212,13 @@ class OStore:
             )
         return versions
 
+    def calculate_sha256(self, file_path: pathlib.Path) -> str:
+        sha256_hash = hashlib.sha256()
+        with file_path.open("rb") as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                sha256_hash.update(chunk)
+        return sha256_hash.hexdigest()
+
     def put_data_files(
         self,
         tables: list[str],
@@ -238,14 +249,64 @@ class OStore:
                 table,
                 db_type,
             )
+            LOGGER.debug("local file: %s", local_data_file)
+            LOGGER.debug("remote file: %s", remote_data_file)
 
             # keeping it simple for now, if local exists re-use it
-            if local_data_file.exists():
+            if local_data_file.exists() and self.object_exists(
+                object_name=str(remote_data_file),
+            ):
+                LOGGER.debug(
+                    "delete pre-existing remote file: %s", remote_data_file
+                )
                 self.delete_data_file(remote_data_file)
                 # pull the files from object store.
-            response = self.s3_client.upload_file(
-                str(local_data_file),
+            LOGGER.debug(
+                "uploading file: %s to: %s in the bucket %s",
+                local_data_file,
+                remote_data_file,
                 self.conn_params.bucket,
-                str(remote_data_file),
             )
-            LOGGER.debug("response from object store upload: %s", response)
+
+            # when the file gets deleted for some reason was generating a checksum
+            # error when trying to re-upload it... Only way to fix was to
+            # calculate the checksum locally and send it along with the upload.
+            checksum = self.calculate_sha256(file_path=local_data_file)
+            LOGGER.debug("checksum: %s", checksum)
+
+            config = TransferConfig(
+                multipart_threshold=1024 * 25,
+                max_concurrency=10,
+                multipart_chunksize=1024 * 25,
+                use_threads=True,
+            )
+            # note... probably don't need a lot of this code.. created it to address
+            # incompatibility between boto3 and our object store impleemntation.
+
+            retry = 1
+            retry_max = 3
+            while retry <= retry_max:
+                try:
+                    response = self.s3_client.upload_file(
+                        str(local_data_file),
+                        self.conn_params.bucket,
+                        str(remote_data_file),
+                        # ExtraArgs={"ChecksumSHA256": checksum},
+                        Config=config,
+                    )
+                    LOGGER.debug(
+                        "response from object store upload: %s", response
+                    )
+                    break
+                except (
+                    botocore.exceptions.ClientError,
+                    boto3.exceptions.S3UploadFailedError,
+                ) as e:
+                    LOGGER.exception(
+                        "Error uploading file: %s, %s", local_data_file, e
+                    )
+                    LOGGER.info("retrying upload... %s of %s", retry, retry_max)
+                    if retry > retry_max:
+                        raise e
+                    retry += 1
+                    time.sleep(1)
