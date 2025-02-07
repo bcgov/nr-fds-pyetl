@@ -333,7 +333,7 @@ class OracleDatabase(db_lib.DB):
         self,
         table_list: list[str],
         retries: int = 1,
-        max_retries: int = 6,
+        max_retries: int = 10,
         *,
         cascade: bool = False,  # noqa: ARG002
     ) -> None:
@@ -695,57 +695,3 @@ class FixOracleSequences:
             sequence_column = columns[val_cnt]
             LOGGER.debug(sequence_column)
         return sequence_column
-
-
-# if __name__ == ("__main__"):
-
-# class TestDecorator:
-
-#     def __init__(self):
-#         self.var = "test"
-
-#     @FixSequences
-#     def testing(self, schema, table, other):
-#         print("testing %s %s %s", schema, table, other)
-
-# tester = TestDecorator()
-# tester.testing(schema="the", table="seedlot", other="something")
-
-# class FixSequences:
-#     """
-#     Fix sequences after data has been loaded.
-
-#     After the data has been loaded this decorator class will identify all
-#     the sequences that are used by triggers in the database, and ensure that
-#     the nextval is greater than the current max value for the column that they
-#     are populating.
-#     """
-
-#     def __init__(self, func) -> None:
-#         functools.update_wrapper(self, func)
-#         self.func = func
-
-#     def __get__(self, instance, owner):
-#         """
-#         Allow the decorator to be used on class methods.
-
-#         :param instance: contains the object reference that needs to be
-#             prepended when calling the function
-#         :type instance: object
-#         :param owner: the class that owns the method.
-#         :type owner: class
-#         :return: Method call that is tied to the instance of the object.
-#         :rtype: function
-#         """
-#         return functools.partial(self.__call__, instance)
-
-#     def __call__(self, *args, **kwargs) -> None:
-#         self.fix_sequences(*args, **kwargs)
-#         retval = self.func(*args, **kwargs)
-#         self.fix_sequences(*args, **kwargs)
-#         return retval
-
-#     def fix_sequences(self, *args, **kwargs) -> None:
-#         print("fixing sequences")
-#         print("args: %s", args)
-#         print("kwargs: %s", kwargs)

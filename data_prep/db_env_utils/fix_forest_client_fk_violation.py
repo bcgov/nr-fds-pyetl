@@ -3,6 +3,22 @@ Identify and delete postgres seedlot table records with fk violations.
 
 Identifies records in postgres seedlot table that have client references that
 do not exist in test.
+
+Once we have the client_number/location codes (from this script) that cause
+the issues, we can change them to ones that exist in TEST.
+
+Example:
+update seedlot
+set
+    applicant_client_number = '00149081',
+    applicant_locn_code = '22'
+where
+    applicant_client_number = '00196805' and
+    applicant_locn_code = '02';
+
+Alternatively, we can delete the records that have the fk violations but that
+can result in removing a lot of tables due to fk constraints.
+
 """
 
 import logging

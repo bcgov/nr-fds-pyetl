@@ -42,6 +42,24 @@ class TableConstraints:
     referenced_columns: list[str]
 
 
+@dataclass
+class SequenceTableColumns:
+    """
+    A class to represent the sequence / table relationship.
+
+    Attributes:
+        sequence_name (str): The name of the sequence.
+        table_name (str): The name of the table.
+        table_schema (str): The schema of the table.
+        column_name (str): The name of the column.
+    """  # noqa: D413
+
+    sequence_name: str
+    table_name: str
+    table_schema: str
+    column_name: str
+
+
 class DB(ABC):
     """
     Database abstract base class.
@@ -225,6 +243,25 @@ class DB(ABC):
         Disable triggers.
 
         Recieves a list of triggers that are to be disabled.
+
+        :param trigger_list: list of strings describing triggers
+        :type trigger_list: list[str]
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def fix_sequences(
+        self,
+    ) -> None:
+        """
+        Resolve database sequences to that they are valid.
+
+        Gets a list of sequences in the database, iterates over them to
+        determine the tables/columns that they are associated with, and then
+        queries the next value for those sequences and compares with the current
+        maximum values in the tables, then updates the sequence so that the
+        sequences next value is greater than the current maximum for the table
+        it populates.
 
         :param trigger_list: list of strings describing triggers
         :type trigger_list: list[str]
@@ -479,6 +516,7 @@ class DB(ABC):
                 self.enable_constraints(cons_list)
                 raise sqlalchemy.exc.IntegrityError
         else:
+            self.fix_sequences()
             self.enable_constraints(cons_list)
 
             trigs_list = self.get_triggers()

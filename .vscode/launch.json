@@ -16,7 +16,7 @@
             "name": "spar-extract-test",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/data_prep/main_spar_extract.py",
+            "program": "${workspaceFolder}/data_prep/db_env_utils/main_spar_extract.py",
             "console": "integratedTerminal",
             "envFile": "${workspaceFolder}/.env",
             "args": [
@@ -27,18 +27,19 @@
             "name": "spar-ingest-test",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/data_prep/main_spar_ingest.py",
+            "program": "${workspaceFolder}/data_prep/db_env_utils/main_spar_ingest.py",
             "console": "integratedTerminal",
             "envFile": "${workspaceFolder}/.env",
             "args": [
-                "TEST"
+                "TEST",
+                "--purge"
             ]
         },
         {
             "name": "spar-extract-prod",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/data_prep/main_spar_extract.py",
+            "program": "${workspaceFolder}/data_prep/db_env_utils/main_spar_extract.py",
             "console": "integratedTerminal",
             "envFile": "${workspaceFolder}/.env",
             "args": [
@@ -49,7 +50,7 @@
             "name": "spar-ingest-prod",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/data_prep/main_spar_ingest.py",
+            "program": "${workspaceFolder}/data_prep/db_env_utils/main_spar_ingest.py",
             "console": "integratedTerminal",
             "envFile": "${workspaceFolder}/.env",
             "args": [
@@ -60,7 +61,7 @@
             "name": "oracle-extract-prod",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/data_prep/main_ora_extract.py",
+            "program": "${workspaceFolder}/data_prep/db_env_utils/main_ora_extract.py",
             "console": "integratedTerminal",
             "envFile": "${workspaceFolder}/.env",
             "args": [
@@ -71,7 +72,7 @@
             "name": "oracle-extract-test",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/data_prep/main_ora_extract.py",
+            "program": "${workspaceFolder}/data_prep/db_env_utils/main_ora_extract.py",
             "console": "integratedTerminal",
             "envFile": "${workspaceFolder}/.env",
             "args": [
@@ -82,7 +83,7 @@
             "name": "oracle-ingest-test",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/data_prep/main_ora_ingest.py",
+            "program": "${workspaceFolder}/data_prep/db_env_utils/main_ora_ingest.py",
             "console": "integratedTerminal",
             "envFile": "${workspaceFolder}/.env",
             "args": [

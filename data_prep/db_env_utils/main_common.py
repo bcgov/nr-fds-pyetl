@@ -55,9 +55,9 @@ class Utility:
         LOGGER.debug("datadir: %s", self.datadir)
         if not self.datadir.exists():
             self.datadir.mkdir(parents=True)
-        env_path = pathlib.Path(self.datadir, self.env_str)
-        if not env_path.exists():
-            env_path.mkdir()
+        # env_path = pathlib.Path(self.datadir, self.env_str)
+        # if not env_path.exists():
+        #     env_path.mkdir()
 
     def configure_logging(self) -> None:
         """
@@ -406,11 +406,20 @@ class Utility:
         if self.db_type == constants.DBType.SPAR:
             self.kube_client.close_port_forward()
 
-    def run_injest(self) -> None:
+    def run_injest(self, purge: bool) -> None:
         """
-        Run the injest process.
+        Run the ingest process.
         """
+        if purge and self.datadir.exists():
+            LOGGER.info(
+                "Purging cached local data and pulling fresh set from object store."
+            )
+            # delete the contents of the directory.
+            for file_path in self.datadir.iterdir():
+                if file_path.is_file():
+                    file_path.unlink()  # Delete the file
         self.make_dirs()
+
         tables_to_import = self.get_tables()
         LOGGER.debug("tables to import: %s", tables_to_import)
 
@@ -434,11 +443,12 @@ class Utility:
             self.db_type,
         )
 
+        # delete the database data... this always happens for ingest
         local_docker_db.purge_data(table_list=tables_to_import, cascade=True)
 
         local_docker_db.load_data_retry(
             data_dir=self.datadir,
             table_list=tables_to_import,
             env_str=self.env_obj.current_env,
-            purge=False,
+            purge=purge,
         )
