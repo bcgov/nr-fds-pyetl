@@ -56,29 +56,48 @@ LOGGER = logging.getLogger(__name__)
 
 @click.command()
 @click.argument(
+    "source",
+    type=click.Choice(
+        ["SPAR", "ORA"],
+        case_sensitive=False,
+    ),
+    required=True,
+)
+@click.argument(
     "environment",
     type=click.Choice(
         ["TEST", "PROD"],
         case_sensitive=False,
     ),
+    required=True,
 )
 @click.option(
     "--refresh", is_flag=True, help="Refresh the environment configuration."
 )
-def main(environment, refresh):
+def main(source, environment, refresh):
     """
-    Extract data from on prem oracle database.
+    Extract data a SPAR database.
 
-    Identify the env to extract from... (TEST or PROD)
+    Source:
 
-    Add the --refresh flag if you want to purge and recreate local and remote
-    (object store) cached data.
+        * SPAR  - Extract data from the SPAR postgres database hosted on oc.
+        * ORA   - Extract data from the ORACLE database hosted on prem.
+
+    Environment:
+
+        * TEST - Extract data from the test environment.
+        * PROD - Extract data from the production environment.
+
+    --refresh: set this flag if you want to purge and recreate local and remote
+               (object store) cached data.
     """
     global LOGGER
     environment = environment.upper()  # Ensure uppercase for consistency
     click.echo(f"Selected environment: {environment}")
 
-    db_type = constants.DBType.ORA
+    # db_type = constants.DBType.ORA
+    db_type = constants.DBType[source]  # Convert string to enum value
+
     common_util = main_common.Utility(environment, db_type)
     common_util.configure_logging()
     logger_name = pathlib.Path(__file__).stem
