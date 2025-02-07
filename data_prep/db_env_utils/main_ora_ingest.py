@@ -39,23 +39,59 @@ import logging
 import pathlib
 import sys
 
+import click
 import constants
 import main_common
 
 LOGGER = logging.getLogger(__name__)
 
 
-if __name__ == "__main__":
-    # dealing with args
-    # NOTE: if this gets more complex use a CLI framework
-    env_str = "TEST"
-    if len(sys.argv) > 1:
-        env_str = sys.argv[1]
+@click.command()
+@click.argument(
+    "environment",
+    type=click.Choice(
+        ["TEST", "PROD"],
+        case_sensitive=False,
+    ),
+)
+@click.option(
+    "--purge",
+    is_flag=True,
+    help="Purge the database and reload with fresh data",
+)
+def main(environment, purge):
+    """
+    Load the data from object store cache to local oracle database.
+
+    Identify the env to load from... (TEST or PROD).
+
+    Add the --purge flag if you want to purge cached local data and reload from
+    remote (object store).
+    """
+    global LOGGER
+    environment = environment.upper()  # Ensure uppercase for consistency
+    click.echo(f"Selected environment: {environment}")
 
     db_type = constants.DBType.ORA
-    common_util = main_common.Utility(env_str, db_type)
+    common_util = main_common.Utility(environment, db_type)
     common_util.configure_logging()
     logger_name = pathlib.Path(__file__).stem
     LOGGER = logging.getLogger(logger_name)
-    LOGGER.debug("log message in main")
-    common_util.run_injest()
+
+    if purge:
+        click.echo(
+            "Purge flag is enabled. Will remove local files, and then pull new ones from ostore..."
+        )
+    else:
+        click.echo(
+            "Purge flag is not enabled... Only load data from local files."
+        )
+
+    LOGGER.debug("purge: %s %s", purge, type(purge))
+    common_util.run_injest(purge=purge)
+
+
+if __name__ == "__main__":
+    if len(sys.argv) == 1:  # No arguments provided
+        sys.argv.append("--help")  # Force help text if no args provided
+    main()
