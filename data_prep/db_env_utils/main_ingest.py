@@ -48,6 +48,14 @@ LOGGER = logging.getLogger(__name__)
 
 @click.command()
 @click.argument(
+    "dest",
+    type=click.Choice(
+        ["SPAR", "ORA"],
+        case_sensitive=False,
+    ),
+    required=True,
+)
+@click.argument(
     "environment",
     type=click.Choice(
         ["TEST", "PROD"],
@@ -59,20 +67,32 @@ LOGGER = logging.getLogger(__name__)
     is_flag=True,
     help="Purge the database and reload with fresh data",
 )
-def main(environment, purge):
+def main(dest, environment, purge):
     """
     Load the data from object store cache to local oracle database.
 
-    Identify the env to load from... (TEST or PROD).
+    \b
+    dest: (The destination local database that is being populated)
+        - SPAR - Load cached SPAR data into the SPAR database.
+        - ORA  - Load cached ORA data into the ORA database.
 
-    Add the --purge flag if you want to purge cached local data and reload from
-    remote (object store).
+    \b
+    Environment:
+        * TEST - Load data that was extracted from the test environment.
+        * PROD - Load data that was extracted from the production environment.
+
+    \b
+    --purge: (Optional) set this flag if you want to ensure the data that is
+             cached in object store is being used for the load.  Otherwise
+             will re-use any locally cached data from previous runs.
     """
     global LOGGER
+    dest = dest.upper()  # Ensure uppercase for consistency
     environment = environment.upper()  # Ensure uppercase for consistency
     click.echo(f"Selected environment: {environment}")
 
-    db_type = constants.DBType.ORA
+    db_type = constants.DBType[dest]  # Convert string to enum value
+
     common_util = main_common.Utility(environment, db_type)
     common_util.configure_logging()
     logger_name = pathlib.Path(__file__).stem
