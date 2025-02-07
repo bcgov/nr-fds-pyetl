@@ -32,3 +32,13 @@ def test_get_fk_constraints(docker_connection_params):
 
     LOGGER.debug("fk_constraints: %s", fk_constraints[0:3])
     assert len(fk_constraints) > 0
+
+
+def test_fix_sequences(docker_connection_params):
+    db = postgresdb_lib.PostgresDatabase(docker_connection_params)
+    fix_seq = postgresdb_lib.FixPostgresSequences(db)
+
+    seq_tab_cols = fix_seq.get_sequence_table_columns()
+    LOGGER.debug("seq_tab_cols: %s", seq_tab_cols)
+
+    fix_seq.fix_sequences()

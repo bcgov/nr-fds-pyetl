@@ -537,6 +537,19 @@ class PostgresDatabase(db_lib.DB):
         LOGGER.info("pg_dump complete")
         return True
 
+    def fix_sequences(self) -> None:
+        """
+        Verify and fix database sequences.
+
+        Ensures that the sequences next value is greater than the max value for
+        the table / column combination that the sequence is populating.
+
+        :param table: the table to fix the sequences for
+        :type table: str
+        """
+        seq_fix = FixPostgresSequences(self)
+        seq_fix.fix_sequences()
+
 
 class ConstraintBackup:
     """
@@ -655,3 +668,172 @@ class ConstraintBackup:
         )
         LOGGER.debug("alter statement: %s", alter_statement)
         return alter_statement
+
+
+class FixPostgresSequences:
+    """
+    Fix postgres sequences.
+    """
+
+    def __init__(self, dbcls: PostgresDatabase) -> None:
+        """
+        Create instance of FixPostgresSequences.
+
+        :param dbcls: instance of a postgres database class
+        :type dbcls: PostgresDatabase
+        """
+        self.dbcls = dbcls
+
+    def get_sequence_table_columns(self) -> list[db_lib.SequenceTableColumns]:
+        """
+        Get the sequence and the table / column that it populates.
+
+        :return: a list of SequenceTableColumns objects that describe the
+            sequences and the tables / columns that they populate.
+        :rtype: list[db_lib.SequenceTableColumns]
+        """
+        self.dbcls.get_connection()
+        cursor = self.dbcls.connection.cursor()
+        query = """
+            SELECT
+                s.relname AS sequence_name,
+                c.relname AS table_name,
+                t.table_schema as table_schema,
+                a.attname AS column_name
+            FROM
+                pg_class s
+            LEFT JOIN
+                pg_depend d ON s.oid = d.objid AND d.deptype = 'a'
+            LEFT JOIN
+                pg_class c ON d.refobjid = c.oid
+            LEFT JOIN
+                pg_attribute a ON d.refobjid = a.attrelid AND
+                  d.refobjsubid = a.attnum
+            left join
+                information_schema.tables t on c.relname = t.table_name
+            WHERE
+                s.relkind = 'S' and
+                table_schema = %(schema)s
+                """
+        cursor.execute(query, {"schema": self.dbcls.schema_2_sync})
+        sequence_table_columns = []
+        for row in cursor:
+            obj = db_lib.SequenceTableColumns(
+                sequence_name=row[0],
+                table_name=row[1],
+                table_schema=row[2],
+                column_name=row[3],
+            )
+            sequence_table_columns.append(obj)
+        cursor.close()
+        return sequence_table_columns
+
+    def get_sequence_last_val(self, sequence_name: str) -> int:
+
+        self.dbcls.get_connection()
+        cursor = self.dbcls.connection.cursor()
+        query = """
+            SELECT last_value
+            FROM pg_sequences
+            WHERE schemaname = %(schema)s
+            AND sequencename = %(sequence_name)s
+        """
+        cursor.execute(
+            query,
+            {
+                "schema": self.dbcls.schema_2_sync,
+                "sequence_name": sequence_name,
+            },
+        )
+        last_val = None
+        last_val_row = cursor.fetchone()
+        if last_val_row:
+            last_val = int(last_val_row[0])
+        else:
+            LOGGER.warning(
+                "no last value found for sequence: %s", sequence_name
+            )
+        LOGGER.debug(
+            "last val for sequence (%s) next_val: %s", sequence_name, last_val
+        )
+        cursor.close()
+        return last_val
+
+    def get_table_max_val(self, schema: str, table: str, column: str) -> int:
+        self.dbcls.get_connection()
+        cursor = self.dbcls.connection.cursor()
+        query = """
+            SELECT max(%(column_name)s)
+            FROM %(table)s
+        """
+        LOGGER.debug("column name: %s", column)
+        LOGGER.debug("table name: %s", table)
+        LOGGER.debug("schema: %s", schema)
+        cursor.execute(
+            query,
+            {
+                "table": psycopg2.extensions.AsIs(schema + "." + table),
+                "column_name": psycopg2.extensions.AsIs(column),
+            },
+        )
+        max_val = None
+        max_val_row = cursor.fetchone()
+        LOGGER.debug("max_val_row: %s", max_val_row)
+        if max_val_row:
+            max_val = int(max_val_row[0])
+        else:
+            LOGGER.warning("no max value found for table: %s", table)
+        LOGGER.debug(
+            "max val for table (%s) column (%s) max_val: %s",
+            table,
+            column,
+            max_val,
+        )
+        cursor.close()
+        return max_val
+
+    def update_sequence(
+        self, schema: str, sequence_name: str, new_val: int
+    ) -> None:
+        self.dbcls.get_connection()
+        cursor = self.dbcls.connection.cursor()
+        # SELECT setval('sequence_name', new_value);
+        query = f"SELECT setval(%(sequence_name)s, %(new_val)s)"
+
+        cursor.execute(
+            query,
+            {
+                "sequence_name": schema + "." + sequence_name,
+                "new_val": psycopg2.extensions.AsIs(new_val),
+            },
+        )
+        LOGGER.info("sequence %s updated to %s", sequence_name, new_val)
+        cursor.close()
+
+    def fix_sequences(self):
+        LOGGER.debug("fixing sequences")
+        sequence_table_columns = self.get_sequence_table_columns()
+
+        for sequence_table_column in sequence_table_columns:
+            LOGGER.debug("sequence_table_column: %s", sequence_table_column)
+            sequence_last_val = self.get_sequence_last_val(
+                sequence_table_column.sequence_name
+            )
+            LOGGER.debug("last_val is %s", sequence_last_val)
+            table_max_val = self.get_table_max_val(
+                sequence_table_column.table_schema,
+                sequence_table_column.table_name,
+                sequence_table_column.column_name,
+            )
+            LOGGER.debug(
+                "max_val for the table / column (%s/%s) is %s",
+                sequence_table_column.table_name,
+                sequence_table_column.column_name,
+                table_max_val,
+            )
+            if sequence_last_val < table_max_val:
+                self.update_sequence(
+                    schema=sequence_table_column.table_schema,
+                    sequence_name=sequence_table_column.sequence_name,
+                    new_val=table_max_val + 1,
+                )
