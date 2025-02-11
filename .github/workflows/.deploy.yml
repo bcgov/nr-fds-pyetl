@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Database
-        uses: bcgov/action-deployer-openshift@v3.1.0
+        uses: bcgov/action-deployer-openshift@fix/repoOverride
         with:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
