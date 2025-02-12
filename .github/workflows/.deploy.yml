@@ -35,6 +35,28 @@ jobs:
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-24.04
     steps:
+      - name: Init
+        uses: bcgov/action-deployer-openshift@fix/repoOverride
+        with:
+          oc_namespace: ${{ vars.OC_NAMESPACE }}
+          oc_server: ${{ vars.OC_SERVER }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          file: common/openshift.init.yml
+          parameters:
+            -p NAME=${{ github.event.repository.name }}
+            -p ZONE=${{ inputs.target }}
+            -p FORESTCLIENTAPI_KEY=unused
+            -p ORACLE_CERT_SECRET='${{ secrets.ORACLE_CERT_SECRET }}'
+            -p ORACLE_HOST='${{ vars.ORACLE_HOST }}'
+            -p ORACLE_PASSWORD='${{ secrets.ORACLE_PASSWORD }}'
+            -p ORACLE_SERVICE='${{ vars.ORACLE_SERVICE }}'
+            -p ORACLE_SYNC_USER='${{ vars.ORACLE_SYNC_USER }}'
+            -p ORACLE_SYNC_PASSWORD='${{ secrets.ORACLE_SYNC_PASSWORD }}'
+            -p ORACLE_USER='${{ vars.ORACLE_USER }}'
+            -p VITE_USER_POOLS_WEB_CLIENT_ID=unused
+          repository: bcgov/nr-spar
+          triggers: ('sync/')
+
       - name: Database
         uses: bcgov/action-deployer-openshift@fix/repoOverride
         timeout-minutes: 5
