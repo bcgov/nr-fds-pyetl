@@ -26,12 +26,12 @@ on:
     outputs:
       triggered:
         description: Was a deployment triggered?
-        value: ${{ jobs.deploy.outputs.deploy }}
+        value: ${{ jobs.sync.outputs.deploy }}
 
 jobs:
-  deploy:
-    # Deployments only run on Pull Requests if the sync/ directory is modified
-    name: Deploy
+  # Deployments only run on Pull Requests if the sync/ directory is modified
+  init:
+    name: Init
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-24.04
     steps:
@@ -58,6 +58,13 @@ jobs:
           repository: bcgov/nr-spar
           triggers: ('sync/')
 
+  database:
+    # Deployments only run on Pull Requests if the sync/ directory is modified
+    name: Database
+    needs: init
+    environment: ${{ inputs.environment }}
+    runs-on: ubuntu-24.04
+    steps:
       - name: Database
         uses: bcgov/action-deployer-openshift@v3.2.0
         timeout-minutes: 5
@@ -76,6 +83,13 @@ jobs:
           repository: bcgov/nr-spar
           triggers: ('sync/')
 
+  sync:
+    # Deployments only run on Pull Requests if the sync/ directory is modified
+    name: Sync
+    needs: init
+    environment: ${{ inputs.environment }}
+    runs-on: ubuntu-24.04
+    steps:
       - name: Deploy (sync)
         id: deploy
         uses: bcgov/action-deployer-openshift@v3.2.0
