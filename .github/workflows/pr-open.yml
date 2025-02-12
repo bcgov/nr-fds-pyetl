@@ -42,7 +42,7 @@ jobs:
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
           triggers: ('sync/')
-          commands: ./sync/oc_run.sh ${{ inputs.tag }} ${{ secrets.oc_token }}
+          commands: ./sync/oc_run.sh ${{ github.event.number }} ${{ secrets.oc_token }}
 
   results:
     name: PR Results
