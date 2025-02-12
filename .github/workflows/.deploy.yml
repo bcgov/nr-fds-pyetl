@@ -44,6 +44,7 @@ jobs:
           file: common/openshift.database.yml
           overwrite: false
           parameters:
+            -p NAME=${{ github.event.repository.name }}
             -p ZONE=${{ inputs.target }}
             ${{ github.event_name == 'pull_request' && '-p DB_PVC_SIZE=192Mi' || '' }}
             ${{ github.event_name == 'pull_request' && '-p MEMORY_REQUEST=100Mi' || '' }}
