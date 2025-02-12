@@ -32,16 +32,6 @@ parameters:
   - name: TEST_MODE
     description: "Run in test mode"
     value: "false"
-  - name: ORACLE_HOST
-    value: nrcdb03.bcgov
-  - name: ORACLE_SERVICE
-    value: dbq01.nrs.bcgov
-  - name: ORACLE_SYNC_USER
-    value: proxy_fsa_spar_sync_user
-  - name: POSTGRES_DB
-    value: nr-spar
-  - name: POSTGRES_USER
-    value: nr-spar
 
   ### Usually a bad idea - not recommended
   - name: JOB_BACKOFF_LIMIT
@@ -96,25 +86,49 @@ objects:
                     - name: EXECUTION_ID
                       value: "${EXECUTION_ID}"
                     - name: ORACLE_HOST
-                      value: "${ORACLE_HOST}"
-                    - name: ORACLE_SYNC_PASSWORD
-                      value: "${ORACLE_SYNC_PASSWORD}"
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${REPO}-${ZONE}-${APP}
+                          key: oracle-host
                     - name: ORACLE_PORT
                       value: ${ORACLE_PORT}
                     - name: ORACLE_SERVICE
-                      value: "${ORACLE_SERVICE}"
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${REPO}-${ZONE}-${APP}
+                          key: oracle-service
+                    - name: ORACLE_SYNC_PASSWORD
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${REPO}-${ZONE}-${APP}
+                          key: oracle-sync-password
                     - name: ORACLE_SYNC_USER
-                      value: "${ORACLE_SYNC_USER}"
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${REPO}-${ZONE}-${APP}
+                          key: oracle-sync-user
+                    - name: POSTGRES_DB
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${REPO}-${ZONE}-database
+                          key: database-name
                     - name: POSTGRES_HOST
                       value: ${REPO}-${ZONE}-database
-                    - name: POSTGRES_DB
-                      value: "${POSTGRES_DB}"
                     - name: POSTGRES_PASSWORD
-                      value: "${POSTGRES_PASSWORD}"
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${REPO}-${ZONE}-database
+                          key: database-password
                     - name: POSTGRES_PORT
-                      value: "${POSTGRES_PORT}"
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${REPO}-${ZONE}-database
+                          key: database-port
                     - name: POSTGRES_USER
-                      value: "${POSTGRES_USER}"
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${REPO}-${ZONE}-database
+                          key: database-user
                   resources:
                     limits:
                       cpu: 250m
