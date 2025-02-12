@@ -37,6 +37,7 @@ jobs:
     steps:
       - name: Database
         uses: bcgov/action-deployer-openshift@fix/repoOverride
+        timeout-minutes: 5
         with:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
@@ -54,6 +55,7 @@ jobs:
 
       - name: Deploy (sync)
         uses: bcgov/action-deployer-openshift@v3.0.1
+        timeout-minutes: 5
         with:
           file: sync/openshift.deploy.yml
           oc_namespace: ${{ vars.OC_NAMESPACE }}
@@ -70,6 +72,7 @@ jobs:
 
       - name: Run sync ETL
         if: github.event_name == 'pull_request'
+        timeout-minutes: 10
         uses: bcgov/action-oc-runner@v0.3.0
         with:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
