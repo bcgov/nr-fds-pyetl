@@ -24,12 +24,12 @@ on:
         type: string
 
     outputs:
-      run_tests:
-        description: Run Cypress tests if the core apps have changed (excludes sync)
-        value: ${{ jobs.init.outputs.deploy_core }}
+      triggered:
+        description: Was a deployment triggered?
+        value: ${{ jobs.deploy.outputs.deploy }}
 
 jobs:
-  sync:
+  deploy:
     # Deployments only run on Pull Requests if the sync/ directory is modified
     name: Deploy
     environment: ${{ inputs.environment }}
@@ -77,6 +77,7 @@ jobs:
           triggers: ('sync/')
 
       - name: Deploy (sync)
+        id: deploy
         uses: bcgov/action-deployer-openshift@v3.2.0
         timeout-minutes: 5
         with:
@@ -92,14 +93,3 @@ jobs:
             -p POSTGRES_PASSWORD='${{ secrets.POSTGRES_PASSWORD }}'
             ${{ github.event_name == 'pull_request' && '-p TEST_MODE=true' || '' }}
           triggers: ('sync/')
-
-      - name: Run sync ETL
-        if: github.event_name == 'pull_request'
-        timeout-minutes: 10
-        uses: bcgov/action-oc-runner@v0.3.0
-        with:
-          oc_namespace: ${{ vars.OC_NAMESPACE }}
-          oc_server: ${{ vars.OC_SERVER }}
-          oc_token: ${{ secrets.OC_TOKEN }}
-          triggers: ('sync/')
-          commands: ./sync/oc_run.sh ${{ inputs.tag }} ${{ secrets.oc_token }}
