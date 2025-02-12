@@ -42,8 +42,6 @@ parameters:
   - name: REGISTRY
     description: Source container registry
     value: ghcr.io
-  - name: POSTGRES_PORT
-    value: "5432"
 
 objects:
   - kind: CronJob
