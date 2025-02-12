@@ -88,10 +88,12 @@ jobs:
     name: Sync
     needs: init
     environment: ${{ inputs.environment }}
+    outputs:
+      deploy: ${{ steps.sync.outputs.triggered }}
     runs-on: ubuntu-24.04
     steps:
-      - name: Deploy (sync)
-        id: deploy
+      - name: Sync
+        id: sync
         uses: bcgov/action-deployer-openshift@v3.2.0
         timeout-minutes: 5
         with:
