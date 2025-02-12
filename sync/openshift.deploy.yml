@@ -8,10 +8,6 @@ parameters:
   - name: ZONE
     description: Deployment zone, e.g. pr-###, test or prod
     required: true
-  - name: ORACLE_SYNC_PASSWORD
-    required: true
-  - name: POSTGRES_PASSWORD
-    required: true
 
   ### Recommended - suggest hard coding
   - name: APP

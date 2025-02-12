@@ -89,6 +89,5 @@ jobs:
           parameters:
             -p TAG=${{ inputs.tag }}
             -p ZONE=${{ inputs.target }}
-            -p POSTGRES_PASSWORD='${{ secrets.POSTGRES_PASSWORD }}'
             ${{ github.event_name == 'pull_request' && '-p TEST_MODE=true' || '' }}
           triggers: ('sync/')
