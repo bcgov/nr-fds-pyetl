@@ -45,6 +45,7 @@ jobs:
           parameters:
             -p NAME=${{ github.event.repository.name }}
             -p ZONE=${{ inputs.target }}
+            -p DB_PASSWORD='${{ secrets.DB_PASSWORD }}'
             -p FORESTCLIENTAPI_KEY=unused
             -p ORACLE_CERT_SECRET='${{ secrets.ORACLE_CERT_SECRET }}'
             -p ORACLE_HOST='${{ vars.ORACLE_HOST }}'
