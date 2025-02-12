@@ -30,7 +30,7 @@ jobs:
 
   test:
     name: Test ETL
-    if: jobs.deploy.outputs.triggered
+    if: needs.deploy.outputs.triggered
     needs: deploy
     runs-on: ubuntu-24.04
     steps:
