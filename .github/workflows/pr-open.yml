@@ -9,8 +9,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  builds:
-    name: Builds
+  build:
+    name: Build
     runs-on: ubuntu-24.04
     permissions:
       packages: write
@@ -22,28 +22,34 @@ jobs:
           tag_fallback: latest
           triggers: ('sync/')
 
-  # Will address this when move the actual sync job to this repository.
-  # deploys:
-  #   name: Deploys (${{ github.event.number }})
-  #   needs: [builds]
-  #   secrets: inherit
-  #   uses: ./.github/workflows/.deploy.yml
+  deploy:
+    name: Deploy (${{ github.event.number }})
+    needs: [build]
+    secrets: inherit
+    uses: ./.github/workflows/.deploy.yml
+
+  test:
+    name: Test ETL
+    if: needs.deploy.outputs.triggered
+    needs: deploy
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Run sync ETL
+        timeout-minutes: 10
+        uses: bcgov/action-oc-runner@v0.3.0
+        with:
+          oc_namespace: ${{ vars.OC_NAMESPACE }}
+          oc_server: ${{ vars.OC_SERVER }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          triggers: ('sync/')
+          commands: ./sync/oc_run.sh ${{ github.event.number }} ${{ secrets.oc_token }}
 
   results:
     name: PR Results
     if: always()
-    # Include all needs that could have failures!
-    # remove deploys until got the actual sync job running in this repo
-    # [builds, deploys]
-    needs: [builds]
+    needs: [build, deploy, test]
     runs-on: ubuntu-24.04
     steps:
-      - run: |
-          # View results
-          echo "needs.*.result: ${{ toJson(needs.*.result) }}"
-
       - if: contains(needs.*.result, 'failure')||contains(needs.*.result, 'canceled')
-        run: |
-          # Job failure found
-          echo "At least one job has failed"
-          exit 1
+        run: echo "At least one job has failed." && exit 1
+      - run: echo "Success!"
