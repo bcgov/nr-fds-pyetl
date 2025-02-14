@@ -51,7 +51,7 @@ package-mode = false
 
 [dependency-groups]
 dev = [
-    "black<25.0.0,>=24.8.0",
+    "black<25.2.0,>=25.1.0",
     "ruff<1.0.0,>=0.8.0",
     "mypy-boto3<2.0.0,>=1.35.38",
     "pytest<9.0.0,>=8.3.3",
