@@ -68,50 +68,41 @@ jobs:
           repository: bcgov/nr-spar
           triggers: ('sync/')
 
-  database:
-    # Deployments only run on Pull Requests if the sync/ directory is modified
-    name: Database
-    needs: init
+  deploy:
+    name: Deploy
     environment: ${{ inputs.environment }}
+    needs: init
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        name: [database, sync]
+        include:
+          - name: database
+            file: common/openshift.database.yml
+            overwrite: false
+            parameters:
+              -p DB_PVC_SIZE=${{ inputs.db-pvc-size }}
+              -p NAME=${{ github.event.repository.name }}
+            repository: bcgov/nr-spar
+          - name: sync
+            file: sync/openhsift.deploy.yml
+            overwrite: true
+            parameters:
+              -p TAG=${{ inputs.tag }}
+              -p TEST_MODE=${{ inputs.test-mode }}
+            repository: ${{ github.repository }}
     steps:
-      - name: Database
-        uses: bcgov/action-deployer-openshift@v3.2.0
+      - uses: bcgov/action-deployer-openshift@v3.2.0
         timeout-minutes: 5
         with:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
-          file: common/openshift.database.yml
-          overwrite: false
+          file: ${{ matrix.file }}
+          overwrite: ${{ matrix.overwrite }}
           parameters:
-            -p NAME=${{ github.event.repository.name }}
             -p ZONE=${{ inputs.target }}
-            -p DB_PVC_SIZE=${{ inputs.db-pvc-size }}
-          repository: bcgov/nr-spar
-          triggers: ('sync/')
-
-  sync:
-    # Deployments only run on Pull Requests if the sync/ directory is modified
-    name: Sync
-    needs: init
-    environment: ${{ inputs.environment }}
-    outputs:
-      deploy: ${{ steps.sync.outputs.triggered }}
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Sync
-        id: sync
-        uses: bcgov/action-deployer-openshift@v3.2.0
-        timeout-minutes: 5
-        with:
-          file: sync/openshift.deploy.yml
-          oc_namespace: ${{ vars.OC_NAMESPACE }}
-          oc_server: ${{ vars.OC_SERVER }}
-          oc_token: ${{ secrets.OC_TOKEN }}
-          overwrite: true
-          parameters:
-            -p TAG=${{ inputs.tag }}
-            -p ZONE=${{ inputs.target }}
-            -p TEST_MODE=${{ inputs.test-mode }}
+            ${{ matrix.parameters }}
+          repository: ${{ matrix.repository }}
           triggers: ('sync/')
