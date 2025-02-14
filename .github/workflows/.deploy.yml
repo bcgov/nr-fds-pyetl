@@ -90,7 +90,7 @@ jobs:
               -p NAME=${{ github.event.repository.name }}
             repository: bcgov/nr-spar
           - name: sync
-            file: sync/openhsift.deploy.yml
+            file: sync/openshift.deploy.yml
             overwrite: true
             parameters:
               -p TAG=${{ inputs.tag }}
