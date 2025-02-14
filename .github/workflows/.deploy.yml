@@ -23,6 +23,16 @@ on:
         required: false
         type: string
 
+      ### Per-environment config
+      db-pvc-size:
+        description: Database PVC size; e.g. 1Gi
+        default: "128Mi"
+        type: string
+      test-mode:
+        description: Test only?
+        default: 'true'
+        type: string
+
     outputs:
       triggered:
         description: Was a deployment triggered?
@@ -77,8 +87,7 @@ jobs:
           parameters:
             -p NAME=${{ github.event.repository.name }}
             -p ZONE=${{ inputs.target }}
-            ${{ github.event_name == 'pull_request' && '-p DB_PVC_SIZE=192Mi' || '' }}
-            ${{ github.event_name == 'pull_request' && '-p MEMORY_REQUEST=100Mi' || '' }}
+            -p DB_PVC_SIZE=${{ inputs.db-pvc-size }}
           repository: bcgov/nr-spar
           triggers: ('sync/')
 
@@ -104,5 +113,5 @@ jobs:
           parameters:
             -p TAG=${{ inputs.tag }}
             -p ZONE=${{ inputs.target }}
-            ${{ github.event_name == 'pull_request' && '-p TEST_MODE=true' || '' }}
+            -p TEST_MODE=${{ inputs.test-mode }}
           triggers: ('sync/')
