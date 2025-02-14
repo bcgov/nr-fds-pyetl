@@ -79,7 +79,6 @@ jobs:
             -p ZONE=${{ inputs.target }}
             ${{ github.event_name == 'pull_request' && '-p DB_PVC_SIZE=192Mi' || '' }}
             ${{ github.event_name == 'pull_request' && '-p MEMORY_REQUEST=100Mi' || '' }}
-            ${{ github.event_name == 'pull_request' && '-p MEMORY_LIMIT=200Mi' || '' }}
           repository: bcgov/nr-spar
           triggers: ('sync/')
 
