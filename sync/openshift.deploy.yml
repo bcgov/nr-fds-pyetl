@@ -124,8 +124,6 @@ objects:
                           name: ${REPO}-${ZONE}-database
                           key: database-user
                   resources:
-                    limits:
-                      cpu: 250m
                     requests:
                       cpu: 50m
                   terminationMessagePath: /dev/termination-log
