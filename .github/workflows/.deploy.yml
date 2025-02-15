@@ -22,6 +22,10 @@ on:
         default: ${{ github.event.number }}
         required: false
         type: string
+      triggers:
+        description: File paths that trigger this workflow
+        default: ''
+        type: string
 
       ### Per-environment config
       db-pvc-size:
@@ -70,7 +74,7 @@ jobs:
             -p ORACLE_USER='${{ vars.ORACLE_USER }}'
             -p VITE_USER_POOLS_WEB_CLIENT_ID=unused
           repository: bcgov/nr-spar
-          triggers: ('sync/')
+          triggers: ${{ inputs.triggers }}
 
   deploy:
     name: Deploy
@@ -109,7 +113,7 @@ jobs:
             -p ZONE=${{ inputs.target }}
             ${{ matrix.parameters }}
           repository: ${{ matrix.repository }}
-          triggers: ('sync/')
+          triggers: ${{ inputs.triggers }}
 
   test:
     name: Test ETL
@@ -126,4 +130,4 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
-          triggers: ('sync/')
+          triggers: ${{ inputs.triggers }}
