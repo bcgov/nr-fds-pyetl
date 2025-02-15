@@ -119,8 +119,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Run sync ETL
-        timeout-minutes: 10
+      - timeout-minutes: 10
         uses: bcgov/action-oc-runner@v0.3.0
         with:
           cronjob: ${{ github.event.repository.name }}-sync-${{ github.event.number }}
