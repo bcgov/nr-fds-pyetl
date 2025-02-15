@@ -27,6 +27,8 @@ jobs:
     needs: [build]
     secrets: inherit
     uses: ./.github/workflows/.deploy.yml
+    with:
+      triggers: ('sync/')
 
   results:
     name: PR Results
