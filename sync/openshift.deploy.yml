@@ -27,7 +27,7 @@ parameters:
     value: nr-fds-pyetl
   - name: TEST_MODE
     description: "Run in test mode"
-    value: "false"
+    value: "true"
 
   ### Usually a bad idea - not recommended
   - name: JOB_BACKOFF_LIMIT

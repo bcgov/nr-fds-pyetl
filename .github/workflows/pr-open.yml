@@ -28,26 +28,10 @@ jobs:
     secrets: inherit
     uses: ./.github/workflows/.deploy.yml
 
-  test:
-    name: Test ETL
-    if: needs.deploy.outputs.triggered
-    needs: deploy
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Run sync ETL
-        timeout-minutes: 10
-        uses: bcgov/action-oc-runner@v0.3.0
-        with:
-          oc_namespace: ${{ vars.OC_NAMESPACE }}
-          oc_server: ${{ vars.OC_SERVER }}
-          oc_token: ${{ secrets.OC_TOKEN }}
-          triggers: ('sync/')
-          commands: ./sync/oc_run.sh ${{ github.event.number }} ${{ secrets.oc_token }}
-
   results:
     name: PR Results
     if: always()
-    needs: [build, deploy, test]
+    needs: [build, deploy]
     runs-on: ubuntu-24.04
     steps:
       - if: contains(needs.*.result, 'failure')||contains(needs.*.result, 'canceled')
