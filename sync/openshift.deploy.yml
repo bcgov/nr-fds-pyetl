@@ -8,6 +8,9 @@ parameters:
   - name: ZONE
     description: Deployment zone, e.g. pr-###, test or prod
     required: true
+  - name: POSTGRES_HOST
+    description: PostgreSQL database host
+    required: true
 
   ### Recommended - suggest hard coding
   - name: APP
@@ -107,7 +110,7 @@ objects:
                           name: ${REPO}-${ZONE}-database
                           key: database-name
                     - name: POSTGRES_HOST
-                      value: ${REPO}-${ZONE}-database
+                      value: ${POSTGRES_HOST}
                     - name: POSTGRES_PASSWORD
                       valueFrom:
                         secretKeyRef:

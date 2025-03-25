@@ -32,8 +32,10 @@ jobs:
     uses: ./.github/workflows/.deploy.yml
     with:
       environment: test
+      postgres-host: nr-spar-prod-database
       tag: ${{ needs.init.outputs.pr }}
       target: test
+      test-mode: false
 
   deploys-prod:
     name: PROD Deploys (${{ needs.init.outputs.pr }})
@@ -42,8 +44,10 @@ jobs:
     uses: ./.github/workflows/.deploy.yml
     with:
       environment: prod
+      postgres-host: nr-spar-prod-database
       tag: ${{ needs.init.outputs.pr }}
       target: prod
+      test-mode: true
 
   promote:
     name: Promote Images

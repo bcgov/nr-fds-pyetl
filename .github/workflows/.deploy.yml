@@ -12,6 +12,11 @@ on:
         default: ''
         required: false
         type: string
+      postgres-host:
+        description: PostgreSQL host
+        default: ${{ github.event.repository.name }}-${{ github.event.number }}-database
+        required: false
+        type: string
       tag:
         description: Container tag; usually PR number
         default: ${{ github.event.number }}
@@ -99,6 +104,7 @@ jobs:
             parameters:
               -p TAG=${{ inputs.tag }}
               -p TEST_MODE=${{ inputs.test-mode }}
+              -p POSTGRES_HOST=${{ inputs.postgres-host }}
             repository: ${{ github.repository }}
     steps:
       - uses: bcgov/action-deployer-openshift@v3.2.0
@@ -115,8 +121,8 @@ jobs:
           repository: ${{ matrix.repository }}
           triggers: ${{ inputs.triggers }}
 
-  test:
-    name: Test ETL
+  run-etl:
+    name: Run ETL
     environment: ${{ inputs.environment }}
     if: inputs.test == true
     needs: deploy
