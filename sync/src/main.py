@@ -10,7 +10,7 @@ def env_var_is_filled(variable):
         print("Error: "+variable+" environment variable is None")
         return False
     return True
-    
+
 def generate_db_config(type_,schema_,settings):
     dbconfig = {}
     ssl_required    = settings["ssl_required"]
@@ -47,16 +47,16 @@ def generate_db_config(type_,schema_,settings):
     return dbconfig
 
 def get_build_number():
-    return os.environ.get("BUILD_NUMBER")
+    return os.environ.get("BUILDER_TAG")
 
 def required_variables_exists():
     ret = True
-    
+
     print("-------------------------------------")
     print("----- ETL Tool: Unit test Execution  ")
     print("----- 1. Checking if required variables are defined")
     print("-------------------------------------")
-    
+
     if not env_var_is_filled("TEST_MODE") or \
        not env_var_is_filled("EXECUTION_ID") or  \
        not env_var_is_filled("POSTGRES_HOST") or  \
@@ -69,22 +69,22 @@ def required_variables_exists():
        not env_var_is_filled("ORACLE_SERVICE") or \
        not env_var_is_filled("ORACLE_SYNC_USER") or \
        not env_var_is_filled("ORACLE_SYNC_PASSWORD"):
-       ret = False        
-        
+       ret = False
+
     if ret:
         print("Required variable tests passed!")
     else:
         raise Exception("Not all required variables to execute a instance of Data Sync Engine exists.")
-    
+
 def testOracleConnection(settings):
     print("-------------------------------------")
     print("-- 3. Checking if Oracle connection is available and reachable")
     print("-------------------------------------")
     from module.test_db_connection import test_db_connection
-    dbConfig = generate_db_config("ORACLE","THE",settings) 
+    dbConfig = generate_db_config("ORACLE","THE",settings)
     d = test_db_connection.do_test(dbConfig)
     print(d)
-    
+
 def testPostgresConnection(settings):
     print("-------------------------------------")
     print("-- 2. Checking if Postgres connection is available and reachable")
@@ -93,7 +93,7 @@ def testPostgresConnection(settings):
     dbConfig = generate_db_config("POSTGRES","spar",settings)
     d = test_db_connection.do_test(dbConfig)
     print(d)
-        
+
 def read_settings():
     file = os.path.join(os.path.abspath(os.path.dirname(__file__)) , "settings.yml")
     try:
@@ -109,7 +109,7 @@ def read_settings():
         print("Error: settings.yml is not well formated or does not have required settings")
     except Exception as err:
         print(f"A fatal error has occurred when trying to load settings.yml ({type(err)}): {err}")
-        
+
 
 def main() -> int:
     try:
@@ -139,23 +139,23 @@ def main() -> int:
                 testOracleConnection(settings["oracle"])
                 # Vault disabled
                 # testVault()
-            else:            
+            else:
                 print("-------------------------------------")
                 print("Starting ETL main process ")
                 print("-------------------------------------")
-                
-                dbOracle = generate_db_config("ORACLE","THE",settings["oracle"]) 
+
+                dbOracle = generate_db_config("ORACLE","THE",settings["oracle"])
                 dbPostgres = generate_db_config("POSTGRES","spar",settings["postgres"])
-                
+
                 job_return_code = execute_etl(dbPostgres, dbOracle)
 
                 print("-------------------------------------")
                 print("ETL Main process finished ")
                 print("-------------------------------------")
         return job_return_code
-    
+
     except Exception as err:
-        print(f"A fatal error has occurred ({type(err)}): {err}") 
+        print(f"A fatal error has occurred ({type(err)}): {err}")
         return 1 #failure
 
 # MAIN Execution
