@@ -34,6 +34,7 @@ jobs:
       environment: test
       tag: ${{ needs.init.outputs.pr }}
       target: test
+      test-mode: false
 
   deploys-prod:
     name: PROD Deploys (${{ needs.init.outputs.pr }})
@@ -44,6 +45,7 @@ jobs:
       environment: prod
       tag: ${{ needs.init.outputs.pr }}
       target: prod
+      test-mode: false
 
   promote:
     name: Promote Images
