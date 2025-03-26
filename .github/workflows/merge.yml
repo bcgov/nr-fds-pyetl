@@ -32,7 +32,7 @@ jobs:
     uses: ./.github/workflows/.deploy.yml
     with:
       environment: test
-      postgres-host: nr-spar-prod-database
+      postgres-host: nr-spar-test-database
       tag: ${{ needs.init.outputs.pr }}
       target: test
       test-mode: false
