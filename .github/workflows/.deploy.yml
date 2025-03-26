@@ -60,6 +60,7 @@ jobs:
     steps:
       - name: Init
         uses: bcgov/action-deployer-openshift@v3.2.0
+        timeout-minutes: 1
         with:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
@@ -79,6 +80,7 @@ jobs:
             -p ORACLE_USER='${{ vars.ORACLE_USER }}'
             -p VITE_USER_POOLS_WEB_CLIENT_ID=unused
           repository: bcgov/nr-spar
+          overwrite: true
           triggers: ${{ inputs.triggers }}
 
   deploy:
