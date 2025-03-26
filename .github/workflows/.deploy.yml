@@ -44,7 +44,7 @@ on:
       test-mode:
         description: Test only?
         default: true
-        type: string
+        type: boolean
 
     outputs:
       triggered:
