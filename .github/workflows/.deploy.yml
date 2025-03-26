@@ -17,6 +17,10 @@ on:
         default: ${{ github.event.repository.name }}-${{ github.event.number }}-database
         required: false
         type: string
+      run-etl:
+        description: Run ETL after deploy?
+        default: false
+        type: boolean
       tag:
         description: Container tag; usually PR number
         default: ${{ github.event.number }}
@@ -79,33 +83,12 @@ jobs:
           overwrite: true
           triggers: ${{ inputs.triggers }}
 
-  deploy:
-    name: Deploy
+  deploy-sync:
+    name: Deploy Sync
     environment: ${{ inputs.environment }}
     needs: init
     runs-on: ubuntu-24.04
     timeout-minutes: 5
-    strategy:
-      matrix:
-        name: [database, sync]
-        include:
-          - name: database
-            file: common/openshift.database.yml
-            overwrite: false
-            parameters:
-              -p DB_PVC_SIZE=${{ inputs.db-pvc-size }}
-              -p NAME=${{ github.event.repository.name }}
-            repository: bcgov/nr-spar
-          - name: sync
-            file: sync/openshift.deploy.yml
-            overwrite: true
-            parameters:
-              -p TAG=${{ inputs.tag }}
-              -p TEST_MODE=${{ inputs.test-mode }}
-              -p POSTGRES_HOST=${{ inputs.postgres-host }}
-              -p POSTGRES_DB=${{ github.event.name == 'pull_request' && 'nr-fds-pyetl' || 'nr-spar' }}
-              -p POSTGRES_USER=${{ github.event.name == 'pull_request' && 'nr-fds-pyetl' || 'nr-spar' }}
-            repository: ${{ github.repository }}
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
         timeout-minutes: 5
@@ -113,20 +96,44 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
-          file: ${{ matrix.file }}
-          overwrite: ${{ matrix.overwrite }}
+          file: sync/openshift.deploy.yml
+          overwrite: sync/openshift.deploy.yml
           parameters:
             -p ZONE=${{ inputs.target }}
-            ${{ matrix.parameters }}
-          repository: ${{ matrix.repository }}
+            -p TAG=${{ inputs.tag }}
+            -p TEST_MODE=${{ inputs.test-mode }}
+            -p POSTGRES_HOST=${{ inputs.postgres-host }}
+            -p POSTGRES_DB=${{ github.event.name == 'pull_request' && 'nr-fds-pyetl' || 'nr-spar' }}
+            -p POSTGRES_USER=${{ github.event.name == 'pull_request' && 'nr-fds-pyetl' || 'nr-spar' }}
           triggers: ${{ inputs.triggers }}
 
-  run-etl:
-    name: Run ETL
+  deploy-db:
+    name: PR ETL Run
     if: github.event.name == 'pull_request'
-    needs: deploy
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
+    steps:
+      - uses: bcgov/action-deployer-openshift@v3.2.0
+        timeout-minutes: 5
+        with:
+          oc_namespace: ${{ vars.OC_NAMESPACE }}
+          oc_server: ${{ vars.OC_SERVER }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          file: common/openshift.database.yml
+          overwrite: false
+          parameters:
+            -p ZONE=${{ inputs.target }}
+            -p DB_PVC_SIZE=${{ inputs.db-pvc-size }}
+            -p NAME=${{ github.event.repository.name }}
+          repository: bcgov/nr-spar
+          triggers: ${{ inputs.triggers }}
+
+  etl-run:
+    name: Run ETL
+    if: inputs.run-etl == true
+    needs: [deploy-sync, deploy-db]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - timeout-minutes: 10
         uses: bcgov/action-oc-runner@v1.0.0
