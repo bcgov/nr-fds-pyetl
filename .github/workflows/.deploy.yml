@@ -37,10 +37,6 @@ on:
         description: Database PVC size; e.g. 1Gi
         default: "128Mi"
         type: string
-      test:
-        description: Run in test mode?
-        default: true
-        type: boolean
       test-mode:
         description: Test only?
         default: true
@@ -127,8 +123,7 @@ jobs:
 
   run-etl:
     name: Run ETL
-    environment: ${{ inputs.environment }}
-    if: inputs.test == true
+    if: github.event.name == 'pull_request'
     needs: deploy
     runs-on: ubuntu-24.04
     timeout-minutes: 5
