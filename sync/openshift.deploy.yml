@@ -11,6 +11,12 @@ parameters:
   - name: POSTGRES_HOST
     description: PostgreSQL database host
     required: true
+  - name: POSTGRES_DB
+    description: PostgreSQL database name
+    required: true
+  - name: POSTGRES_USER
+    description: PostgreSQL database user
+    value: "nr-spar"
 
   ### Recommended - suggest hard coding
   - name: APP
@@ -105,24 +111,18 @@ objects:
                           name: ${REPO}-${ZONE}-${APP}
                           key: oracle-sync-user
                     - name: POSTGRES_DB
-                      valueFrom:
-                        secretKeyRef:
-                          name: ${REPO}-${ZONE}-database
-                          key: database-name
+                      value: ${POSTGRES_DB}
                     - name: POSTGRES_HOST
                       value: ${POSTGRES_HOST}
                     - name: POSTGRES_PASSWORD
-                      valueFrom:
-                        secretKeyRef:
-                          name: ${REPO}-${ZONE}-database
-                          key: database-password
+                      value: ${POSTGRES_PASSWORD}
                     - name: POSTGRES_PORT
                       valueFrom:
                         secretKeyRef:
                           name: ${REPO}-${ZONE}-database
                           key: database-port
                     - name: POSTGRES_USER
-                      value: ${REPO}
+                      value: ${POSTGRES_USER}
                   resources:
                     requests:
                       cpu: 50m

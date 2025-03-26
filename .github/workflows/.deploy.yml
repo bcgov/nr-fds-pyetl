@@ -107,6 +107,8 @@ jobs:
               -p TAG=${{ inputs.tag }}
               -p TEST_MODE=${{ inputs.test-mode }}
               -p POSTGRES_HOST=${{ inputs.postgres-host }}
+              -p POSTGRES_DB=nr-spar
+              -p POSTGRES_USER=nr-spar
             repository: ${{ github.repository }}
     steps:
       - uses: bcgov/action-deployer-openshift@v3.2.0
