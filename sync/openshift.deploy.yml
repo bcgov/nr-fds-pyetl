@@ -105,9 +105,9 @@ objects:
                           name: ${REPO}-${ZONE}-${APP}
                           key: oracle-sync-user
                     - name: POSTGRES_DB
-                      value: ${POSTGRES_DB}
-                    - name: POSTGRES_HOST
                       value: ${REPO}
+                    - name: POSTGRES_HOST
+                      value: ${POSTGRES_HOST}
                     - name: POSTGRES_PASSWORD
                       valueFrom:
                         secretKeyRef:
