@@ -115,7 +115,10 @@ objects:
                     - name: POSTGRES_HOST
                       value: ${POSTGRES_HOST}
                     - name: POSTGRES_PASSWORD
-                      value: ${POSTGRES_PASSWORD}
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${REPO}-${ZONE}-database
+                          key: database-password
                     - name: POSTGRES_PORT
                       valueFrom:
                         secretKeyRef:
