@@ -107,27 +107,6 @@ jobs:
             -p POSTGRES_USER=${{ github.event.name == 'pull_request' && 'nr-fds-pyetl' || 'nr-spar' }}
           triggers: ${{ inputs.triggers }}
 
-  deploy-db:
-    name: PR ETL Run
-    if: github.event.name == 'pull_request'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    steps:
-      - uses: bcgov/action-deployer-openshift@v3.2.0
-        timeout-minutes: 5
-        with:
-          oc_namespace: ${{ vars.OC_NAMESPACE }}
-          oc_server: ${{ vars.OC_SERVER }}
-          oc_token: ${{ secrets.OC_TOKEN }}
-          file: common/openshift.database.yml
-          overwrite: false
-          parameters:
-            -p ZONE=${{ inputs.target }}
-            -p DB_PVC_SIZE=${{ inputs.db-pvc-size }}
-            -p NAME=${{ github.event.repository.name }}
-          repository: bcgov/nr-spar
-          triggers: ${{ inputs.triggers }}
-
   etl-run:
     name: Run ETL
     if: inputs.run-etl == true
