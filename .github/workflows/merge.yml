@@ -33,6 +33,7 @@ jobs:
     with:
       environment: test
       postgres-host: nr-spar-test-database
+      secrets-from: nr-spar-test
       tag: ${{ needs.init.outputs.pr }}
       target: test
       test-mode: false
@@ -45,6 +46,7 @@ jobs:
     with:
       environment: prod
       postgres-host: nr-spar-prod-database
+      secrets-from: nr-spar-prod
       tag: ${{ needs.init.outputs.pr }}
       target: prod
       test-mode: true
