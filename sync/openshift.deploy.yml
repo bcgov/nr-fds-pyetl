@@ -40,6 +40,9 @@ parameters:
   - name: REPO
     description: Repository name
     value: nr-fds-pyetl
+  - name: SECRETS_FROM
+    description: Secrets objects to reference
+    value: ${REPO}-${ZONE}
   - name: TEST_MODE
     description: "Run in test mode"
     value: "true"
