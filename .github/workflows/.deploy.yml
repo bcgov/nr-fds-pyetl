@@ -110,7 +110,7 @@ jobs:
   etl-run:
     name: Run ETL
     if: inputs.run-etl == true
-    needs: [deploy-sync, deploy-db]
+    needs: [deploy-sync]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
