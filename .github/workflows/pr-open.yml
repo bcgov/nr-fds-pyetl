@@ -28,6 +28,7 @@ jobs:
     secrets: inherit
     uses: ./.github/workflows/.deploy.yml
     with:
+      run-etl: true
       triggers: ('sync/')
 
   results:

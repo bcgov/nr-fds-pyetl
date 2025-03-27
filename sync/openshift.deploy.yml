@@ -16,10 +16,10 @@ parameters:
     required: true
   - name: POSTGRES_HOST
     description: PostgreSQL database host
-    required: true
+    required: false
   - name: POSTGRES_DB
     description: PostgreSQL database name
-    required: true
+    required: false
   - name: POSTGRES_USER
     description: PostgreSQL database user
     value: "nr-spar"
