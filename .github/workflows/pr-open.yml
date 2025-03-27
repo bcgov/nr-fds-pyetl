@@ -29,6 +29,7 @@ jobs:
     uses: ./.github/workflows/.deploy.yml
     with:
       run-etl: true
+      secrets-from: ${{ github.event.repository.name }}-${{ github.event.number }}
       triggers: ('sync/')
 
   # results:
