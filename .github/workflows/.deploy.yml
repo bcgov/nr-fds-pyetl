@@ -17,6 +17,14 @@ on:
         default: ${{ github.event.repository.name }}-${{ github.event.number }}-database
         required: false
         type: string
+      run-etl:
+        description: Run ETL after deploy?
+        default: false
+        type: boolean
+      secrets-from:
+        description: Secrets objects to reference
+        default: ${{ github.event.repository.name }}-${{ github.event.number }}
+        type: string
       tag:
         description: Container tag; usually PR number
         default: ${{ github.event.number }}
@@ -51,7 +59,7 @@ jobs:
   # Deployments only run on Pull Requests if the sync/ directory is modified
   init:
     name: Init
-    environment: ${{ inputs.environment }}
+    if: github.event.name == 'pull_request'
     runs-on: ubuntu-24.04
     steps:
       - name: Init
@@ -71,41 +79,19 @@ jobs:
             -p ORACLE_HOST='${{ vars.ORACLE_HOST }}'
             -p ORACLE_PASSWORD='${{ secrets.ORACLE_PASSWORD }}'
             -p ORACLE_SERVICE='${{ vars.ORACLE_SERVICE }}'
-            -p ORACLE_SYNC_USER='${{ vars.ORACLE_SYNC_USER }}'
-            -p ORACLE_SYNC_PASSWORD='${{ secrets.ORACLE_SYNC_PASSWORD }}'
+            -p ORACLE_SYNC_USER=unused
+            -p ORACLE_SYNC_PASSWORD=unused
             -p ORACLE_USER='${{ vars.ORACLE_USER }}'
             -p VITE_USER_POOLS_WEB_CLIENT_ID=unused
           repository: bcgov/nr-spar
           overwrite: true
           triggers: ${{ inputs.triggers }}
 
-  deploy:
-    name: Deploy
+  deploy-sync:
+    name: Deploy Sync
     environment: ${{ inputs.environment }}
-    needs: init
     runs-on: ubuntu-24.04
     timeout-minutes: 5
-    strategy:
-      matrix:
-        name: [database, sync]
-        include:
-          - name: database
-            file: common/openshift.database.yml
-            overwrite: false
-            parameters:
-              -p DB_PVC_SIZE=${{ inputs.db-pvc-size }}
-              -p NAME=${{ github.event.repository.name }}
-            repository: bcgov/nr-spar
-          - name: sync
-            file: sync/openshift.deploy.yml
-            overwrite: true
-            parameters:
-              -p TAG=${{ inputs.tag }}
-              -p TEST_MODE=${{ inputs.test-mode }}
-              -p POSTGRES_HOST=${{ inputs.postgres-host }}
-              -p POSTGRES_DB=${{ github.event.name == 'pull_request' && 'nr-fds-pyetl' || 'nr-spar' }}
-              -p POSTGRES_USER=${{ github.event.name == 'pull_request' && 'nr-fds-pyetl' || 'nr-spar' }}
-            repository: ${{ github.repository }}
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
         timeout-minutes: 5
@@ -113,26 +99,31 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
-          file: ${{ matrix.file }}
-          overwrite: ${{ matrix.overwrite }}
+          file: sync/openshift.deploy.yml
+          overwrite: sync/openshift.deploy.yml
           parameters:
             -p ZONE=${{ inputs.target }}
-            ${{ matrix.parameters }}
-          repository: ${{ matrix.repository }}
+            -p TAG=${{ inputs.tag }}
+            -p TEST_MODE=${{ inputs.test-mode }}
+            -p ORACLE_SYNC_USER='${{ vars.ORACLE_SYNC_USER }}'
+            -p ORACLE_SYNC_PASSWORD='${{ secrets.ORACLE_SYNC_PASSWORD }}'
+            -p POSTGRES_HOST=${{ inputs.postgres-host }}
+            -p POSTGRES_DB='nr-spar'
+            -p POSTGRES_USER='nr-spar'
+            -p SECRETS_FROM=${{ inputs.secrets-from }}
           triggers: ${{ inputs.triggers }}
 
-  run-etl:
+  etl-run:
     name: Run ETL
-    if: github.event.name == 'pull_request'
-    needs: deploy
+    if: inputs.run-etl == true
+    needs: [deploy-sync]
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - timeout-minutes: 10
         uses: bcgov/action-oc-runner@v1.0.0
         with:
-          cronjob: ${{ github.event.repository.name }}-${{ inputs.target }}-sync
-          cronjob_tail: -1
+          commands: ./sync/oc_run.sh ${{ inputs.target }}
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
