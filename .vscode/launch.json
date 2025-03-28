@@ -97,9 +97,13 @@
             "program": "${workspaceFolder}/sync/src/main.py",
             "console": "integratedTerminal",
             "envFile": "${workspaceFolder}/sync/.env",
+            "python": "/home/kjnether/fsa_proj/nr-fds-pyetl/sync/.venv/bin/python3",
             "args": [
                 ""
-            ]
+            ],
+            "env": {
+                "PYTHONPATH": "/home/kjnether/fsa_proj/nr-fds-pyetl/sync/src"
+            }
         }
 
     ]
