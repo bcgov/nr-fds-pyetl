@@ -31,7 +31,6 @@ jobs:
     secrets: inherit
     uses: ./.github/workflows/.deploy.yml
     with:
-      environment: test
       postgres-host: nr-spar-test-database
       secrets-from: nr-spar-test
       tag: ${{ needs.init.outputs.pr }}
