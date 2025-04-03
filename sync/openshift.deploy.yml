@@ -8,12 +8,18 @@ parameters:
   - name: ZONE
     description: Deployment zone, e.g. pr-###, test or prod
     required: true
+  - name: ORACLE_SYNC_USER
+    description: Oracle database user
+    required: true
+  - name: ORACLE_SYNC_PASSWORD
+    description: Oracle database password
+    required: true
   - name: POSTGRES_HOST
     description: PostgreSQL database host
-    required: true
+    required: false
   - name: POSTGRES_DB
     description: PostgreSQL database name
-    required: true
+    required: false
   - name: POSTGRES_USER
     description: PostgreSQL database user
     value: "nr-spar"
@@ -34,6 +40,9 @@ parameters:
   - name: REPO
     description: Repository name
     value: nr-fds-pyetl
+  - name: SECRETS_FROM
+    description: Secrets objects to reference
+    required: true
   - name: TEST_MODE
     description: "Run in test mode"
     value: "true"
@@ -91,25 +100,19 @@ objects:
                     - name: ORACLE_HOST
                       valueFrom:
                         secretKeyRef:
-                          name: ${REPO}-${ZONE}-${APP}
+                          name: ${SECRETS_FROM}-oracle-api
                           key: oracle-host
                     - name: ORACLE_PORT
                       value: ${ORACLE_PORT}
                     - name: ORACLE_SERVICE
                       valueFrom:
                         secretKeyRef:
-                          name: ${REPO}-${ZONE}-${APP}
+                          name: ${SECRETS_FROM}-oracle-api
                           key: oracle-service
                     - name: ORACLE_SYNC_PASSWORD
-                      valueFrom:
-                        secretKeyRef:
-                          name: ${REPO}-${ZONE}-${APP}
-                          key: oracle-sync-password
+                      value: ${ORACLE_SYNC_PASSWORD}
                     - name: ORACLE_SYNC_USER
-                      valueFrom:
-                        secretKeyRef:
-                          name: ${REPO}-${ZONE}-${APP}
-                          key: oracle-sync-user
+                      value: ${ORACLE_SYNC_USER}
                     - name: POSTGRES_DB
                       value: ${POSTGRES_DB}
                     - name: POSTGRES_HOST
@@ -117,12 +120,12 @@ objects:
                     - name: POSTGRES_PASSWORD
                       valueFrom:
                         secretKeyRef:
-                          name: ${REPO}-${ZONE}-database
+                          name: ${SECRETS_FROM}-database
                           key: database-password
                     - name: POSTGRES_PORT
                       valueFrom:
                         secretKeyRef:
-                          name: ${REPO}-${ZONE}-database
+                          name: ${SECRETS_FROM}-database
                           key: database-port
                     - name: POSTGRES_USER
                       value: ${POSTGRES_USER}

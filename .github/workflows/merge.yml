@@ -31,8 +31,6 @@ jobs:
     secrets: inherit
     uses: ./.github/workflows/.deploy.yml
     with:
-      environment: test
-      postgres-host: nr-spar-test-database
       tag: ${{ needs.init.outputs.pr }}
       target: test
       test-mode: false
@@ -45,6 +43,7 @@ jobs:
     with:
       environment: prod
       postgres-host: nr-spar-prod-database
+      secrets-from: nr-spar-prod
       tag: ${{ needs.init.outputs.pr }}
       target: prod
       test-mode: true
