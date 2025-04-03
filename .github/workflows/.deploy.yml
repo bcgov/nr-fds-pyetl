@@ -59,7 +59,7 @@ jobs:
   # Deployments only run on Pull Requests if the sync/ directory is modified
   init:
     name: Init
-    if: github.event.name == 'pull_request'
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
     steps:
       - name: Init
