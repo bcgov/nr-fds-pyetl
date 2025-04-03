@@ -42,7 +42,7 @@ parameters:
     value: nr-fds-pyetl
   - name: SECRETS_FROM
     description: Secrets objects to reference
-    value: ${REPO}-${ZONE}
+    required: true
   - name: TEST_MODE
     description: "Run in test mode"
     value: "true"
@@ -100,14 +100,14 @@ objects:
                     - name: ORACLE_HOST
                       valueFrom:
                         secretKeyRef:
-                          name: ${REPO}-${ZONE}-oracle-api
+                          name: ${SECRETS_FROM}-oracle-api
                           key: oracle-host
                     - name: ORACLE_PORT
                       value: ${ORACLE_PORT}
                     - name: ORACLE_SERVICE
                       valueFrom:
                         secretKeyRef:
-                          name: ${REPO}-${ZONE}-oracle-api
+                          name: ${SECRETS_FROM}-oracle-api
                           key: oracle-service
                     - name: ORACLE_SYNC_PASSWORD
                       value: ${ORACLE_SYNC_PASSWORD}
@@ -120,12 +120,12 @@ objects:
                     - name: POSTGRES_PASSWORD
                       valueFrom:
                         secretKeyRef:
-                          name: ${REPO}-${ZONE}-database
+                          name: ${SECRETS_FROM}-database
                           key: database-password
                     - name: POSTGRES_PORT
                       valueFrom:
                         secretKeyRef:
-                          name: ${REPO}-${ZONE}-database
+                          name: ${SECRETS_FROM}-database
                           key: database-port
                     - name: POSTGRES_USER
                       value: ${POSTGRES_USER}

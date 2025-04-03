@@ -56,32 +56,8 @@ on:
         value: ${{ jobs.sync.outputs.deploy }}
 
 jobs:
-  # Deployments only run on Pull Requests if the sync/ directory is modified
-  init:
-    name: Init
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Init
-        uses: bcgov/action-deployer-openshift@v4.0.0
-        timeout-minutes: 1
-        with:
-          oc_namespace: ${{ vars.OC_NAMESPACE }}
-          oc_server: ${{ vars.OC_SERVER }}
-          oc_token: ${{ secrets.OC_TOKEN }}
-          file: common/openshift.init.yml
-          parameters:
-            -p ZONE=${{ inputs.target }}
-            -p ORACLE_CERT_SECRET='${{ secrets.ORACLE_CERT_SECRET }}'
-            -p ORACLE_HOST='${{ vars.ORACLE_HOST }}'
-            -p ORACLE_SERVICE='${{ vars.ORACLE_SERVICE }}'
-            -p ORACLE_SYNC_USER=unused
-            -p ORACLE_SYNC_PASSWORD=unused
-          overwrite: true
-          triggers: ${{ inputs.triggers }}
-
-  deploy-sync:
-    name: Deploy Sync
+  deploy:
+    name: Deploy
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -109,7 +85,7 @@ jobs:
   etl-run:
     name: Run ETL
     if: inputs.run-etl == true
-    needs: [deploy-sync, init]
+    needs: [deploy]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
