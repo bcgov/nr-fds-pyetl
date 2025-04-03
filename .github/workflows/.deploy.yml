@@ -10,11 +10,10 @@ on:
       environment:
         description: GitHub/OpenShift environment; usually PR number, test or prod
         default: ''
-        required: false
         type: string
       postgres-host:
         description: PostgreSQL host
-        required: true
+        default: nr-spar-test-database
         type: string
       run-etl:
         description: Run ETL after deploy?
@@ -22,7 +21,7 @@ on:
         type: boolean
       secrets-from:
         description: Secrets objects to reference
-        required: true
+        default: nr-spar-test
         type: string
       tag:
         description: Container tag; usually PR number

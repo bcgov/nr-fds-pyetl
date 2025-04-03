@@ -28,9 +28,7 @@ jobs:
     secrets: inherit
     uses: ./.github/workflows/.deploy.yml
     with:
-      postgres-host: nr-spar-test-database
       run-etl: true
-      secrets-from: nr-spar-test
       test-mode: true
       triggers: ('sync/')
 
