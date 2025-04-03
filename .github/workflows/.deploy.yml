@@ -71,19 +71,12 @@ jobs:
           oc_token: ${{ secrets.OC_TOKEN }}
           file: common/openshift.init.yml
           parameters:
-            -p NAME=${{ github.event.repository.name }}
             -p ZONE=${{ inputs.target }}
-            -p DB_PASSWORD='${{ secrets.DB_PASSWORD }}'
-            -p FORESTCLIENTAPI_KEY=unused
             -p ORACLE_CERT_SECRET='${{ secrets.ORACLE_CERT_SECRET }}'
             -p ORACLE_HOST='${{ vars.ORACLE_HOST }}'
-            -p ORACLE_PASSWORD='${{ secrets.ORACLE_PASSWORD }}'
             -p ORACLE_SERVICE='${{ vars.ORACLE_SERVICE }}'
             -p ORACLE_SYNC_USER=unused
             -p ORACLE_SYNC_PASSWORD=unused
-            -p ORACLE_USER='${{ vars.ORACLE_USER }}'
-            -p VITE_USER_POOLS_WEB_CLIENT_ID=unused
-          repository: bcgov/nr-spar
           overwrite: true
           triggers: ${{ inputs.triggers }}
 
@@ -116,7 +109,7 @@ jobs:
   etl-run:
     name: Run ETL
     if: inputs.run-etl == true
-    needs: [deploy-sync]
+    needs: [deploy-sync, init]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
