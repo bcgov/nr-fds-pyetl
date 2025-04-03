@@ -9,22 +9,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # build:
-  #   name: Build
-  #   runs-on: ubuntu-24.04
-  #   permissions:
-  #     packages: write
-  #   steps:
-  #     - uses: bcgov/action-builder-ghcr@v2.3.0
-  #       with:
-  #         package: sync
-  #         tag: ${{ github.event.number }}
-  #         tag_fallback: latest
-  #         triggers: ('sync/')
+  build:
+    name: Build
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+    steps:
+      - uses: bcgov/action-builder-ghcr@v2.3.0
+        with:
+          package: sync
+          tag: ${{ github.event.number }}
+          tag_fallback: latest
+          triggers: ('sync/')
 
   deploy:
     name: Deploy (${{ github.event.number }})
-    # needs: [build]
+    needs: [build]
     secrets: inherit
     uses: ./.github/workflows/.deploy.yml
     with:
@@ -34,12 +34,12 @@ jobs:
       test-mode: true
       triggers: ('sync/')
 
-  # results:
-  #   name: PR Results
-  #   if: always()
-  #   needs: [build, deploy]
-  #   runs-on: ubuntu-24.04
-  #   steps:
-  #     - if: contains(needs.*.result, 'failure')||contains(needs.*.result, 'canceled')
-  #       run: echo "At least one job has failed." && exit 1
-  #     - run: echo "Success!"
+  results:
+    name: PR Results
+    if: always()
+    needs: [build, deploy]
+    runs-on: ubuntu-24.04
+    steps:
+      - if: contains(needs.*.result, 'failure')||contains(needs.*.result, 'canceled')
+        run: echo "At least one job has failed." && exit 1
+      - run: echo "Success!"

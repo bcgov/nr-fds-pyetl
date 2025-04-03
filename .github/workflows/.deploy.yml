@@ -14,8 +14,7 @@ on:
         type: string
       postgres-host:
         description: PostgreSQL host
-        default: ${{ github.event.repository.name }}-${{ github.event.number }}-database
-        required: false
+        required: true
         type: string
       run-etl:
         description: Run ETL after deploy?
@@ -23,7 +22,7 @@ on:
         type: boolean
       secrets-from:
         description: Secrets objects to reference
-        default: ${{ github.event.repository.name }}-${{ github.event.number }}
+        required: true
         type: string
       tag:
         description: Container tag; usually PR number
