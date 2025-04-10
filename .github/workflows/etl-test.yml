@@ -17,8 +17,7 @@ jobs:
       - timeout-minutes: 10
         uses: bcgov/action-oc-runner@v1.0.0
         with:
-          cronjob: ${{ github.event.repository.name }}-test-sync
-          cronjob_tail: -1
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
+          commands: ./sync/oc_run.sh test ${{ secrets.oc_token }}
