@@ -58,7 +58,7 @@ def generate_db_config(type_, schema_, settings):
             "max_rows_upsert": max_rows_upsert,
         }
 
-    return dbconfig["host"].split(".")
+    return dbconfig
 
 
 def get_build_number():
