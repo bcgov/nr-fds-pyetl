@@ -43,7 +43,7 @@ def generate_db_config(type_, schema_, settings):
             # to try to address the ssl issue.
             dbconfig["host"] = host_parts[0].upper() + "." + ".".join(host_parts[1:])
             print(
-                f"Uppercasing the host name to try to address the ssl issue, host name: {dbconfig['host']}",
+                f"Uppercasing the host name to try to address the ssl issue, host name: {host_parts[0].upper()}",
             )
 
     if type_ == "POSTGRES":
