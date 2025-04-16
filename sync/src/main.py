@@ -1,7 +1,7 @@
 import json
+import logging
 import os
 import sys
-from logging import DEBUG as loggingDEBUG
 from logging import INFO as loggingINFO
 from logging import basicConfig as loggingBasicConfig
 from logging import config as logging_config
@@ -199,7 +199,14 @@ def main() -> int:
 
 # MAIN Execution
 def execute_etl(dbPostgres, dbOracle):
-    loggingBasicConfig(level=loggingDEBUG, stream=sys.stdout)
+    # TODO:
+    loggingBasicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s - %(levelname)s - %(filename)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        stream=sys.stdout,
+    )
+
     return data_sync.execute_instance(
         oracle_config=dbOracle, postgres_config=dbPostgres, track_config=dbPostgres
     )
