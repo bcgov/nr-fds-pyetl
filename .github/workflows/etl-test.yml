@@ -30,7 +30,7 @@ jobs:
           title: "Spar ETL Sync Job status - (env=TEST)"
           message: |
             Workflow `${{ github.workflow }}` on `${{ github.repository }}` \
-            completed with status: **${{ job.status }}** \
+            Completed with status: **${{ job.status }}** \
             View run [here](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
           color: ${{ job.status == 'success' && '00FF00' || 'FF0000' }}
 
