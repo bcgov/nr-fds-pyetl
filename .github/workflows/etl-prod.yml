@@ -21,3 +21,15 @@ jobs:
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
           commands: ./sync/oc_run.sh prod ${{ secrets.oc_token }}
+
+      - uses: simbo/msteams-message-card-action@latest
+        name: Notify Microsoft Teams
+        if: always()  # this ensures it runs even if earlier steps fail
+        with:
+          webhook: ${{ secrets.MS_TEAMS_WEBHOOK_URI }}
+          title: "Spar ETL Sync Job status - (env=PROD)"
+          message: |
+            Workflow `${{ github.workflow }}` on `${{ github.repository }}` \
+            Completed with status: **${{ job.status }}** \
+            View run [here](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          color: ${{ job.status == 'success' && '00FF00' || 'FF0000' }}
