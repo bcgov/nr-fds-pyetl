@@ -25,7 +25,7 @@ jobs:
         name: Notify Microsoft Teams
         if: always()  # this ensures it runs even if earlier steps fail
         with:
-          webhook: ${{ vars.MS_TEAMS_WEBHOOK_URI }}
+          webhook: ${{ secrets.MS_TEAMS_WEBHOOK_URI }}
           title: "Spar ETL Sync Job status - TEST"
           message: "${{github.event.workflow_run.head_commit.message}}"
           color: '#03fc17'
