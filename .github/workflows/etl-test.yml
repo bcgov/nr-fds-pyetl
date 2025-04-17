@@ -27,10 +27,10 @@ jobs:
         with:
           webhook: ${{ secrets.MS_TEAMS_WEBHOOK_URI }}
           title: "Spar ETL Sync Job status - TEST"
-          message: "${{github.event.workflow_run.head_commit.message}}"
-          color: '#03fc17'
-          text: |
+          #message: "${{github.event.workflow_run.head_commit.message}}"
+          #color: '#03fc17'
+          message: |
             Workflow `${{ github.workflow }}` on `${{ github.repository }}` \
             completed with status: **${{ job.status }}**
-          theme-color: ${{ job.status == 'success' && '00FF00' || 'FF0000' }}
+          color: ${{ job.status == 'success' && '00FF00' || 'FF0000' }}
 
