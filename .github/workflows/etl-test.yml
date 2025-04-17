@@ -22,17 +22,12 @@ jobs:
           oc_token: ${{ secrets.OC_TOKEN }}
           commands: ./sync/oc_run.sh test ${{ secrets.oc_token }}
 
-      - name: Extract environment
-        run: echo "ENVIRONMENT=${{ github.event.environment }}" >> $GITHUB_ENV
-
       - uses: simbo/msteams-message-card-action@latest
         name: Notify Microsoft Teams
         if: always()  # this ensures it runs even if earlier steps fail
         with:
           webhook: ${{ secrets.MS_TEAMS_WEBHOOK_URI }}
-          title: "Spar ETL Sync Job status - ${{ env.ENVIRONMENT }}"
-          #message: "${{github.event.workflow_run.head_commit.message}}"
-          #color: '#03fc17'
+          title: "Spar ETL Sync Job status - (env=TEST)"
           message: |
             Workflow `${{ github.workflow }}` on `${{ github.repository }}` \
             completed with status: **${{ job.status }}** \
