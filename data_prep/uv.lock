@@ -62,30 +62,30 @@ wheels = [
 
 [[package]]
 name = "boto3"
-version = "1.35.95"
+version = "1.37.33"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "botocore" },
     { name = "jmespath" },
     { name = "s3transfer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/97/b5/b961eb4d803ade4c90113b254630482f59a5d89b84e6939c9d4c7893d0c7/boto3-1.35.95.tar.gz", hash = "sha256:d5671226819f6a78e31b1f37bd60f194afb8203254a543d06bdfb76de7d79236", size = 111014 }
+sdist = { url = "https://files.pythonhosted.org/packages/89/74/001695948752bc1b5357677eb2635e059f464b22c3eb5f9411ec4e8c48a3/boto3-1.37.33.tar.gz", hash = "sha256:4390317a1578af73f1514651bd180ba25802dcbe0a23deafa13851d54d3c3203", size = 111676 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3a/e1/1910792d5eceff426bd9048c454766df720cb0fd26473907fbfd1c64d518/boto3-1.35.95-py3-none-any.whl", hash = "sha256:c81223488607457dacb7829ee0c99803c664593b34a2b0f86c71d421e7c3469a", size = 139182 },
+    { url = "https://files.pythonhosted.org/packages/1f/e7/e660fac728570c926c4a12fa1ae8bffde7300d4817942bbd7871a6ebd4e2/boto3-1.37.33-py3-none-any.whl", hash = "sha256:7b1b1bc69762975824e5a5d570880abebf634f7594f88b3dc175e8800f35be1a", size = 139920 },
 ]
 
 [[package]]
 name = "botocore"
-version = "1.35.99"
+version = "1.37.37"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jmespath" },
     { name = "python-dateutil" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7c/9c/1df6deceee17c88f7170bad8325aa91452529d683486273928eecfd946d8/botocore-1.35.99.tar.gz", hash = "sha256:1eab44e969c39c5f3d9a3104a0836c24715579a455f12b3979a31d7cde51b3c3", size = 13490969 }
+sdist = { url = "https://files.pythonhosted.org/packages/96/d0/70969515e3ae8ff0fcccf22827d5d131bc7b8729331127415cf8f2861d63/botocore-1.37.37.tar.gz", hash = "sha256:3eadde6fed95c4cb469cc39d1c3558528b7fa76d23e7e16d4bddc77250431a64", size = 13828530 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fc/dd/d87e2a145fad9e08d0ec6edcf9d71f838ccc7acdd919acc4c0d4a93515f8/botocore-1.35.99-py3-none-any.whl", hash = "sha256:b22d27b6b617fc2d7342090d6129000af2efd20174215948c0d7ae2da0fab445", size = 13293216 },
+    { url = "https://files.pythonhosted.org/packages/fe/17/602915b29cb695e1e66f65e33b1026f1534e49975d99ea4e32e58d963542/botocore-1.37.37-py3-none-any.whl", hash = "sha256:eb730ff978f47c02f0c8ed07bccdc0db6d8fa098ed32ac31bee1da0e9be480d1", size = 13495584 },
 ]
 
 [[package]]
@@ -351,7 +351,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "boto3", specifier = "==1.35.95,<2.0.0" },
+    { name = "boto3", specifier = "==1.37.33,<2.0.0" },
     { name = "click", specifier = ">=8.1.8" },
     { name = "fastparquet", specifier = ">=2024.11.0" },
     { name = "kr8s", specifier = ">=0.18.0,<1.0.0" },
@@ -1104,14 +1104,14 @@ wheels = [
 
 [[package]]
 name = "s3transfer"
-version = "0.10.4"
+version = "0.11.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "botocore" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c0/0a/1cdbabf9edd0ea7747efdf6c9ab4e7061b085aa7f9bfc36bb1601563b069/s3transfer-0.10.4.tar.gz", hash = "sha256:29edc09801743c21eb5ecbc617a152df41d3c287f67b615f73e5f750583666a7", size = 145287 }
+sdist = { url = "https://files.pythonhosted.org/packages/c4/2b/5c9562795c2eb2b5f63536961754760c25bf0f34af93d36aa28dea2fb303/s3transfer-0.11.5.tar.gz", hash = "sha256:8c8aad92784779ab8688a61aefff3e28e9ebdce43142808eaa3f0b0f402f68b7", size = 149107 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/66/05/7957af15543b8c9799209506df4660cba7afc4cf94bfb60513827e96bed6/s3transfer-0.10.4-py3-none-any.whl", hash = "sha256:244a76a24355363a68164241438de1b72f8781664920260c48465896b712a41e", size = 83175 },
+    { url = "https://files.pythonhosted.org/packages/45/39/13402e323666d17850eca87e4cd6ecfcf9fd7809cac9efdcce10272fc29d/s3transfer-0.11.5-py3-none-any.whl", hash = "sha256:757af0f2ac150d3c75bc4177a32355c3862a98d20447b69a0161812992fe0bd4", size = 84782 },
 ]
 
 [[package]]
