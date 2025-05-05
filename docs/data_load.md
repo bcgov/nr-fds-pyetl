@@ -13,11 +13,10 @@ should only be required if you need the latest greatest data in your dev
 environment.
 
 **Assumptions:**
-1. The DDL has been extracted and configured with flyway migrations
+1. The DDL has been extracted and executed using flyway to a dockerized oracle database
 1. Object Storage buckets have been procured
 1. Data has already been extracted from LOB databases and loaded to object
     storage
-1. Current version of tooling only supports tables.
 
 # Data Load Instructions
 
@@ -25,18 +24,27 @@ A separate process has been created that will cache the data from the TEST and
 PROD environments for a specific application to an object store bucket.
 [see here](./data_extract.md)
 
-
 ## Define Environment Variables
+
+### Oracle environment variables
+
+The injest process only needs to connect to the local database so configure the
+following env variables.
+
+* ORACLE_HOST_LOCAL=localhost
+* ORACLE_PORT_LOCAL=1521
+* ORACLE_SERVICE_LOCAL=DBDOCK_01
+* ORACLE_SYNC_USER_LOCAL=THE
+* ORACLE_SYNC_PASSWORD_LOCAL=default
+* ORACLE_SCHEMA_TO_SYNC_LOCAL=THE
+
+
+### Object store environment variables
 
 To load data you must populate the following environment variables to enable
 connectivity to the object store buckets, that contain the actual backup
-files.  The environment variables are concluded by the environment who's
-data you want to pull.  Current possible options are either `TEST` or `PROD`.
+files.  Substitute TEST|PROD for <env>
 
-The one other environment variable is `ORACLE_SCHEMA_TO_SYNC_<env>`. This
-variable defines what schema in the local environment to load the data to.  It
-is recommended that this be the same schema as the original data was extracted
-from.
 
 1. `OBJECT_STORE_USER_<env>`
 1. `OBJECT_STORE_SECRET_<env>`
