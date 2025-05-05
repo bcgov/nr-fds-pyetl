@@ -169,3 +169,7 @@ data_prep/data/**
 data_prep/.venv/**
 sync/src/junk.py
 
+data_prep_old/**
+ora-env/nr-oracle-env/**
+
+ora-env/data/**
