@@ -24,15 +24,16 @@
             ]
         },
         {
-            "name": "spar-ingest-test",
+            "name": "oracle-ingest-prod",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/data_prep/db_env_utils/main_spar_ingest.py",
+            "program": "${workspaceFolder}/ora-env/nr-oracle-env/data-population/db_env_utils/main_ingest.py",
             "console": "integratedTerminal",
             "envFile": "${workspaceFolder}/.env",
+            "python": "${workspaceFolder}/ora-env/nr-oracle-env/data-population/.venv/bin/python",
             "args": [
-                "TEST",
-                "--purge"
+                "ORA",
+                "PROD"
             ]
         },
         {
@@ -40,17 +41,6 @@
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/data_prep/db_env_utils/main_spar_extract.py",
-            "console": "integratedTerminal",
-            "envFile": "${workspaceFolder}/.env",
-            "args": [
-                "PROD"
-            ]
-        },
-        {
-            "name": "spar-ingest-prod",
-            "type": "python",
-            "request": "launch",
-            "program": "${workspaceFolder}/data_prep/db_env_utils/main_spar_ingest.py",
             "console": "integratedTerminal",
             "envFile": "${workspaceFolder}/.env",
             "args": [
