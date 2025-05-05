@@ -41,15 +41,14 @@ C) run the script
 """
 
 import logging
+import os
 
 import constants
-import docker_parser
+import db_lib
 import env_config
 import main_common
 import oradb_lib
 import postgresdb_lib
-import db_lib
-import os
 
 LOGGER = logging.getLogger(__name__)
 
@@ -68,9 +67,9 @@ class PostgresSeedlot:
         """
         Connect to the database.
         """
-        #dcr = docker_parser.ReadDockerCompose()
-        #LOGGER.debug("connecting to database... ")
-        #local_db_params = dcr.get_spar_conn_params()
+        # dcr = docker_parser.ReadDockerCompose()
+        # LOGGER.debug("connecting to database... ")
+        # local_db_params = dcr.get_spar_conn_params()
         oc_params = db_lib.ConnectionParameters(
             username=os.getenv("POSTGRES_USER_TEST"),
             password=os.getenv("POSTGRES_PASSWORD_TEST"),
@@ -79,7 +78,7 @@ class PostgresSeedlot:
             service_name=os.getenv("POSTGRES_DB_TEST"),
             schema_to_sync=os.getenv("POSTGRES_USER_TEST"),
         )
-        #schema_to_sync=os.getenv("POSTGRES_USER_TEST"),
+        # schema_to_sync=os.getenv("POSTGRES_USER_TEST"),
         self.db = postgresdb_lib.PostgresDatabase(oc_params)
 
     def get_seedlot_fc_records(self) -> set:
@@ -122,9 +121,9 @@ class OracleSeedlot:
         """
         Create a connection to the oracle database.
         """
-        #dcr = docker_parser.ReadDockerCompose()
+        # dcr = docker_parser.ReadDockerCompose()
 
-        #local_db_params = dcr.get_ora_conn_params()
+        # local_db_params = dcr.get_ora_conn_params()
         local_db_params = db_lib.ConnectionParameters(
             username=os.getenv("ORACLE_USER_TEST"),
             password=os.getenv("ORACLE_PASSWORD_TEST"),

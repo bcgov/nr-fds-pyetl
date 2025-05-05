@@ -37,7 +37,9 @@ class PostgresDatabase(db_lib.DB):
         populated by the object constructor.
         """
         if self.connection is None:
-            LOGGER.info("connecting the oracle database: %s", self.service_name)
+            LOGGER.info(
+                "connecting the postgres database: %s", self.service_name
+            )
             self.connection = psycopg2.connect(
                 user=self.username,
                 password=self.password,
