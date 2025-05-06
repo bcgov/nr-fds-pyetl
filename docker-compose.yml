@@ -26,6 +26,8 @@ x-var:
     1521
   - &ORACLE_FLYWAY_URL
     jdbc:oracle:thin:@//oracle-spar:1521/DBDOCK_01
+  - &ORACLE_SOURCE_DATA_FOLDER
+    /app/data
 
 
 
@@ -39,6 +41,7 @@ x-postgres-vars: &postgres-vars
   #FLYWAY_URL_POSTGRES: jdbc:postgresql://postgres:5432/spar
 
 x-oracle-vars: &oracle-vars
+  # Used by the Oracle container in the setup
   ORACLE_DATABASE: *ORACLE_DATABASE
   ORACLE_PASSWORD: *ORACLE_PASSWORD
   ORACLE_HOST: *ORACLE_HOST
@@ -48,8 +51,21 @@ x-oracle-vars: &oracle-vars
   ORACLE_SYNC_PASSWORD: *ORACLE_PASSWORD
   ORACLE_SYNC_USER: *ORACLE_USER
   FLYWAY_URL: *ORACLE_FLYWAY_URL
+  LOCAL_DATA_DIR: *ORACLE_SOURCE_DATA_FOLDER
+  # used by the data load process
+  ORACLE_HOST_LOCAL: *ORACLE_HOST
+  ORACLE_PORT_LOCAL: *ORACLE_PORT
+  ORACLE_SERVICE_LOCAL: *ORACLE_DATABASE
+  ORACLE_USER_LOCAL: *ORACLE_USER
+  ORACLE_PASSWORD_LOCAL: *ORACLE_PASSWORD
+  ORACLE_SCHEMA_TO_SYNC_LOCAL: *ORACLE_USER
 
 services:
+  # dbutils:
+  #   image: ghcr.io/astral-sh/uv:python3.13-bookworm-slim
+  #   container_name: dbutils
+
+
   postgres:
     #image: postgis/postgis:15-master
     image: postgis/postgis:17-3.5-alpine
@@ -154,7 +170,7 @@ services:
     container_name: oracle-migrations
     command: info migrate info
     volumes:
-      - "./data_prep/migrations_ora/sql:/flyway/sql:ro"
+      - "./ora-env/migrations/ora:/flyway/sql:ro"
     environment:
       <<: *oracle-vars
       FLYWAY_USER: *ORACLE_USER
@@ -170,18 +186,19 @@ services:
     image: nr-fds-pyetl-oracle-data-load:latest
     build:
         context: ./  # Path to the directory containing the Dockerfile
-        dockerfile: Dockerfile.data_load  # Name of the Dockerfile (optional if named "Dockerfile")
+        dockerfile: Dockerfile.dbutils  # Name of the Dockerfile (optional if named "Dockerfile")
     # image: python:3.13-slim-bookworm
     container_name: oracle-data-load
     # "CMD",
     # entrypoint: [ "/application/docker_run_ORA_TEST.sh"]
     working_dir: /app
 
-    entrypoint: ["python", "db_env_utils/main_ora_ingest.py", TEST]
+    entrypoint: ["python", "db_env_utils/main_ingest.py", ORA, TEST]
     volumes:
       # - "./data_prep:/app"
       - "./docker-compose.yml:/app/docker-compose.yml"
-      - "./data:/app/data"
+      - "./ora-env/data/docker:/app/data"
+      - "./ora-env/data/temp/data_classification.xlsx:/app/data/temp/data_classification.xlsx"
     environment:
       <<: [*oracle-vars]
     env_file:
