@@ -70,14 +70,16 @@
             ]
         },
         {
-            "name": "oracle-ingest-test",
+            "name": "pg injest prod",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/data_prep/db_env_utils/main_ora_ingest.py",
+            "program": "${workspaceFolder}/ora-env/nr-oracle-env/data-population/db_env_utils/main_ingest.py",
             "console": "integratedTerminal",
             "envFile": "${workspaceFolder}/.env",
+            "python": "${workspaceFolder}/ora-env/nr-oracle-env/data-population/.venv/bin/python",
             "args": [
-                "TEST"
+                "OC_POSTGRES",
+                "PROD"
             ]
         },
         {
