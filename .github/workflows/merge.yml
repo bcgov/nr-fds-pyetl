@@ -46,7 +46,7 @@ jobs:
       secrets-from: nr-spar-prod
       tag: ${{ needs.init.outputs.pr }}
       target: prod
-      test-mode: true
+      test-mode: false
 
   promote:
     name: Promote Images
