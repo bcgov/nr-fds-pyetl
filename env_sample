@@ -6,12 +6,13 @@
 
 # TEST PARAMS
 #----------------------------------------------------------------
+# object store
 OBJECT_STORE_USER_TEST=
 OBJECT_STORE_SECRET_TEST=
 OBJECT_STORE_BUCKET_TEST=
 OBJECT_STORE_HOST_TEST=
 
-# populate these to perform extract from oracle test
+# oracle
 ORACLE_SCHEMA_TO_SYNC_TEST=
 ORACLE_HOST_TEST=
 ORACLE_PORT_TEST=
@@ -21,10 +22,14 @@ ORACLE_PASSWORD_TEST=
 
 
 # PROD PARAMS - populate these to perform extract from oracle prod
+#----------------------------------------------------------------
+# object store
 OBJECT_STORE_USER_PROD=
 OBJECT_STORE_SECRET_PROD=
 OBJECT_STORE_BUCKET_PROD=
 OBJECT_STORE_HOST_PROD=
+
+# oracle
 ORACLE_HOST_PROD=
 ORACLE_PORT_PROD=
 ORACLE_SERVICE_PROD=
@@ -38,3 +43,6 @@ OC_LICENSE_PLATE_PROD=
 OC_LICENSE_PLATE_TEST=
 OC_TOKEN_TEST=
 OC_TOKEN_PROD=
+
+LOCAL_DATA_DIR=../../data
+OBJECT_STORE_DATA_DIRECTORY="pyetl"

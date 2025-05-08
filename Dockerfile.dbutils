@@ -1,0 +1,49 @@
+FROM  ghcr.io/astral-sh/uv:python3.13-bookworm-slim as builder
+
+# Install the project into `/app`
+WORKDIR /app
+
+# get the build dependencies
+RUN apt-get update && \
+    apt-get --no-install-recommends install -y \
+        build-essential && \
+    apt-get --no-install-recommends install -y git && \
+    git clone https://github.com/bcgov/nr-oracle-env .
+
+
+# Enable bytecode compilation
+ENV UV_COMPILE_BYTECODE=1
+
+# Copy from the cache instead of linking since it's a mounted volume
+ENV UV_LINK_MODE=copy
+
+RUN cd data-population && \
+    uv sync --frozen --no-install-project --no-dev
+
+
+# ---------------------------------------
+# Second stage... copy the venv to final image
+FROM  ghcr.io/astral-sh/uv:python3.13-bookworm-slim as runtime
+
+RUN apt-get update && \
+    apt-get --no-install-recommends install -y \
+    postgresql-client \
+    && apt-get clean
+
+RUN groupadd -r derek && useradd -r -g derek derek
+
+COPY --from=builder /app/data-population/.venv /app/.venv
+COPY --from=builder --chown=root:root --chmod=755 /app/data-population/ /app/
+
+
+# Then, add the rest of the project source code and install it
+# Installing separately from its dependencies allows optimal layer caching
+# ADD . /app
+# COPY --chown=root:root --chmod=755 data_prep/ /app/
+
+# Place executables in the environment at the front of the path
+ENV PATH="/app/.venv/bin:$PATH"
+
+USER derek
+ENTRYPOINT []
+
