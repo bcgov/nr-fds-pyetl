@@ -32,7 +32,7 @@ objects:
     stringData:
       database-name: ${ORACLE_SERVICE}
       database-password: ${ORACLE_PASSWORD}
-      database-port: "1543"
+      database-port: ${ORACLE_PORT}
       database-user: ${ORACLE_USER}
       database-host: ${ORACLE_HOST}
   - apiVersion: networking.k8s.io/v1
