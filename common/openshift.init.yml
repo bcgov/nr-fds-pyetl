@@ -1,0 +1,50 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+parameters:
+  - name: NAME
+    description: Product name
+    value: nr-fds-pyetl
+  - name: ZONE
+    description: Deployment zone, e.g. pr-### or prod
+    required: true
+  - name: ORACLE_HOST
+    description: Oracle database host
+    required: true
+  - name: ORACLE_SERVICE
+    description: Oracle service name
+    required: true
+  - name: ORACLE_PASSWORD
+    description: Oracle database password for API
+    required: true
+  - name: ORACLE_USER
+    description: Oracle database username for API
+    required: true
+  - name: ORACLE_PORT
+    description: Oracle database port
+    value: 1543
+objects:
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: ${NAME}-${ZONE}-oracle-database
+      labels:
+        app: ${NAME}-${ZONE}
+    stringData:
+      database-name: ${ORACLE_SERVICE}
+      database-password: ${ORACLE_PASSWORD}
+      database-port: "1543"
+      database-user: ${ORACLE_USER}
+      database-host: ${ORACLE_HOST}
+  - apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: ${NAME}-${ZONE}-nsp
+      labels:
+        app: ${NAME}-${ZONE}
+    spec:
+      podSelector: {}
+      ingress:
+        - from:
+          - podSelector: {}
+      policyTypes:
+        - Ingress
