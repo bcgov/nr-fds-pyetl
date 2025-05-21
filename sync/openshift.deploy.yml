@@ -108,9 +108,10 @@ objects:
                           key: database-user
 
                     - name: POSTGRES_DB
-                      secretKeyRef:
-                          name: ${SECRETS_FROM}-database
-                          key: database-name
+                      valueFrom:
+                        secretKeyRef:
+                            name: ${SECRETS_FROM}-database
+                            key: database-name
                     - name: POSTGRES_HOST
                       value: ${SECRETS_FROM}-database
                     - name: POSTGRES_PASSWORD
@@ -124,9 +125,10 @@ objects:
                           name: ${SECRETS_FROM}-database
                           key: database-port
                     - name: POSTGRES_USER
-                      secretKeyRef:
-                          name: ${SECRETS_FROM}-database
-                          key: database-user
+                      valueFrom:
+                        secretKeyRef:
+                            name: ${SECRETS_FROM}-database
+                            key: database-user
                   resources:
                     requests:
                       cpu: 50m
