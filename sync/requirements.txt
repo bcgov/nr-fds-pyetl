@@ -3,5 +3,5 @@ oracledb
 numpy==2.2.5
 pandas==2.2.3
 psycopg2==2.9.10
-SQLAlchemy==2.0.40
+SQLAlchemy==2.0.41
 pyyaml==6.0.2
