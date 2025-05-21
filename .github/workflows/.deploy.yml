@@ -72,7 +72,7 @@ jobs:
             -p ZONE=${{ inputs.target }}
             -p ORACLE_PASSWORD='${{ secrets.ORACLE_PASSWORD }}'
             -p ORACLE_SERVICE='${{ secrets.ORACLE_DB_SERVICE }}'
-            -p ORACLE_USER='${{ vars.ORACLE_USER }}'
+            -p ORACLE_USER='${{ secrets.ORACLE_USER }}'
             -p ORACLE_HOST='${{ secrets.ORACLE_DB_HOST }}'
           triggers: ${{ inputs.triggers }}
   deploy:
