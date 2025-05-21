@@ -21,7 +21,7 @@ parameters:
     required: true
   - name: ORACLE_PORT
     description: Oracle database port
-    value: 1543
+    value: "1543"
 objects:
   - apiVersion: v1
     kind: Secret
