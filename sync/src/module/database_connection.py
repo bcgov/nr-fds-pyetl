@@ -5,8 +5,6 @@ import time
 from io import StringIO
 
 import numpy
-
-# import cx_Oracle
 import oracledb
 import pandas as pd
 from sqlalchemy import create_engine, text
