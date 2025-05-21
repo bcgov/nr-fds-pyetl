@@ -19,7 +19,7 @@ from module.custom_exception import (
 )
 from sqlalchemy.exc import SQLAlchemyError
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 """
     Execute data synchronization between 2 data sources
@@ -43,36 +43,36 @@ def execute_instance(oracle_config, postgres_config, track_config):
     stored_metrics["time_conn_target"] = None
     stored_metrics["time_source_extract"] = None
     stored_metrics["time_target_load"] = None
-    logger.info("Starting ETL Tool execution instance")
+    LOGGER.info("Starting ETL Tool execution instance")
     current_cwd = path.join(
         path.abspath(path.dirname(__file__).split("src")[0]), "config"
     )
-    logger.info("Initializing Tracking Database Connection")
+    LOGGER.info("Initializing Tracking Database Connection")
     is_error = False
     job_return_code = 1  # fail
 
     with db_conn.database_connection(track_config) as track_db_conn:
         temp_time = time.time()
 
-        logger.info("Get date range to load from source")
+        LOGGER.info("Get date range to load from source")
         schedule_times = data_sync_ctl.get_scheduler(
             track_db_conn, track_config["schema"]
         )
         schedule_times = schedule_times[0]
-        logger.debug("=============== s c h e d u l e   d a t e s ==================")
-        logger.debug(schedule_times)
-        logger.debug("=============== s c h e d u l e   d a t e s ==================")
+        LOGGER.debug("=============== s c h e d u l e   d a t e s ==================")
+        LOGGER.debug(schedule_times)
+        LOGGER.debug("=============== s c h e d u l e   d a t e s ==================")
 
         # if job is already running, stop
         if schedule_times["last_run_status"] == "RUNNING":
-            logger.info(
+            LOGGER.info(
                 "Critical error: previous job still RUNNING or did not report SUCCESS or FAILURE"
             )
             raise Exception(
                 "Critical error: previous job still RUNNING or did not report SUCCESS or FAILURE"
             )
 
-        logger.info("Insert execution log - signal RUNNING")
+        LOGGER.info("Insert execution log - signal RUNNING")
         data_sync_ctl.insert_execution_log(
             database_conn=track_db_conn,
             database_schema=track_config["schema"],
@@ -85,7 +85,7 @@ def execute_instance(oracle_config, postgres_config, track_config):
         )
         # execution_map  = data_sync_ctl.get_execution_map(track_db_conn,track_config['schema'],execution_id)
 
-        logger.info("Validating Execution instructions")
+        LOGGER.info("Validating Execution instructions")
         try:
             # if not data_sync_ctl.validate_execution_map(execution_map):
             #    raise ETLConfigurationException ("ETL configuration validation failed")
@@ -106,20 +106,20 @@ def execute_instance(oracle_config, postgres_config, track_config):
             print(
                 "ETLConfigurationException - Impossible to execute or determine what process will be executed (or no process to be executed)"
             )
-            logger.critical(
+            LOGGER.critical(
                 "ETLConfigurationException - Impossible to execute or determine what process will be executed (or no process to be executed)"
             )
 
         except Exception as err:
             is_error = True
-            logger.critical(
+            LOGGER.critical(
                 f"A fatal error has occurred ({type(err)}): {err}", exc_info=True
             )
 
     sync_elapsed_time = time.time() - stored_metrics["sync_start_time"]
     if is_error:
-        logger.info("***** ETL Process finished with error *****")
-        logger.info(
+        LOGGER.info("***** ETL Process finished with error *****")
+        LOGGER.info(
             f"ETL Tool whole process took {timedelta(seconds=sync_elapsed_time)}"
         )
         run_status = "FAILURE"
@@ -138,7 +138,7 @@ def execute_instance(oracle_config, postgres_config, track_config):
         run_status=run_status,
     )
 
-    logger.info("***** Finish ETL Run *****")
+    LOGGER.info("***** Finish ETL Run *****")
     return job_return_code
 
 
@@ -153,20 +153,20 @@ def identifyQueryParams(query, db_type, params) -> object:
 
 
 def print_process_metrics(stored_metrics):
-    logger.info(f"ETL Tool whole process took {stored_metrics['time_process']}")
-    logger.info(
+    LOGGER.info(f"ETL Tool whole process took {stored_metrics['time_process']}")
+    LOGGER.info(
         f"ETL Tool monitoring database connection took {stored_metrics['time_conn_monitor']}"
     )
-    logger.info(
+    LOGGER.info(
         f"ETL Tool source database connection took {stored_metrics['time_conn_source']}"
     )
-    logger.info(
+    LOGGER.info(
         f"ETL Tool source extract data took {stored_metrics['time_source_extract']} gathering {stored_metrics['rows_from_source']} rows"
     )
-    logger.info(
+    LOGGER.info(
         f"ETL Tool target database connection took {stored_metrics['time_conn_target']}"
     )
-    logger.info(
+    LOGGER.info(
         f"ETL Tool target load data took {stored_metrics['time_target_load']} processing {stored_metrics['rows_target_processed']} rows"
     )
 
@@ -174,7 +174,7 @@ def print_process_metrics(stored_metrics):
 def delete_seedlot_child_tables(
     seedlot_number, track_db_conn, track_db_schema, target_db_conn, processes
 ):
-    logger.debug("Executing delete for seedlot " + seedlot_number)
+    LOGGER.debug("Executing delete for seedlot " + seedlot_number)
     log_message = ""
 
     # Initializing metric variables
@@ -192,7 +192,7 @@ def delete_seedlot_child_tables(
             table["target_table"] != "the.seedlot"
             and table["run_mode"] == "UPSERT_WITH_DELETE"
         ):
-            logger.debug(
+            LOGGER.debug(
                 f"calling delete for {seedlot_number} table {table['target_table']}"
             )
             table_metrics = {}
@@ -213,7 +213,7 @@ def delete_seedlot_child_tables(
     #                                                    log_message=log_message,
     #                                                    execution_status='SKIPPED', ## No error, but
     #                                                    )
-    logger.debug("Finished deletions")
+    LOGGER.debug("Finished deletions")
     data_sync_ctl.save_execution_log(track_db_conn, track_db_schema, metrics)
 
     return metrics
@@ -229,7 +229,7 @@ def execute_process(
     oracle_config,
     postgres_config,
 ):
-    logger.debug("Executing process for seedlot " + seedlot_number)
+    LOGGER.debug("Executing process for seedlot " + seedlot_number)
     process_stop = False
     log_message = ""
     source_config = data_sync_ctl.get_config(
@@ -252,14 +252,14 @@ def execute_process(
     stored_metrics["rows_from_source"] = 0
     stored_metrics["rows_target_processed"] = 0
 
-    logger.debug("Connecting into Source Database")
+    LOGGER.debug("Connecting into Source Database")
     with db_conn.database_connection(source_config) as source_db_conn:
-        logger.debug("Source Database connection established")
+        LOGGER.debug("Source Database connection established")
         temp_time = time.time()
 
-        data_sync_ctl.print_process(process)
+        data_sync_ctl.log_process(process)
         load_file = base_dir + process["source_file"].replace("/", separator)
-        logger.debug(f"Reading Extract query from: {load_file}")
+        LOGGER.debug(f"Reading Extract query from: {load_file}")
 
         query_sql = open(load_file).read()
         # logger.debug(f"Query to be executed in Source database is: {query_sql}")
@@ -270,7 +270,7 @@ def execute_process(
         table_df = pd.read_sql_query(
             sql=query_sql, con=source_db_conn.engine, params=params
         )
-        logger.debug("Source Database data loaded on in-memory dataframe")
+        LOGGER.debug("Source Database data loaded on in-memory dataframe")
 
         stored_metrics["time_source_extract"] = timedelta(
             seconds=(time.time() - temp_time)
@@ -283,18 +283,18 @@ def execute_process(
         ):
             process_stop = True
             log_message = f'There is no data to extract from source for table: {process["target_table"]}. Process will be skipped.'
-            logger.debug(log_message)
-            logger.warning(log_message)
+            LOGGER.debug(log_message)
+            LOGGER.warning(log_message)
 
         temp_time = time.time()
         if not process_stop:
-            logger.debug("Connecting into Target Database")
+            LOGGER.debug("Connecting into Target Database")
             # if True:
             with target_db_conn:
                 # with db_conn.database_connection(target_config) as target_db_conn:
                 # Creating a new db connection
                 # with target_db_conn:
-                logger.debug("Target Database connection established")
+                LOGGER.debug("Target Database connection established")
                 stored_metrics["time_conn_target"] = timedelta(
                     seconds=(time.time() - temp_time)
                 ).total_seconds()
@@ -302,15 +302,15 @@ def execute_process(
 
                 table_df = table_df.convert_dtypes()
 
-                logger.debug(
+                LOGGER.debug(
                     "--****************************************************************--"
                 )
-                logger.debug(" ")
-                logger.debug(process)
-                logger.debug(process["run_mode"])
-                logger.debug(table_df)
-                logger.debug(" ")
-                logger.debug(
+                LOGGER.debug(" ")
+                LOGGER.debug(process)
+                LOGGER.debug(process["run_mode"])
+                LOGGER.debug(table_df)
+                LOGGER.debug(" ")
+                LOGGER.debug(
                     "--****************************************************************--"
                 )
 
@@ -329,7 +329,7 @@ def execute_process(
                     process["run_mode"] == "UPSERT"
                     or process["run_mode"] == "UPSERT_WITH_DELETE"
                 ):
-                    logger.debug(f"Calling upsert for {seedlot_number}")
+                    LOGGER.debug(f"Calling upsert for {seedlot_number}")
                     stored_metrics["rows_target_processed"] = (
                         target_db_conn.execute_upsert(
                             dataframe=table_df,
@@ -344,7 +344,7 @@ def execute_process(
                     )
 
                     # READ FROM TEMP TABLE:
-                    logger.debug("Target Database data load finished")
+                    LOGGER.debug("Target Database data load finished")
                     stored_metrics["time_target_load"] = timedelta(
                         seconds=(time.time() - temp_time)
                     ).total_seconds()
@@ -363,7 +363,7 @@ def execute_process(
                 #                                                    log_message=log_message,
                 #                                                    execution_status='SUCCESS')
 
-                logger.debug("Including process execution log information")
+                LOGGER.debug("Including process execution log information")
                 # data_sync_ctl.save_execution_log   (track_db_conn,track_db_schema,process["interface_id"],process["execution_id"],process_log)
         else:
             stored_metrics["process_delta"] = timedelta(
@@ -377,7 +377,7 @@ def execute_process(
             #                                                    log_message=log_message,
             #                                                    execution_status='SKIPPED', ## No error, but
             #                                                    )
-            logger.debug("Including process execution log information")
+            LOGGER.debug("Including process execution log information")
             # data_sync_ctl.save_execution_log(track_db_conn,track_db_schema,process["interface_id"],process["execution_id"],process_log)
 
         data_sync_ctl.save_execution_log(track_db_conn, track_db_schema, stored_metrics)
@@ -397,12 +397,12 @@ def process_seedlots(
     current_cwd = path.join(
         path.abspath(path.dirname(__file__).split("src")[0]), "config"
     )
-    logger.debug(
+    LOGGER.debug(
         "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"
     )
-    logger.debug(schedule_times)
-    logger.debug(schedule_times["current_start_time"])
-    logger.debug(
+    LOGGER.debug(schedule_times)
+    LOGGER.debug(schedule_times["current_start_time"])
+    LOGGER.debug(
         "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::"
     )
     schedule_param = {
@@ -410,13 +410,13 @@ def process_seedlots(
         "end_time": schedule_times["current_end_time"],
     }
 
-    logger.debug("Connecting into Source Database to get Seedlots")
+    LOGGER.debug("Connecting into Source Database to get Seedlots")
     with db_conn.database_connection(postgres_config) as source_db_conn:
         metrics = {}
         metrics["step"] = "Process Seedlots"
         metrics["start_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
 
-        logger.debug("Source Database connection established")
+        LOGGER.debug("Source Database connection established")
 
         query_sql = """SELECT s.seedlot_number
                          FROM spar.seedlot s
@@ -425,16 +425,16 @@ def process_seedlots(
                         WHERE s.update_timestamp between %(start_time)s AND %(end_time)s
                            OR drft.update_timestamp between %(start_time)s AND %(end_time)s
                         ORDER BY seedlot_number """
-        logger.debug(
+        LOGGER.debug(
             f"Main driver query to be executed in Source database is: {query_sql}"
         )
 
         params = identifyQueryParams(query_sql, "POSTGRES", schedule_param)
-        logger.debug(
+        LOGGER.debug(
             "*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_"
         )
-        logger.debug(params)
-        logger.debug(
+        LOGGER.debug(params)
+        LOGGER.debug(
             "*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_"
         )
 
@@ -448,7 +448,7 @@ def process_seedlots(
             seconds=(end_time - start_time)
         ).total_seconds()
 
-        logger.debug("Main driver SEEDLOT data loaded on in-memory dataframe")
+        LOGGER.debug("Main driver SEEDLOT data loaded on in-memory dataframe")
 
         processes = [
             [
@@ -625,7 +625,7 @@ def process_seedlots(
                         try:
                             process = processrow[0]
 
-                            logger.info("Get Delta times to load from source")
+                            LOGGER.info("Get Delta times to load from source")
 
                             process_metrics = execute_process(
                                 seedlot_number=seedlot.seedlot_number,
@@ -638,10 +638,10 @@ def process_seedlots(
                                 postgres_config=postgres_config,
                             )
                             processlst.append(process_metrics)
-                            logger.info("Execution process finished")
+                            LOGGER.info("Execution process finished")
 
                         except Exception as err:
-                            logger.critical("A fatal error has occurred", exc_info=True)
+                            LOGGER.critical("A fatal error has occurred", exc_info=True)
                             log_message = f"Error type: {type(err)}: {err}"
                             metrics["end_time"] = datetime.now().strftime(
                                 "%Y-%m-%d %H:%M:%S.%f"
@@ -656,7 +656,7 @@ def process_seedlots(
                 metrics["seedlots"] = seedlotlst
 
             except Exception as err:
-                logger.critical("A fatal error has occurred", exc_info=True)
+                LOGGER.critical("A fatal error has occurred", exc_info=True)
                 log_message = f"Error type: {type(err)}: {err}"
                 metrics["end_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
                 metrics.setdefault("ERROR", "")

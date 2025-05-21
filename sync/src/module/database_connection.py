@@ -9,7 +9,7 @@ import oracledb
 import pandas as pd
 from sqlalchemy import create_engine, text
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class database_connection(object):
@@ -54,7 +54,7 @@ class database_connection(object):
         try:
             self.conn.execute(text(query))
         except:
-            logger.critical(
+            LOGGER.critical(
                 "Connection health check resulted in an error", exc_info=True
             )
             return False
@@ -122,7 +122,7 @@ class database_connection(object):
         query = "CREATE TEMP TABLE {} as SELECT * FROM {} {}".format(
             table_name, from_what_table, complement
         )
-        logger.debug("TEMP TABLE {} created: {}".format(table_name, query))
+        LOGGER.debug("TEMP TABLE {} created: {}".format(table_name, query))
         self.conn.execute(text(query), None)
 
     def execute_upsert(
@@ -139,13 +139,13 @@ class database_connection(object):
             i = 0
             k = 0
             list_df = numpy.array_split(dataframe, math.ceil(len(dataframe) / n))
-            logger.debug(
+            LOGGER.debug(
                 f"Dataframe being processed into Postgres by chunks of {n} rows."
             )
             # Splitting dataframe in small chunks to improve performance
             for df in list_df:
                 k = k + 1
-                logger.debug(
+                LOGGER.debug(
                     f"Dataframe being processed into Postgres chunks {k} / {len(list_df)}."
                 )
                 i = i + self.bulk_upsert_postgres(
@@ -179,7 +179,7 @@ class database_connection(object):
         index_data: bool,
     ) -> int:
         onconflictstatement = ""
-        logger.debug("Starting UPSERT statement in Postgres Database")
+        LOGGER.debug("Starting UPSERT statement in Postgres Database")
         table_clean = clean_table_from_schema(table_name)
         if table_pk != "":
             columnspk = table_pk.split(",")
@@ -203,7 +203,7 @@ class database_connection(object):
 
     def delete_seedlot_owner_quantity(self, seedlot_number, table_name, soqdf) -> int:
         # special delete processing for soq - delete any owners from oracle not in postgres
-        logger.debug(
+        LOGGER.debug(
             "Executing seedlot_owner_quantity delete for seedlot " + seedlot_number
         )
         log_message = ""
@@ -235,12 +235,12 @@ class database_connection(object):
             )
 
         sql_text = sql_text + ")"
-        logger.debug(
+        LOGGER.debug(
             "==================soq sql=========================================="
         )
-        logger.debug(sql_text)
-        logger.debug(params)
-        logger.debug(
+        LOGGER.debug(sql_text)
+        LOGGER.debug(params)
+        LOGGER.debug(
             "==================================================================="
         )
 
@@ -252,24 +252,24 @@ class database_connection(object):
         #                                                    log_message=log_message,
         #                                                    execution_status='SKIPPED', ## No error, but
         #                                                    )
-        logger.debug("Finished soq deletion")
+        LOGGER.debug("Finished soq deletion")
         # data_sync_ctl.save_execution_log(track_db_conn,track_db_schema,process["interface_id"],process["execution_id"],process_log)
 
         return result.rowcount
 
     def delete_seedlot_child_table(self, table_name: str, seedlot_number: str) -> int:
-        logger.debug("-------------------processing delete on row-----------------")
-        logger.debug(f"seedlot number is {seedlot_number}")
-        logger.debug("-------------------processing delete on row-----------------")
+        LOGGER.debug("-------------------processing delete on row-----------------")
+        LOGGER.debug(f"seedlot number is {seedlot_number}")
+        LOGGER.debug("-------------------processing delete on row-----------------")
         sql_text = f"""
             DELETE FROM {table_name}
             WHERE seedlot_number = :p_seedlot_number """
         params = {}
         params["p_seedlot_number"] = seedlot_number
 
-        logger.debug("-------------------delete text-----------------")
-        logger.debug(sql_text)
-        logger.debug("-------------------delete text-----------------")
+        LOGGER.debug("-------------------delete text-----------------")
+        LOGGER.debug(sql_text)
+        LOGGER.debug("-------------------delete text-----------------")
         result = self.conn.execute(text(sql_text), params)
 
         self.commit()  # If everything is ok, a commit will be executed.
@@ -283,15 +283,15 @@ class database_connection(object):
         run_mode: str,
         ignore_columns_on_update: str,
     ) -> int:
-        logger.debug("Starting UPSERT statement in Oracle Database")
-        logger.debug("run_mode is " + run_mode)
+        LOGGER.debug("Starting UPSERT statement in Oracle Database")
+        LOGGER.debug("run_mode is " + run_mode)
         onconflictstatement = ""
         rows_affected = 0
 
         i = 0
         for row in dataframe.itertuples():
             i = i + 1
-            logger.debug(f"---Including row {i}")
+            LOGGER.debug(f"---Including row {i}")
             params = {}
             for column in dataframe.columns.values:
                 params[column] = getattr(row, column)
@@ -358,8 +358,8 @@ class database_connection(object):
                         {additionalprocessing}
                         END;"""
 
-            logger.debug(f"---Executing statement for row {i}")
-            logger.debug(sql_text)
+            LOGGER.debug(f"---Executing statement for row {i}")
+            LOGGER.debug(sql_text)
             result = self.conn.execute(text(sql_text), params)
             # TODO rowcount will not be accurate due to additionalprocessing
             rows_affected = result.rowcount
