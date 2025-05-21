@@ -1,6 +1,7 @@
 import csv
 import logging
 import math
+import ssl
 import time
 from io import StringIO
 
@@ -70,23 +71,31 @@ class database_connection(object):
         self.conn.rollback()
 
     def get_oracle_engine(self):
-        import ssl
-
-        import oracledb
-
+        LOGGER.debug("db config: %s", self.database_config)
         dbc = self.database_config  # aliasok i
-        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-        ssl_context.set_ciphers("DEFAULT@SECLEVEL=1")
-        return create_engine(
-            f"oracle+oracledb://:@",
-            connect_args={
-                "user": dbc["username"],
-                "password": dbc["password"],
-                "dsn": f"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCPS)(HOST={dbc['host']})(PORT={dbc['port']}))(CONNECT_DATA=(SERVICE_NAME={dbc['service_name']})))",
-                "externalauth": False,
-                "ssl_context": ssl_context,
-            },
-        )
+        if self.database_config["ssl_required"]:
+            ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+            ssl_context.set_ciphers("DEFAULT@SECLEVEL=1")
+            return create_engine(
+                f"oracle+oracledb://:@",
+                connect_args={
+                    "user": dbc["username"],
+                    "password": dbc["password"],
+                    "dsn": f"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCPS)(HOST={dbc['host']})(PORT={dbc['port']}))(CONNECT_DATA=(SERVICE_NAME={dbc['service_name']})))",
+                    "externalauth": False,
+                    "ssl_context": ssl_context,
+                },
+            )
+        else:
+            return create_engine(
+                f"oracle+oracledb://:@",
+                connect_args={
+                    "user": dbc["username"],
+                    "password": dbc["password"],
+                    "dsn": f"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST={dbc['host']})(PORT={dbc['port']}))(CONNECT_DATA=(SERVICE_NAME={dbc['service_name']})))",
+                    "externalauth": False,
+                },
+            )
 
     def format_connection_string(self, database_config: str):
         """Formats the connection string based on the database type and the connection configuration."""
