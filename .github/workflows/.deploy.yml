@@ -54,6 +54,27 @@ on:
         value: ${{ jobs.sync.outputs.deploy }}
 
 jobs:
+  init:
+    name: Deploy Init
+    environment: ${{ inputs.environment }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: OpenShift Init
+        id: trigger
+        uses: bcgov/action-deployer-openshift@d972993c70aba88e4f2fe66a66c4b7149fa9fcad # v4.0.0
+        with:
+          oc_namespace: ${{ vars.OC_NAMESPACE }}
+          oc_server: ${{ vars.OC_SERVER }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          file: common/openshift.init.yml
+          overwrite: true
+          parameters:
+            -p ZONE=${{ inputs.target }}
+            -p ORACLE_PASSWORD='${{ secrets.ORACLE_PASSWORD }}'
+            -p ORACLE_SERVICE='${{ secrets.ORACLE_DB_SERVICE }}'
+            -p ORACLE_USER='${{ vars.ORACLE_USER }}'
+            -p ORACLE_HOST='${{ secrets.ORACLE_DB_HOST }}'
+          triggers: ${{ inputs.triggers }}
   deploy:
     name: Deploy
     environment: ${{ inputs.environment }}
@@ -72,11 +93,6 @@ jobs:
             -p ZONE=${{ inputs.target }}
             -p TAG=${{ inputs.tag }}
             -p TEST_MODE=${{ inputs.test-mode }}
-            -p ORACLE_SYNC_USER='${{ vars.ORACLE_SYNC_USER }}'
-            -p ORACLE_SYNC_PASSWORD='${{ secrets.ORACLE_SYNC_PASSWORD }}'
-            -p POSTGRES_HOST=${{ inputs.postgres-host }}
-            -p POSTGRES_DB='nr-spar'
-            -p POSTGRES_USER='nr-spar'
             -p SECRETS_FROM=${{ inputs.secrets-from }}
           triggers: ${{ inputs.triggers }}
 
