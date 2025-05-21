@@ -201,16 +201,17 @@ services:
     # "CMD",
     # entrypoint: [ "/application/docker_run_ORA_TEST.sh"]
     working_dir: /app
-    entrypoint: ["python", "db_env_utils/main_ingest.py", ORA, TEST]
+    entrypoint: ["python", "db_env_utils/main_ingest.py", ORA, PROD]
     volumes:
       # - "./data_prep:/app"
       - "./docker-compose.yml:/app/docker-compose.yml"
       - "./ora-env/data/docker:/app/data"
       - "./ora-env/data/temp/data_classification.xlsx:/app/data/temp/data_classification.xlsx"
-    environment:
-      <<: [*oracle-vars]
     env_file:
       - ".env"
+    environment:
+      <<: [*oracle-vars]
+
     depends_on:
       oracle-migrations:
         condition: service_completed_successfully
