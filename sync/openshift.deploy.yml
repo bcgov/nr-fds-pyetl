@@ -8,29 +8,15 @@ parameters:
   - name: ZONE
     description: Deployment zone, e.g. pr-###, test or prod
     required: true
-  - name: ORACLE_SYNC_USER
-    description: Oracle database user
+  - name: SECRETS_FROM
+    description: Secrets object to reference for oc pg db
     required: true
-  - name: ORACLE_SYNC_PASSWORD
-    description: Oracle database password
-    required: true
-  - name: POSTGRES_HOST
-    description: PostgreSQL database host
-    required: false
-  - name: POSTGRES_DB
-    description: PostgreSQL database name
-    required: false
-  - name: POSTGRES_USER
-    description: PostgreSQL database user
-    value: "nr-spar"
+
 
   ### Recommended - suggest hard coding
   - name: APP
     description: Application/component name
     value: sync
-  - name: ORACLE_PORT
-    description: Oracle database port
-    value: "1543"
   - name: EXECUTION_ID
     description: Process execution ID for running ETL Tool
     value: "100"
@@ -40,9 +26,6 @@ parameters:
   - name: REPO
     description: Repository name
     value: nr-fds-pyetl
-  - name: SECRETS_FROM
-    description: Secrets objects to reference
-    required: true
   - name: TEST_MODE
     description: "Run in test mode"
     value: "true"
@@ -71,6 +54,7 @@ objects:
         cronjob: ${REPO}-${ZONE}
     spec:
       # At 00:00 on day-of-month 31 in February
+      # job is being scheduled/triggered by gh action
       schedule: "0 0 31 2/12000 0" # https://crontab.guru/#0_0_31_2_*
       startingDeadlineSeconds: 60
       concurrencyPolicy: "Replace"
@@ -100,23 +84,35 @@ objects:
                     - name: ORACLE_HOST
                       valueFrom:
                         secretKeyRef:
-                          name: ${SECRETS_FROM}-oracle-api
-                          key: oracle-host
+                          name: ${REPO}-${ZONE}-oracle-database
+                          key: database-host
                     - name: ORACLE_PORT
-                      value: ${ORACLE_PORT}
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${REPO}-${ZONE}-oracle-database
+                          key: database-port
                     - name: ORACLE_SERVICE
                       valueFrom:
                         secretKeyRef:
-                          name: ${SECRETS_FROM}-oracle-api
-                          key: oracle-service
+                          name: ${REPO}-${ZONE}-oracle-database
+                          key: database-name
                     - name: ORACLE_SYNC_PASSWORD
-                      value: ${ORACLE_SYNC_PASSWORD}
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${REPO}-${ZONE}-oracle-database
+                          key: database-password
                     - name: ORACLE_SYNC_USER
-                      value: ${ORACLE_SYNC_USER}
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${REPO}-${ZONE}-oracle-database
+                          key: database-user
+
                     - name: POSTGRES_DB
-                      value: ${POSTGRES_DB}
+                      secretKeyRef:
+                          name: ${SECRETS_FROM}-database
+                          key: database-name
                     - name: POSTGRES_HOST
-                      value: ${POSTGRES_HOST}
+                      value: ${SECRETS_FROM}-database
                     - name: POSTGRES_PASSWORD
                       valueFrom:
                         secretKeyRef:
@@ -128,7 +124,9 @@ objects:
                           name: ${SECRETS_FROM}-database
                           key: database-port
                     - name: POSTGRES_USER
-                      value: ${POSTGRES_USER}
+                      secretKeyRef:
+                          name: ${SECRETS_FROM}-database
+                          key: database-user
                   resources:
                     requests:
                       cpu: 50m
