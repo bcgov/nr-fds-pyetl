@@ -245,7 +245,7 @@ services:
       EXECUTION_ID: 9999
       ORACLE_PORT: *ORACLE_PORT
       ORACLE_SERVICE: *ORACLE_DATABASE
-      ORA_NON_ENRCYPT_LISTENER: True
+      ORA_NON_ENCRYPT_LISTENER: True
     command: ["python", "/app/src/main.py"]
     # command: ["sleep", "10000"]
     volumes:

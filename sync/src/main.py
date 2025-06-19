@@ -126,9 +126,9 @@ def read_settings():
     try:
         with open(file, "r") as stream:
             data_loaded = yaml.safe_load(stream)
-            use_ssl_str = os.getenv("ORA_NON_ENRCYPT_LISTENER", "false").strip().lower()
+            use_ssl_str = os.getenv("ORA_NON_ENCRYPT_LISTENER", "false").strip().lower()
 
-            LOGGER.debug("ORA_NON_ENRCYPT_LISTENER env var: %s", use_ssl_str)
+            LOGGER.debug("ORA_NON_ENCRYPT_LISTENER env var: %s", use_ssl_str)
             use_ssl = not use_ssl_str in truthy
             LOGGER.debug("SSL required: %s", use_ssl)
             data_loaded["oracle"]["ssl_required"] = use_ssl
