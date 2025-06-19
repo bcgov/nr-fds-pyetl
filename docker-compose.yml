@@ -136,7 +136,7 @@ services:
 
   # data-load here doesn't work references non existing shell script
   postgres-data-load:
-    image: nr-fds-pyetl-oracle-data-load:latest
+    image: nr-fds-pyetl-oracle-spar-data-load:latest
     build:
         context: ./  # Path to the directory containing the Dockerfile
         dockerfile: Dockerfile.dbutils  # Name of the Dockerfile (optional if named "Dockerfile")
@@ -149,7 +149,7 @@ services:
     volumes:
       - "./docker-compose.yml:/app/docker-compose.yml"
       #- "./ora-env/data/docker:/app/data"
-      - "oracle-data-load:/app/data"
+      - "oracle-spar-data-load:/app/data"
 
     environment:
       <<: [*postgres-vars]
@@ -181,9 +181,9 @@ services:
       - oracle-data:/opt/oracle/oradata  # Mount the volume to the Oracle data directory
       - ./data_prep/ora_db_init/db_init/db_init.sql:/container-entrypoint-initdb.d/my-init.sql:ro
 
-  oracle-migrations:
+  oracle-spar-migrations:
     image: flyway/flyway:10-alpine
-    container_name: oracle-migrations
+    container_name: oracle-spar-migrations
     command: info migrate info
     volumes:
       - "./ora-env/migrations/ora:/flyway/sql:ro"
@@ -198,21 +198,21 @@ services:
         condition: service_healthy
 
   # doesnt work, references non existing shell script
-  oracle-data-load:
-    image: nr-fds-pyetl-oracle-data-load:latest
+  oracle-spar-data-load:
+    image: nr-fds-pyetl-oracle-spar-data-load:latest
     user: "0:0"
     build:
         context: ./  # Path to the directory containing the Dockerfile
         dockerfile: Dockerfile.dbutils  # Name of the Dockerfile (optional if named "Dockerfile")
     # image: python:3.13-slim-bookworm
-    container_name: oracle-data-load
+    container_name: oracle-spar-data-load
     # "CMD",
     # entrypoint: [ "/application/docker_run_ORA_TEST.sh"]
     working_dir: /app
     # entrypoint: ["python", "db_env_utils/main_ingest.py", ORA, PROD]
     entrypoint: ["bash", "/app/run_data_inject_ora.sh"]
     volumes:
-      - "oracle-data-load:/app/data"
+      - "oracle-spar-data-load:/app/data"
       - "./ora-env/data/temp/data_classification.xlsx:/app/data_classification.xlsx"
     env_file:
       - ".env"
@@ -220,7 +220,7 @@ services:
       <<: [*oracle-vars]
 
     depends_on:
-      oracle-migrations:
+      oracle-spar-migrations:
         condition: service_completed_successfully
 
   # debug service, useful for understanding how environment variables work
@@ -229,7 +229,7 @@ services:
     image: functions/alpine:health
     command: ["/bin/sh", "-c", "echo Postgres and Oracle envs now live!"]
     depends_on:
-      oracle-data-load:
+      oracle-spar-data-load:
         condition: service_completed_successfully
       postgres-data-load:
         condition: service_completed_successfully
@@ -285,4 +285,4 @@ services:
 volumes:
   oracle-data:
   postgres-migrations-volume:
-  oracle-data-load:
+  oracle-spar-data-load:
