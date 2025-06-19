@@ -1,0 +1,60 @@
+[tool.ruff.lint]
+select = ["ALL"]
+
+[tool.ruff]
+line-length = 80
+
+[tool.black]
+line-length = 80
+
+# Ignore some errors in tests as they are not relevant
+[tool.ruff.lint.extend-per-file-ignores]
+"**/tests/**/*.py" = [
+    # at least this three should be fine in tests:
+    "S101", # asserts allowed in tests...
+    "S105", # local dev password fields are verified
+    "ARG", # Unused function args -> fixtures nevertheless are functionally relevant...
+    "FBT", # Don't care about booleans as positional arguments in tests, e.g. via @pytest.mark.parametrize()
+    # The below are debateable
+    "PLR2004", # Magic value used in comparison, ...
+    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+]
+
+[project]
+authors = [
+    {name = "Kevin Netherton", email = "kevin.netherton@gov.bc.ca"},
+]
+license = {text = "Apache License 2.0"}
+requires-python = "==3.13"
+dependencies = [
+    "numpy>=2.2.6",
+    "oracledb>=3.1.1",
+    "pandas>=2.2.3",
+    "psycopg2>=2.9.10",
+    "pyyaml>=6.0.2",
+    "sqlalchemy>=2.0.41",
+]
+name = "sync"
+version = "0.1.0"
+description = "etl between oc postgres and on prem oracle"
+readme = "README.md"
+package-mode = false
+
+[dependency-groups]
+dev = [
+    "black<25.2.0,>=25.1.0",
+    "ruff<1.0.0,>=0.8.0",
+    "mypy-boto3<2.0.0,>=1.35.38",
+    "pytest<9.0.0,>=8.3.3",
+]
+
+
+
+
+
+
+
+
+
+
+

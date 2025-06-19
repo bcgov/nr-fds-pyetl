@@ -39,3 +39,4 @@ jest.*
 .vscode
 .ps1
 thumbs.db
+.venv
