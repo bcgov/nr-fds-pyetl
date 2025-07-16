@@ -34,7 +34,7 @@ dependencies = [
     "pandas<3.0.0,>=2.2.3",
     "pyarrow>=19.0.1,<19.1.0",
     "pypika<1.0.0,>=0.48.9",
-    "boto3<2.0.0,==1.35.95",
+    "boto3<2.0.0,==1.39.4",
     "kubernetes<32.0.2,>=32.0.1",
     "requests<3.0.0,>=2.32.3",
     "openshift-client<3.0.0,>=2.0.4",
