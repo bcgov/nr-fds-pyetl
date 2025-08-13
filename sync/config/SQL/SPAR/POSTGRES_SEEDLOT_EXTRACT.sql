@@ -200,14 +200,15 @@ SELECT
     ,CASE WHEN s.seedlot_status_code = 'PND' THEN drft.vol_per_container
           ELSE s.vol_per_container
      END vol_per_container
-     --default values
+     --default values required for seedlot registration
     ,'00012797' as stored_cli_number
     ,'00'       as stored_cli_locn_cd
     ,0          as original_seed_qty
+    ,'N'        as registered_seed_ind
+    --additional defaults
     ,0          as utm_easting
     ,0          as utm_northing
     ,0          as utm_zone
-    ,'N'        as registered_seed_ind
 FROM spar.seedlot s
 LEFT OUTER JOIN seedlot_coll_methods scm1
              ON (scm1.seedlot_number = s.seedlot_number AND scm1.rown = 1)
