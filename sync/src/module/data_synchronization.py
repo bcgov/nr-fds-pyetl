@@ -463,7 +463,7 @@ def process_seedlots(
                     "target_primary_key": "seedlot_number",
                     "target_db_type": "ORACLE",
                     "run_mode": "UPSERT",
-                    "ignore_columns_on_update": "extraction_st_date,extraction_end_date,seed_store_client_number,seed_store_client_locn,temporary_storage_start_date,temporary_storage_end_date,seedlot_status_code",
+                    "ignore_columns_on_update": "extraction_st_date,extraction_end_date,seed_store_client_number,seed_store_client_locn,temporary_storage_start_date,temporary_storage_end_date,seedlot_status_code,stored_cli_number,stored_cli_locn_cd,original_seed_qty,utm_easting,utm_northing,utm_zone,registered_seed_ind",
                 }
             ],
             [
