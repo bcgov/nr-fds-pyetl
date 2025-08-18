@@ -9,31 +9,31 @@ WITH seedlot_coll_methods
   , draft_seedlots
  AS
   (select seedlot_number
-     , case when all_step_data->'extractionStorageStep'->'extraction'->'agency'->>'isInvalid' = 'false' 
-             and all_step_data->'extractionStorageStep'->'extraction'->'locationCode'->>'isInvalid' = 'false' 
+     , case when all_step_data->'extractionStorageStep'->'extraction'->'agency'->>'isInvalid' = 'false'
+             and all_step_data->'extractionStorageStep'->'extraction'->'locationCode'->>'isInvalid' = 'false'
             then NULLIF(all_step_data->'extractionStorageStep'->'extraction'->'agency'->>'value','')
-            else null 
-       end as extrct_cli_number 
-     , case when all_step_data->'extractionStorageStep'->'extraction'->'agency'->>'isInvalid' = 'false' 
-             and all_step_data->'extractionStorageStep'->'extraction'->'locationCode'->>'isInvalid' = 'false' 
+            else null
+       end as extrct_cli_number
+     , case when all_step_data->'extractionStorageStep'->'extraction'->'agency'->>'isInvalid' = 'false'
+             and all_step_data->'extractionStorageStep'->'extraction'->'locationCode'->>'isInvalid' = 'false'
             then NULLIF(all_step_data->'extractionStorageStep'->'extraction'->'locationCode'->>'value','')
-            else null 
-       end as extrct_cli_locn_cd 
-     , case when all_step_data->'interimStep'->'facilityType'->>'isInvalid' = 'false' 
+            else null
+       end as extrct_cli_locn_cd
+     , case when all_step_data->'interimStep'->'facilityType'->>'isInvalid' = 'false'
             then NULLIF(all_step_data->'interimStep'->'facilityType'->>'value' ,'')
-            else null 
-       end as interm_facility_code 
-     , case when all_step_data->'orchardStep'->'orchards'->'primaryOrchard'->>'isInvalid' = 'false' 
+            else null
+       end as interm_facility_code
+     , case when all_step_data->'orchardStep'->'orchards'->'primaryOrchard'->>'isInvalid' = 'false'
             then NULLIF(all_step_data->'orchardStep'->'orchards'->'primaryOrchard'->'value'->>'code','')
-            else null 
+            else null
        end as orchard_id
-     , case when all_step_data->'orchardStep'->'orchards'->'secondaryOrchard'->>'isInvalid' = 'false' 
+     , case when all_step_data->'orchardStep'->'orchards'->'secondaryOrchard'->>'isInvalid' = 'false'
             then NULLIF(all_step_data->'orchardStep'->'orchards'->'secondaryOrchard'->'value'->>'code','')
-            else null 
+            else null
        end as secondary_orchard_id
      , CAST(case when all_step_data->'collectionStep'->'startDate'->>'isInvalid' = 'false'
                  then NULLIF(all_step_data->'collectionStep'->'startDate'->>'value','')
-                 else null 
+                 else null
                   end AS DATE)  as collection_start_date
      , CAST(case when all_step_data->'collectionStep'->'endDate'->>'isInvalid' = 'false'
                  then NULLIF(all_step_data->'collectionStep'->'endDate'->>'value','')
@@ -75,7 +75,7 @@ WITH seedlot_coll_methods
        end as seedlot_comment
   from spar.seedlot_registration_a_class_save
  where seedlot_number = %(p_seedlot_number)s)
-SELECT 
+SELECT
     s.applicant_client_number,
     s.applicant_email_address,
     s.applicant_locn_code                AS applicant_client_locn,
@@ -131,18 +131,18 @@ SELECT
 	,S.extraction_end_date::date
 	,S.extraction_st_date::date
 	,CASE WHEN s.seedlot_status_code = 'PND' THEN drft.extrct_cli_number
-          ELSE s.extractory_client_number 
+          ELSE s.extractory_client_number
      END                       as extrct_cli_number
 	,CASE WHEN s.seedlot_status_code = 'PND' THEN drft.extrct_cli_locn_cd
-          ELSE s.extractory_locn_code 
+          ELSE s.extractory_locn_code
      END                	    as extrct_cli_locn_cd
-	,s.female_gametic_mthd_code         
-	,S.genetic_class_code               
-	,CASE WHEN s.seedlot_status_code = 'PND' THEN drft.interm_facility_code 
-          ELSE s.interm_facility_code             
+	,s.female_gametic_mthd_code
+	,S.genetic_class_code
+	,CASE WHEN s.seedlot_status_code = 'PND' THEN drft.interm_facility_code
+          ELSE s.interm_facility_code
      END                        as interm_facility_code
 	,s.interm_strg_locn_code           			as interm_strg_client_locn
-	,S.interm_strg_client_number        
+	,S.interm_strg_client_number
 	,S.interm_strg_end_date::date
 	,S.interm_strg_locn
 	,S.interm_strg_st_date::date
@@ -192,27 +192,36 @@ SELECT
 	,s.temporary_strg_end_date::date    as temporary_storage_end_date
 	,s.temporary_strg_start_date::date  as temporary_storage_start_date
 	,CASE WHEN s.to_be_registrd_ind THEN 'Y' Else 'N' END as to_be_registrd_ind
-	,s.total_parent_trees	
+	,s.total_parent_trees
 	,s.update_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/Los_Angeles' AS update_timestamp
 	,REPLACE(s.update_userid,'\', '@') update_userid  -- 'Replacing @ to \ for Provider@User
-	,s.variant                                          
+	,s.variant
 	,s.vegetation_code
     ,CASE WHEN s.seedlot_status_code = 'PND' THEN drft.vol_per_container
           ELSE s.vol_per_container
      END vol_per_container
+     --default values required for seedlot registration
+    ,'00012797' as stored_cli_number
+    ,'00'       as stored_cli_locn_cd
+    ,0          as original_seed_qty
+    ,'N'        as registered_seed_ind
+    --additional defaults
+    ,0          as utm_easting
+    ,0          as utm_northing
+    ,0          as utm_zone
 FROM spar.seedlot s
-LEFT OUTER JOIN seedlot_coll_methods scm1 
+LEFT OUTER JOIN seedlot_coll_methods scm1
              ON (scm1.seedlot_number = s.seedlot_number AND scm1.rown = 1)
 LEFT OUTER JOIN seedlot_coll_methods scm2
              ON (scm2.seedlot_number = s.seedlot_number AND scm2.rown = 2)
 LEFT OUTER JOIN (SELECT po.seedlot_number
-                      , po.orchard_id 
+                      , po.orchard_id
                    FROM spar.seedlot_orchard po
-                  WHERE po.primary_ind = True) prim 
+                  WHERE po.primary_ind = True) prim
              ON prim.seedlot_number = s.seedlot_number
 LEFT OUTER JOIN (SELECT DISTINCT
                         so.seedlot_number
-                      , FIRST_VALUE(so.orchard_id) OVER (PARTITION BY so.seedlot_number 
+                      , FIRST_VALUE(so.orchard_id) OVER (PARTITION BY so.seedlot_number
                                                              ORDER BY so.entry_timestamp) secondary_orchard_id
                    FROM spar.seedlot_orchard so
                   WHERE so.primary_ind = False) sec
@@ -220,7 +229,7 @@ LEFT OUTER JOIN (SELECT DISTINCT
 LEFT OUTER JOIN spar.active_orchard_spu ospu
              ON ospu.orchard_id = prim.orchard_id
             AND ospu.active_ind = True
-LEFT OUTER JOIN draft_seedlots drft 
+LEFT OUTER JOIN draft_seedlots drft
              ON drft.seedlot_number = s.seedlot_number
 WHERE s.seedlot_number = %(p_seedlot_number)s
 ORDER BY s.seedlot_number DESC
