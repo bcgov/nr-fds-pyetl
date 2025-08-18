@@ -1,18 +1,21 @@
 import json
 import logging
+import logging.config
 import os
+import pathlib
 import sys
-from logging import INFO as loggingINFO
-from logging import basicConfig as loggingBasicConfig
-from logging import config as logging_config
 
 import module.data_synchronization as data_sync
+import module.test_db_connection
 import yaml
+
+# string values that are interpreted as true
+truthy = ["Y", "YES", "1", "T", "TRUE", "t", "true"]
 
 
 def env_var_is_filled(variable):
     if os.environ.get(variable) is None:
-        print("Error: " + variable + " environment variable is None")
+        LOGGER.error("Error: " + variable + " environment variable is None")
         return False
     return True
 
@@ -68,10 +71,10 @@ def get_build_number():
 def required_variables_exists():
     ret = True
 
-    print("-------------------------------------")
-    print("----- ETL Tool: Unit test Execution  ")
-    print("----- 1. Checking if required variables are defined")
-    print("-------------------------------------")
+    LOGGER.info("-------------------------------------")
+    LOGGER.info("----- ETL Tool: Unit test Execution  ")
+    LOGGER.info("----- 1. Checking if required variables are defined")
+    LOGGER.info("-------------------------------------")
 
     if (
         not env_var_is_filled("TEST_MODE")
@@ -90,7 +93,7 @@ def required_variables_exists():
         ret = False
 
     if ret:
-        print("Required variable tests passed!")
+        LOGGER.info("Required variable tests passed!")
     else:
         raise Exception(
             "Not all required variables to execute a instance of Data Sync Engine exists."
@@ -98,25 +101,24 @@ def required_variables_exists():
 
 
 def testOracleConnection(settings):
-    print("-------------------------------------")
-    print("-- 3. Checking if Oracle connection is available and reachable")
-    print("-------------------------------------")
-    from module.test_db_connection import test_db_connection
+    LOGGER.info("-------------------------------------")
+    LOGGER.info("-- 3. Checking if Oracle connection is available and reachable")
+    LOGGER.info("-------------------------------------")
 
     dbConfig = generate_db_config("ORACLE", "THE", settings)
-    d = test_db_connection.do_test(dbConfig)
-    print(d)
+    d = module.test_db_connection.test_db_connection.do_test(dbConfig)
+    LOGGER.info(d)
 
 
 def testPostgresConnection(settings):
-    print("-------------------------------------")
-    print("-- 2. Checking if Postgres connection is available and reachable")
-    print("-------------------------------------")
+    LOGGER.info("-------------------------------------")
+    LOGGER.info("-- 2. Checking if Postgres connection is available and reachable")
+    LOGGER.info("-------------------------------------")
     from module.test_db_connection import test_db_connection
 
     dbConfig = generate_db_config("POSTGRES", "spar", settings)
     d = test_db_connection.do_test(dbConfig)
-    print(d)
+    LOGGER.info(d)
 
 
 def read_settings():
@@ -124,6 +126,12 @@ def read_settings():
     try:
         with open(file, "r") as stream:
             data_loaded = yaml.safe_load(stream)
+            use_ssl_str = os.getenv("ORA_NON_ENCRYPT_LISTENER", "false").strip().lower()
+
+            LOGGER.debug("ORA_NON_ENCRYPT_LISTENER env var: %s", use_ssl_str)
+            use_ssl = not use_ssl_str in truthy
+            LOGGER.debug("SSL required: %s", use_ssl)
+            data_loaded["oracle"]["ssl_required"] = use_ssl
             if (
                 data_loaded["postgres"]["max_rows_upsert"]
                 or data_loaded["postgres"]["version_column"]
@@ -134,51 +142,51 @@ def read_settings():
             ):
                 return data_loaded
     except FileNotFoundError:
-        print("Error: settings.yml not found")
+        LOGGER.error("Error: settings.yml not found")
     except KeyError:
-        print(
+        LOGGER.error(
             "Error: settings.yml is not well formated or does not have required settings"
         )
     except Exception as err:
-        print(
+        LOGGER.error(
             f"A fatal error has occurred when trying to load settings.yml ({type(err)}): {err}"
         )
 
 
 def main() -> int:
+    config_logging()
     try:
-        definition_of_yes = ["Y", "YES", "1", "T", "TRUE", "t", "true"]
         job_return_code = 0
 
         build_number = get_build_number()
-        print("<------------------ b.u.i.l.d  n.u.m.b.e.r ----------------->")
-        print(f"Running Sync BUILD NUMBER: {build_number}")
-        print("<------------------ b.u.i.l.d  n.u.m.b.e.r ----------------->")
+        LOGGER.info("<------------------ b.u.i.l.d  n.u.m.b.e.r ----------------->")
+        LOGGER.info(f"Running Sync BUILD NUMBER: {build_number}")
+        LOGGER.info("<------------------ b.u.i.l.d  n.u.m.b.e.r ----------------->")
 
         # print(os.environ.get("TEST_MODE"))
         if os.environ.get("TEST_MODE") is None:
-            print("Error: test mode variable is None")
+            LOGGER.error("Error: test mode variable is None")
         elif os.environ.get("EXECUTION_ID") is None:
-            print(
+            LOGGER.error(
                 "Error: EXECUTION_ID is None, no execution defined to be executed in this run."
             )
         else:
             this_is_a_test = os.environ.get("TEST_MODE")
             settings = read_settings()
-            print("<------------------ settings ----------------->")
-            print(settings)
-            print("<------------------ settings ----------------->")
-            if this_is_a_test in definition_of_yes:
-                print("Executing in Test mode")
+            LOGGER.info("<------------------ settings ----------------->")
+            LOGGER.info(settings)
+            LOGGER.info("<------------------ settings ----------------->")
+            if this_is_a_test in truthy:
+                LOGGER.info("Executing in Test mode")
                 required_variables_exists()
                 testPostgresConnection(settings["postgres"])
                 testOracleConnection(settings["oracle"])
                 # Vault disabled
                 # testVault()
             else:
-                print("-------------------------------------")
-                print("Starting ETL main process ")
-                print("-------------------------------------")
+                LOGGER.info("-------------------------------------")
+                LOGGER.info("Starting ETL main process ")
+                LOGGER.info("-------------------------------------")
 
                 dbOracle = generate_db_config("ORACLE", "THE", settings["oracle"])
                 dbPostgres = generate_db_config(
@@ -187,29 +195,28 @@ def main() -> int:
 
                 job_return_code = execute_etl(dbPostgres, dbOracle)
 
-                print("-------------------------------------")
-                print("ETL Main process finished ")
-                print("-------------------------------------")
+                LOGGER.info("-------------------------------------")
+                LOGGER.info("ETL Main process finished ")
+                LOGGER.info("-------------------------------------")
         return job_return_code
 
     except Exception as err:
-        print(f"A fatal error has occurred ({type(err)}): {err}")
+        LOGGER.error(f"A fatal error has occurred ({type(err)}): {err}")
         return 1  # failure
 
 
 # MAIN Execution
 def execute_etl(dbPostgres, dbOracle):
-    # TODO:
-    loggingBasicConfig(
-        level=logging.DEBUG,
-        format="%(asctime)s - %(levelname)s - %(filename)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        stream=sys.stdout,
-    )
-
     return data_sync.execute_instance(
         oracle_config=dbOracle, postgres_config=dbPostgres, track_config=dbPostgres
     )
+
+
+def config_logging():
+    log_file = pathlib.Path(__file__).parent / "logging.config"
+    logging.config.fileConfig(log_file, disable_existing_loggers=False)
+    global LOGGER
+    LOGGER = logging.getLogger("sync")
 
 
 if __name__ == "__main__":

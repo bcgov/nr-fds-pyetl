@@ -14,6 +14,10 @@ x-var:
     spar
   - &POSTGRES_FLYWAY_URL_POSTGRES
     jdbc:postgresql://postgres:5432/spar
+  - &SOURCE_DATA_FOLDER
+    /app/data
+  - &DATA_CLASSIFICATION_SS
+    /app/data_classification.xlsx
   - &ORACLE_USER
     THE
   - &ORACLE_PASSWORD
@@ -36,9 +40,18 @@ x-postgres-vars: &postgres-vars
   POSTGRES_PASSWORD: *POSTGRES_PASSWORD
   POSTGRES_PORT: *POSTGRES_PORT
   FLYWAY_URL_POSTGRES: *POSTGRES_FLYWAY_URL_POSTGRES
-  #FLYWAY_URL_POSTGRES: jdbc:postgresql://postgres:5432/spar
+
+  POSTGRES_HOST_LOCAL: *POSTGRES_HOST
+  POSTGRES_PORT_LOCAL: *POSTGRES_PORT
+  POSTGRES_SERVICE_LOCAL: *POSTGRES_DATABASE
+  POSTGRES_USER_LOCAL: *POSTGRES_USER
+  POSTGRES_PASSWORD_LOCAL: *POSTGRES_PASSWORD
+  POSTGRES_SCHEMA_TO_SYNC_LOCAL: *POSTGRES_SCHEMA
+  LOCAL_DATA_DIR: *SOURCE_DATA_FOLDER
+
 
 x-oracle-vars: &oracle-vars
+  # Used by the Oracle container in the setup
   ORACLE_DATABASE: *ORACLE_DATABASE
   ORACLE_PASSWORD: *ORACLE_PASSWORD
   ORACLE_HOST: *ORACLE_HOST
@@ -48,8 +61,23 @@ x-oracle-vars: &oracle-vars
   ORACLE_SYNC_PASSWORD: *ORACLE_PASSWORD
   ORACLE_SYNC_USER: *ORACLE_USER
   FLYWAY_URL: *ORACLE_FLYWAY_URL
+  # data load process
+  LOCAL_DATA_DIR: *SOURCE_DATA_FOLDER
+  DATA_CLASSIFICATION_SS: *DATA_CLASSIFICATION_SS
+  # used by the data load process
+  ORACLE_HOST_LOCAL: *ORACLE_HOST
+  ORACLE_PORT_LOCAL: *ORACLE_PORT
+  ORACLE_SERVICE_LOCAL: *ORACLE_DATABASE
+  ORACLE_USER_LOCAL: *ORACLE_USER
+  ORACLE_PASSWORD_LOCAL: *ORACLE_PASSWORD
+  ORACLE_SCHEMA_TO_SYNC_LOCAL: *ORACLE_USER
 
 services:
+  # dbutils:
+  #   image: ghcr.io/astral-sh/uv:python3.13-bookworm-slim
+  #   container_name: dbutils
+
+
   postgres:
     #image: postgis/postgis:15-master
     image: postgis/postgis:17-3.5-alpine
@@ -108,17 +136,21 @@ services:
 
   # data-load here doesn't work references non existing shell script
   postgres-data-load:
-    image: nr-fds-pyetl-oracle-data-load:latest
+    image: nr-fds-pyetl-oracle-spar-data-load:latest
     build:
         context: ./  # Path to the directory containing the Dockerfile
-        dockerfile: Dockerfile.data_load  # Name of the Dockerfile (optional if named "Dockerfile")
+        dockerfile: Dockerfile.dbutils  # Name of the Dockerfile (optional if named "Dockerfile")
     # image: python:3.13-slim-bookworm
     container_name: postgres-data-load
     working_dir: /app
-    entrypoint: ["python", "db_env_utils/main_spar_ingest.py", TEST]
+    #entrypoint: ["python", "db_env_utils/main_ingest.py", OC_POSTGRES, TEST]
+    entrypoint: ["bash", "/app/run_data_inject_oc.sh"]
+
     volumes:
       - "./docker-compose.yml:/app/docker-compose.yml"
-      - "./data:/app/data"
+      #- "./ora-env/data/docker:/app/data"
+      - "oracle-spar-data-load:/app/data"
+
     environment:
       <<: [*postgres-vars]
     env_file:
@@ -149,12 +181,12 @@ services:
       - oracle-data:/opt/oracle/oradata  # Mount the volume to the Oracle data directory
       - ./data_prep/ora_db_init/db_init/db_init.sql:/container-entrypoint-initdb.d/my-init.sql:ro
 
-  oracle-migrations:
+  oracle-spar-migrations:
     image: flyway/flyway:10-alpine
-    container_name: oracle-migrations
+    container_name: oracle-spar-migrations
     command: info migrate info
     volumes:
-      - "./data_prep/migrations_ora/sql:/flyway/sql:ro"
+      - "./ora-env/migrations/ora:/flyway/sql:ro"
     environment:
       <<: *oracle-vars
       FLYWAY_USER: *ORACLE_USER
@@ -166,37 +198,38 @@ services:
         condition: service_healthy
 
   # doesnt work, references non existing shell script
-  oracle-data-load:
-    image: nr-fds-pyetl-oracle-data-load:latest
+  oracle-spar-data-load:
+    image: nr-fds-pyetl-oracle-spar-data-load:latest
+    user: "0:0"
     build:
         context: ./  # Path to the directory containing the Dockerfile
-        dockerfile: Dockerfile.data_load  # Name of the Dockerfile (optional if named "Dockerfile")
+        dockerfile: Dockerfile.dbutils  # Name of the Dockerfile (optional if named "Dockerfile")
     # image: python:3.13-slim-bookworm
-    container_name: oracle-data-load
+    container_name: oracle-spar-data-load
     # "CMD",
     # entrypoint: [ "/application/docker_run_ORA_TEST.sh"]
     working_dir: /app
-
-    entrypoint: ["python", "db_env_utils/main_ora_ingest.py", TEST]
+    # entrypoint: ["python", "db_env_utils/main_ingest.py", ORA, PROD]
+    entrypoint: ["bash", "/app/run_data_inject_ora.sh"]
     volumes:
-      # - "./data_prep:/app"
-      - "./docker-compose.yml:/app/docker-compose.yml"
-      - "./data:/app/data"
-    environment:
-      <<: [*oracle-vars]
+      - "oracle-spar-data-load:/app/data"
+      - "./ora-env/data/temp/data_classification.xlsx:/app/data_classification.xlsx"
     env_file:
       - ".env"
+    environment:
+      <<: [*oracle-vars]
+
     depends_on:
-      oracle-migrations:
+      oracle-spar-migrations:
         condition: service_completed_successfully
 
   # debug service, useful for understanding how environment variables work
-  etl:
-    container_name: etl
+  etl-env-setup:
+    container_name: etl-env-setup
     image: functions/alpine:health
     command: ["/bin/sh", "-c", "echo Postgres and Oracle envs now live!"]
     depends_on:
-      oracle-data-load:
+      oracle-spar-data-load:
         condition: service_completed_successfully
       postgres-data-load:
         condition: service_completed_successfully
@@ -212,15 +245,18 @@ services:
       EXECUTION_ID: 9999
       ORACLE_PORT: *ORACLE_PORT
       ORACLE_SERVICE: *ORACLE_DATABASE
+      ORA_NON_ENCRYPT_LISTENER: True
     command: ["python", "/app/src/main.py"]
     # command: ["sleep", "10000"]
     volumes:
     - "./sync/src:/app/src"
-    - "./sync/poetry.lock:/application/poetry.lock"
+    - "./sync/uv.lock:/application/uv.lock"
     - "./sync/pyproject.toml:/application/pyproject.toml"
     depends_on:
-      etl:
+      etl-env-setup:
         condition: service_completed_successfully
+
+
 
   cloudbeaver:
     profiles: ["cloudbeaver"]
@@ -249,3 +285,4 @@ services:
 volumes:
   oracle-data:
   postgres-migrations-volume:
+  oracle-spar-data-load:

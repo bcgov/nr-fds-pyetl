@@ -13,11 +13,9 @@ should only be required if you need the latest greatest data in your dev
 environment.
 
 **Assumptions:**
-1. The DDL has been extracted and configured with flyway migrations
+1. The DDL for an oracle database has been generated.
 1. Object Storage buckets have been procured
-1. Data has already been extracted from LOB databases and loaded to object
-    storage
-1. Current version of tooling only supports tables.
+1. Data extract has been run and the data exists in the buckets
 
 # Data Load Instructions
 
@@ -26,17 +24,51 @@ PROD environments for a specific application to an object store bucket.
 [see here](./data_extract.md)
 
 
-## Define Environment Variables
+# Run data injest on Oracle db only
+
+* requires the [data classification spreadshee](#get-data-classification-spreadsheet)
+* requires [object store secrets](#object-store-environment-variables)
+
+`docker compose up oracle-data-load`
+
+# Run data injet on Postgres db only
+
+1. pulls the migrations from the nr-spar repo
+1. runs the migrations
+1. loads the data that has been cached in object store
+
+* requires [object store secrets](#object-store-environment-variables)
+
+`docker compose up postgres-data-load`
+
+## Bring up Postgres AND Oracle w/ Data
+
+The docker compose will spin up the oracle environment, run the migrations to
+create the table structures, and then finally pull the data from object store
+and load it into the oracle database.
+
+It will also create the postgres database that represents new spar, runs the
+migrations, and loads the cached data from object store.
+
+```docker compose up etl```
+
+
+# Pre-requisites
+
+Sections below are referenced via links identifying which pre-reqs are required
+for different steps.
+
+## Environment Variables
+
+Most of these environment variables are defined in the docker compose and
+therefor do not have to be populated.
+
+### Object store Environment Variables
 
 To load data you must populate the following environment variables to enable
 connectivity to the object store buckets, that contain the actual backup
-files.  The environment variables are concluded by the environment who's
-data you want to pull.  Current possible options are either `TEST` or `PROD`.
+files.  Substitute TEST|PROD for <env>.  Add them to a `.env` file.
 
-The one other environment variable is `ORACLE_SCHEMA_TO_SYNC_<env>`. This
-variable defines what schema in the local environment to load the data to.  It
-is recommended that this be the same schema as the original data was extracted
-from.
 
 1. `OBJECT_STORE_USER_<env>`
 1. `OBJECT_STORE_SECRET_<env>`
@@ -48,13 +80,9 @@ Ideally these environments should be defined in a .env file in the root of this
 repository.  The docker-compose is configured already to load that file to
 populate environment variables in the container.
 
-## Run Docker Compose
+## Data Classification Spreadsheet
 
-The docker compose will spin up the oracle environment, run the migrations to
-create the table structures, and then finally pull the data from object store
-and load it into the oracle database.
+The data load requires access to the data classification spreadsheet which can be
+downloaded [here](https://nrs.objectstore.gov.bc.ca/muyrpr/data_classification/CLIENT%20ECAS%20GAS2%20ILCR%20ISP.xlsx)
 
-It will also create the postgres database that represents new spar, runs the
-migrations, and loads the cached data from object store.
-
-```docker compose up etl```
+Copy the file spreadsheet to the path ./ora-env/data/temp/data_classification.xlsx

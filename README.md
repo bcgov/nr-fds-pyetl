@@ -41,14 +41,6 @@ and [our Rocket Chat](https://chat.developer.gov.bc.ca/) channel.
 
 # Getting started
 
-Once you have cloned this repository, you can get it running by typing at the
-project root directory
-
-**Todo: implement this in the moved repo, not currently working!  Know Issue**
-```sh
-docker compose up -d
-```
-
 # nr-spar-data-sync
 
 Engine to sync data for SPAR application (from Postgres to Oracle). The application extracts, transforms, and loads data based on a few parameters/configurations.
