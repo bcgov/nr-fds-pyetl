@@ -1,7 +1,7 @@
 name: ETL TEST
 
 on:
-  schedule: [cron: "0 */2 * * *"] # Every other hour on the hour
+  # schedule: [cron: "0 */2 * * *"] # Every other hour on the hour
   workflow_dispatch:
 
 concurrency:
