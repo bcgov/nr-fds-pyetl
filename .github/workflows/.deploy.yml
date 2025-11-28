@@ -9,7 +9,7 @@ on:
       ### Typical / recommended
       environment:
         description: GitHub/OpenShift environment; usually PR number, test or prod
-        default: ''
+        default: ""
         type: string
       postgres-host:
         description: PostgreSQL host
@@ -35,7 +35,7 @@ on:
         type: string
       triggers:
         description: File paths that trigger this workflow
-        default: ''
+        default: ""
         type: string
 
       ### Per-environment config
@@ -68,8 +68,7 @@ jobs:
           oc_token: ${{ secrets.OC_TOKEN }}
           file: common/openshift.init.yml
           overwrite: true
-          parameters:
-            -p ZONE=${{ inputs.target }}
+          parameters: -p ZONE=${{ inputs.target }}
             -p ORACLE_PASSWORD='${{ secrets.ORACLE_PASSWORD }}'
             -p ORACLE_SERVICE='${{ secrets.ORACLE_DB_SERVICE }}'
             -p ORACLE_USER='${{ secrets.ORACLE_USER }}'
@@ -79,21 +78,19 @@ jobs:
     name: Deploy
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
-        timeout-minutes: 5
         with:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
           file: sync/openshift.deploy.yml
           overwrite: sync/openshift.deploy.yml
-          parameters:
-            -p ZONE=${{ inputs.target }}
+          parameters: -p ZONE=${{ inputs.target }}
             -p TAG=${{ inputs.tag }}
             -p TEST_MODE=${{ inputs.test-mode }}
             -p SECRETS_FROM=${{ inputs.secrets-from }}
+          timeout: 5
           triggers: ${{ inputs.triggers }}
 
   etl-run:
@@ -101,13 +98,12 @@ jobs:
     if: inputs.run-etl == true
     needs: [deploy]
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
     steps:
-      - timeout-minutes: 10
-        uses: bcgov/action-oc-runner@v1.2.3
+      - uses: bcgov/action-oc-runner@f900830adadd4d9eef3ca6ff80103e839ba8b7c0 #v1.3.0
         with:
           commands: ./sync/oc_run.sh ${{ inputs.target }}
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
+          timeout: 10
           triggers: ${{ inputs.triggers }}
