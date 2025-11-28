@@ -48,7 +48,7 @@ def get_scheduler(track_db_conn: object, database_schema: str) -> list:
             CURRENT_TIMESTAMP as current_end_time,
             (select run_status
                from spar.etl_execution_log
-              order by from_timestamp desc
+              order by created_at desc
               limit 1) as last_run_status
         from {database_schema}.etl_execution_log
         where run_status = 'SUCCESS' """

@@ -137,7 +137,7 @@ objects:
                   imagePullPolicy: Always
               restartPolicy: Never
               terminationGracePeriodSeconds: 30
-              activeDeadlineSeconds: 1600
+              activeDeadlineSeconds: 3600
               dnsPolicy: ClusterFirst
               serviceAccountName: pipeline
               schedulerName: default-scheduler
