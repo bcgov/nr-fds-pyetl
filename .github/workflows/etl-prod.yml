@@ -14,12 +14,12 @@ jobs:
     environment: prod
     runs-on: ubuntu-24.04
     steps:
-      - timeout-minutes: 10
-        uses: bcgov/action-oc-runner@f900830adadd4d9eef3ca6ff80103e839ba8b7c0 #v1.3.0
+      - uses: bcgov/action-oc-runner@f900830adadd4d9eef3ca6ff80103e839ba8b7c0 #v1.3.0
         with:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
+          timeout: 10
           commands: ./sync/oc_run.sh prod ${{ secrets.oc_token }}
 
       - uses: simbo/msteams-message-card-action@latest
