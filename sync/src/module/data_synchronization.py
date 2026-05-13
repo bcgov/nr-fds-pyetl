@@ -63,21 +63,14 @@ def execute_instance(oracle_config, postgres_config, track_config):
         LOGGER.debug(schedule_times)
         LOGGER.debug("=============== s c h e d u l e   d a t e s ==================")
 
-        # A leftover RUNNING row means the previous run never wrote a terminal
-        # status (e.g. OOM / SIGKILL / pod terminated). Workflow concurrency
-        # already prevents true overlap, so reclaim it and proceed.
+        # if job is already running, stop
         if schedule_times["last_run_status"] == "RUNNING":
-            reclaimed = data_sync_ctl.reclaim_stale_running(
-                track_db_conn, track_config["schema"]
+            LOGGER.info(
+                "Critical error: previous job still RUNNING or did not report SUCCESS or FAILURE"
             )
-            LOGGER.warning(
-                f"Reclaimed {reclaimed} stale RUNNING row(s); previous job did not "
-                "report SUCCESS or FAILURE. Re-reading schedule."
+            raise Exception(
+                "Critical error: previous job still RUNNING or did not report SUCCESS or FAILURE"
             )
-            schedule_times = data_sync_ctl.get_scheduler(
-                track_db_conn, track_config["schema"]
-            )[0]
-            LOGGER.debug(schedule_times)
 
         LOGGER.info("Insert execution log - signal RUNNING")
         data_sync_ctl.insert_execution_log(
@@ -87,68 +80,63 @@ def execute_instance(oracle_config, postgres_config, track_config):
             to_timestamp=schedule_times["current_end_time"],
             run_status="RUNNING",
         )
+        stored_metrics["time_conn_monitor"] = timedelta(
+            seconds=(temp_time - stored_metrics["sync_start_time"])
+        )
+        # execution_map  = data_sync_ctl.get_execution_map(track_db_conn,track_config['schema'],execution_id)
 
-        # Default to FAILURE so the `finally` always writes a terminal status,
-        # even if something below escapes the inner try/except.
-        run_status = "FAILURE"
+        LOGGER.info("Validating Execution instructions")
         try:
-            stored_metrics["time_conn_monitor"] = timedelta(
-                seconds=(temp_time - stored_metrics["sync_start_time"])
+            # if not data_sync_ctl.validate_execution_map(execution_map):
+            #    raise ETLConfigurationException ("ETL configuration validation failed")
+
+            seedlot_metrics = process_seedlots(
+                oracle_config,
+                postgres_config,
+                track_config,
+                track_db_conn,
+                schedule_times,
             )
-            # execution_map  = data_sync_ctl.get_execution_map(track_db_conn,track_config['schema'],execution_id)
+            if "ERROR" in seedlot_metrics:
+                raise Exception(seedlot_metrics["ERROR"])
 
-            LOGGER.info("Validating Execution instructions")
-            try:
-                # if not data_sync_ctl.validate_execution_map(execution_map):
-                #    raise ETLConfigurationException ("ETL configuration validation failed")
-
-                seedlot_metrics = process_seedlots(
-                    oracle_config,
-                    postgres_config,
-                    track_config,
-                    track_db_conn,
-                    schedule_times,
-                )
-                if "ERROR" in seedlot_metrics:
-                    raise Exception(seedlot_metrics["ERROR"])
-
-            # Exception when validate_execution_map is false
-            except ETLConfigurationException:
-                is_error = True
-                print(
-                    "ETLConfigurationException - Impossible to execute or determine what process will be executed (or no process to be executed)"
-                )
-                LOGGER.critical(
-                    "ETLConfigurationException - Impossible to execute or determine what process will be executed (or no process to be executed)"
-                )
-
-            except Exception as err:
-                is_error = True
-                LOGGER.critical(
-                    f"A fatal error has occurred ({type(err)}): {err}", exc_info=True
-                )
-
-            sync_elapsed_time = time.time() - stored_metrics["sync_start_time"]
-            if is_error:
-                LOGGER.info("***** ETL Process finished with error *****")
-                LOGGER.info(
-                    f"ETL Tool whole process took {timedelta(seconds=sync_elapsed_time)}"
-                )
-                run_status = "FAILURE"
-                job_return_code = 1
-            else:
-                stored_metrics["time_process"] = timedelta(seconds=sync_elapsed_time)
-                print_process_metrics(stored_metrics)
-                run_status = "SUCCESS"
-                job_return_code = 0
-        finally:
-            data_sync_ctl.update_execution_log(
-                database_conn=track_db_conn,
-                database_schema=track_config["schema"],
-                from_timestamp=schedule_times["current_start_time"],
-                to_timestamp=schedule_times["current_end_time"],
-                run_status=run_status,
+        # Exception when validate_execution_map is false
+        except ETLConfigurationException:
+            is_error = True
+            print(
+                "ETLConfigurationException - Impossible to execute or determine what process will be executed (or no process to be executed)"
             )
+            LOGGER.critical(
+                "ETLConfigurationException - Impossible to execute or determine what process will be executed (or no process to be executed)"
+            )
+
+        except Exception as err:
+            is_error = True
+            LOGGER.critical(
+                f"A fatal error has occurred ({type(err)}): {err}", exc_info=True
+            )
+
+    sync_elapsed_time = time.time() - stored_metrics["sync_start_time"]
+    if is_error:
+        LOGGER.info("***** ETL Process finished with error *****")
+        LOGGER.info(
+            f"ETL Tool whole process took {timedelta(seconds=sync_elapsed_time)}"
+        )
+        run_status = "FAILURE"
+        job_return_code = 1
+    else:
+        stored_metrics["time_process"] = timedelta(seconds=sync_elapsed_time)
+        print_process_metrics(stored_metrics)
+        run_status = "SUCCESS"
+        job_return_code = 0
+
+    data_sync_ctl.update_execution_log(
+        database_conn=track_db_conn,
+        database_schema=track_config["schema"],
+        from_timestamp=schedule_times["current_start_time"],
+        to_timestamp=schedule_times["current_end_time"],
+        run_status=run_status,
+    )
 
     LOGGER.info("***** Finish ETL Run *****")
     return job_return_code
