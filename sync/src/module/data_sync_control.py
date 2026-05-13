@@ -425,6 +425,20 @@ def update_execution_log(
     database_conn.commit()
 
 
+def reclaim_stale_running(database_conn: object, database_schema: str) -> int:
+    # A RUNNING row at startup means the previous job exited without writing
+    # a terminal status (e.g. OOM/SIGKILL/pod terminated — no chance to run
+    # Python cleanup). Workflow-level concurrency prevents real overlap, so
+    # mark any RUNNING row as FAILURE so this run can proceed.
+    update_stm = f"""update {database_schema}.etl_execution_log
+                       set run_status = 'FAILURE'
+                         , updated_at = current_timestamp
+                     where run_status = 'RUNNING' """
+    result = database_conn.select(update_stm)
+    database_conn.commit()
+    return getattr(result, "rowcount", 0) or 0
+
+
 def update_data_sync_control(
     database_conn: object, database_schema: str, data_sync_id: str, status: str
 ):
