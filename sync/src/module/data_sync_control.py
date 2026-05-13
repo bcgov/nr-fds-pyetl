@@ -426,14 +426,17 @@ def update_execution_log(
 
 
 def reclaim_stale_running(database_conn: object, database_schema: str) -> int:
-    # A RUNNING row at startup means the previous job exited without writing
-    # a terminal status (e.g. OOM/SIGKILL/pod terminated — no chance to run
-    # Python cleanup). Workflow-level concurrency prevents real overlap, so
-    # mark any RUNNING row as FAILURE so this run can proceed.
+    # Only reclaim RUNNING rows old enough that the pod that wrote them
+    # cannot still be alive. The CronJob sets activeDeadlineSeconds=3600
+    # (sync/openshift.deploy.yml) plus terminationGracePeriodSeconds=30, so
+    # any pod is dead well within 90 minutes. Fresher RUNNING rows are left
+    # alone — they may belong to a live pod, and reclaiming them would let
+    # a second pod start and write concurrently.
     update_stm = f"""update {database_schema}.etl_execution_log
                        set run_status = 'FAILURE'
                          , updated_at = current_timestamp
-                     where run_status = 'RUNNING' """
+                     where run_status = 'RUNNING'
+                       and updated_at < current_timestamp - INTERVAL '90 minutes' """
     result = database_conn.select(update_stm)
     database_conn.commit()
     return getattr(result, "rowcount", 0) or 0

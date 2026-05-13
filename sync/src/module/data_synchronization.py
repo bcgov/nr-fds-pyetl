@@ -63,21 +63,33 @@ def execute_instance(oracle_config, postgres_config, track_config):
         LOGGER.debug(schedule_times)
         LOGGER.debug("=============== s c h e d u l e   d a t e s ==================")
 
-        # A leftover RUNNING row means the previous run never wrote a terminal
-        # status (e.g. OOM / SIGKILL / pod terminated). Workflow concurrency
-        # already prevents true overlap, so reclaim it and proceed.
+        # A leftover RUNNING row may mean either (a) the previous run died
+        # without writing a terminal status (OOM / SIGKILL / pod terminated),
+        # or (b) a pod from a previous schedule is still alive. Reclaim only
+        # rows old enough that the pod cannot still be running; if the row is
+        # fresh, bail out so we don't run concurrently with that pod.
         if schedule_times["last_run_status"] == "RUNNING":
             reclaimed = data_sync_ctl.reclaim_stale_running(
                 track_db_conn, track_config["schema"]
             )
-            LOGGER.warning(
-                f"Reclaimed {reclaimed} stale RUNNING row(s); previous job did not "
-                "report SUCCESS or FAILURE. Re-reading schedule."
-            )
-            schedule_times = data_sync_ctl.get_scheduler(
-                track_db_conn, track_config["schema"]
-            )[0]
-            LOGGER.debug(schedule_times)
+            if reclaimed:
+                LOGGER.warning(
+                    f"Reclaimed {reclaimed} stale RUNNING row(s); previous job did "
+                    "not report SUCCESS or FAILURE. Re-reading schedule."
+                )
+                schedule_times = data_sync_ctl.get_scheduler(
+                    track_db_conn, track_config["schema"]
+                )[0]
+                LOGGER.debug(schedule_times)
+            else:
+                LOGGER.info(
+                    "Previous job still RUNNING within the pod's active window; "
+                    "skipping this run to avoid concurrent writes."
+                )
+                raise Exception(
+                    "Previous job still RUNNING within the pod's active window; "
+                    "skipping this run to avoid concurrent writes."
+                )
 
         LOGGER.info("Insert execution log - signal RUNNING")
         data_sync_ctl.insert_execution_log(
