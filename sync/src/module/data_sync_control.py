@@ -425,6 +425,23 @@ def update_execution_log(
     database_conn.commit()
 
 
+def reclaim_stale_running(database_conn: object, database_schema: str) -> int:
+    # Only reclaim RUNNING rows old enough that the pod that wrote them
+    # cannot still be alive. The CronJob sets activeDeadlineSeconds=3600
+    # (sync/openshift.deploy.yml) plus terminationGracePeriodSeconds=30, so
+    # any pod is dead well within 90 minutes. Fresher RUNNING rows are left
+    # alone — they may belong to a live pod, and reclaiming them would let
+    # a second pod start and write concurrently.
+    update_stm = f"""update {database_schema}.etl_execution_log
+                       set run_status = 'FAILURE'
+                         , updated_at = current_timestamp
+                     where run_status = 'RUNNING'
+                       and updated_at < current_timestamp - INTERVAL '90 minutes' """
+    result = database_conn.select(update_stm)
+    database_conn.commit()
+    return getattr(result, "rowcount", 0) or 0
+
+
 def update_data_sync_control(
     database_conn: object, database_schema: str, data_sync_id: str, status: str
 ):
