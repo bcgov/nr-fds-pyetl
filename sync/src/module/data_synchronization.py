@@ -81,6 +81,15 @@ def execute_instance(oracle_config, postgres_config, track_config):
                     track_db_conn, track_config["schema"]
                 )[0]
                 LOGGER.debug(schedule_times)
+                if schedule_times["last_run_status"] == "RUNNING":
+                    LOGGER.info(
+                        "Previous job still RUNNING within the pod's active window; "
+                        "skipping this run to avoid concurrent writes."
+                    )
+                    raise Exception(
+                        "Previous job still RUNNING within the pod's active window; "
+                        "skipping this run to avoid concurrent writes."
+                    )
             else:
                 LOGGER.info(
                     "Previous job still RUNNING within the pod's active window; "
