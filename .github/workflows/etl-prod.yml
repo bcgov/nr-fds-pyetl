@@ -20,4 +20,4 @@ jobs:
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
           timeout: 10
-          commands: ./sync/oc_run.sh prod ${{ secrets.oc_token }}
+          commands: ./sync/oc_run.sh prod ${{ secrets.OC_TOKEN }}
