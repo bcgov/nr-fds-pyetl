@@ -20,4 +20,4 @@ jobs:
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
           timeout: 60
-          commands: ./sync/oc_run.sh test ${{ secrets.oc_token }}
+          commands: ./sync/oc_run.sh test ${{ secrets.OC_TOKEN }}
