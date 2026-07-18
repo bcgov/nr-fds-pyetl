@@ -1,0 +1,61 @@
+{
+    "_comment": "Ordered list of Postgres spar tables to populate from Oracle THE. Parent first; children after their parents. Deletes (on --overwrite) run in reverse order. Each query is an Oracle SELECT whose output columns are aliased to the exact Postgres column names, so the loader can INSERT straight from the cursor description.",
+    "leading_column": "seedlot_number",
+    "tables": [
+        {
+            "target_table": "spar.seedlot",
+            "query": "01_seedlot.sql",
+            "primary_key": ["seedlot_number"]
+        },
+        {
+            "target_table": "spar.seedlot_orchard",
+            "query": "02_seedlot_orchard.sql",
+            "primary_key": ["seedlot_number", "orchard_id"]
+        },
+        {
+            "target_table": "spar.seedlot_collection_method",
+            "query": "03_seedlot_collection_method.sql",
+            "primary_key": ["seedlot_number", "cone_collection_method_code"]
+        },
+        {
+            "target_table": "spar.seedlot_seed_plan_zone",
+            "query": "04_seedlot_seed_plan_zone.sql",
+            "primary_key": ["seedlot_number", "seed_plan_zone_code"]
+        },
+        {
+            "target_table": "spar.seedlot_genetic_worth",
+            "query": "05_seedlot_genetic_worth.sql",
+            "primary_key": ["seedlot_number", "genetic_worth_code"]
+        },
+        {
+            "target_table": "spar.seedlot_owner_quantity",
+            "query": "06_seedlot_owner_quantity.sql",
+            "primary_key": ["seedlot_number", "owner_client_number", "owner_locn_code"]
+        },
+        {
+            "target_table": "spar.seedlot_parent_tree",
+            "query": "07_seedlot_parent_tree.sql",
+            "primary_key": ["seedlot_number", "parent_tree_id"]
+        },
+        {
+            "target_table": "spar.seedlot_parent_tree_gen_qlty",
+            "query": "08_seedlot_parent_tree_gen_qlty.sql",
+            "primary_key": ["seedlot_number", "parent_tree_id", "genetic_type_code", "genetic_worth_code"]
+        },
+        {
+            "target_table": "spar.seedlot_parent_tree_smp_mix",
+            "query": "09_seedlot_parent_tree_smp_mix.sql",
+            "primary_key": ["seedlot_number", "parent_tree_id", "genetic_type_code", "genetic_worth_code"]
+        },
+        {
+            "target_table": "spar.smp_mix",
+            "query": "10_smp_mix.sql",
+            "primary_key": ["seedlot_number", "parent_tree_id"]
+        },
+        {
+            "target_table": "spar.smp_mix_gen_qlty",
+            "query": "11_smp_mix_gen_qlty.sql",
+            "primary_key": ["seedlot_number", "parent_tree_id", "genetic_type_code", "genetic_worth_code"]
+        }
+    ]
+}
