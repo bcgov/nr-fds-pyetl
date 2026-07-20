@@ -1,0 +1,18 @@
+# Oracle (THE schema) - source
+ORACLE_HOST=host_name
+ORACLE_PORT=1521
+ORACLE_SERVICE=service_name
+ORACLE_SYNC_USER=named_userid
+ORACLE_SYNC_PASSWORD=password
+# Set to a truthy value (Y/YES/1/T/TRUE) to use a plain TCP (non-TLS) listener.
+# Any other value (or unset) uses TCPS/TLS.
+ORA_NON_ENCRYPT_LISTENER=True
+
+# Postgres (spar schema) - target
+POSTGRES_HOST=localhost
+POSTGRES_PORT=15432
+POSTGRES_DB=nr-spar
+POSTGRES_USER=nr-spar
+POSTGRES_PASSWORD=password
+# Optional: disable, allow, prefer, require, verify-ca, verify-full
+POSTGRES_SSLMODE=prefer

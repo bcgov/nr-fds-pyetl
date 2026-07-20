@@ -1,5 +1,5 @@
 {
-    "editor.hover.enabled": false,
+    "editor.hover.enabled": "off",
     "editor.rulers": [
         80,
         120
