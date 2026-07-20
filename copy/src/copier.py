@@ -10,13 +10,14 @@ from __future__ import annotations
 
 import json
 import logging
-import os
+from pathlib import Path
 
 LOGGER = logging.getLogger("copy.copier")
 
-_CONFIG_DIR = os.path.join(os.path.dirname(__file__), "config")
-_QUERIES_DIR = os.path.join(_CONFIG_DIR, "queries")
-_MANIFEST = os.path.join(_CONFIG_DIR, "manifest.json")
+_BASE_DIR = Path(__file__).resolve().parent
+_CONFIG_DIR = _BASE_DIR / "config"
+_QUERIES_ROOT = (_CONFIG_DIR / "queries").resolve()
+_MANIFEST = _CONFIG_DIR / "manifest.json"
 
 
 class SeedlotExistsError(RuntimeError):
@@ -25,16 +26,26 @@ class SeedlotExistsError(RuntimeError):
 
 def load_manifest() -> list[dict]:
     """Return the ordered list of tables to copy (parent first)."""
-    with open(_MANIFEST, encoding="utf-8") as handle:
+    with _MANIFEST.open(encoding="utf-8") as handle:
         return json.load(handle)["tables"]
 
 
 def _read_query(file_name: str) -> str:
-    with open(os.path.join(_QUERIES_DIR, file_name), encoding="utf-8") as handle:
+    query_path = (_QUERIES_ROOT / file_name).resolve()
+    try:
+        query_path.relative_to(_QUERIES_ROOT)
+    except ValueError as exc:
+        raise ValueError(
+            f"Invalid query path outside queries dir: {file_name}"
+        ) from exc
+
+    with query_path.open(encoding="utf-8") as handle:
         return handle.read()
 
 
-def _find_existing(pg_cursor, tables: list[dict], seedlot_number: str) -> list[str]:
+def _find_existing(
+    pg_cursor, tables: list[dict], seedlot_number: str
+) -> list[str]:
     """Return the target tables that already hold rows for this seedlot."""
     existing = []
     for table in tables:
@@ -48,7 +59,9 @@ def _find_existing(pg_cursor, tables: list[dict], seedlot_number: str) -> list[s
     return existing
 
 
-def _delete_existing(pg_cursor, tables: list[dict], seedlot_number: str) -> None:
+def _delete_existing(
+    pg_cursor, tables: list[dict], seedlot_number: str
+) -> None:
     """Delete the seedlot from every target table in reverse (child-first) order."""
     for table in reversed(tables):
         LOGGER.info("Deleting existing rows from %s", table["target_table"])
