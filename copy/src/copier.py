@@ -24,6 +24,16 @@ class SeedlotExistsError(RuntimeError):
     """Raised when the seedlot already exists in Postgres and overwrite is off."""
 
 
+def _sanitize_for_log(value: object) -> str:
+    """Return a single-line, control-character-safe string for logging."""
+    text = str(value)
+    return (
+        text.replace("\r", "\\r")
+        .replace("\n", "\\n")
+        .replace("\t", "\\t")
+    )
+
+
 def load_manifest() -> list[dict]:
     """Return the ordered list of tables to copy (parent first)."""
     with _MANIFEST.open(encoding="utf-8") as handle:
@@ -64,7 +74,10 @@ def _delete_existing(
 ) -> None:
     """Delete the seedlot from every target table in reverse (child-first) order."""
     for table in reversed(tables):
-        LOGGER.info("Deleting existing rows from %s", table["target_table"])
+        LOGGER.info(
+            "Deleting existing rows from %s",
+            _sanitize_for_log(table["target_table"]),
+        )
         pg_cursor.execute(
             f"DELETE FROM {table['target_table']} WHERE seedlot_number = %s",
             (seedlot_number,),
@@ -78,7 +91,10 @@ def _copy_table(ora_cursor, pg_cursor, table: dict, seedlot_number: str) -> int:
     rows = ora_cursor.fetchall()
 
     if not rows:
-        LOGGER.info("  %s: no source rows", table["target_table"])
+        LOGGER.info(
+            "  %s: no source rows",
+            _sanitize_for_log(table["target_table"]),
+        )
         return 0
 
     # The Oracle SELECT aliases every output column to its Postgres name, so we
@@ -91,7 +107,11 @@ def _copy_table(ora_cursor, pg_cursor, table: dict, seedlot_number: str) -> int:
         f"VALUES ({placeholders})"
     )
     pg_cursor.executemany(insert_sql, rows)
-    LOGGER.info("  %s: inserted %d row(s)", table["target_table"], len(rows))
+    LOGGER.info(
+        "  %s: inserted %d row(s)",
+        _sanitize_for_log(table["target_table"]),
+        len(rows),
+    )
     return len(rows)
 
 
@@ -136,7 +156,10 @@ def copy_seedlot(
             )
 
         pg_conn.commit()
-        LOGGER.info("Committed copy of seedlot %s", seedlot_number)
+        LOGGER.info(
+            "Committed copy of seedlot %s",
+            _sanitize_for_log(seedlot_number),
+        )
     except Exception:
         pg_conn.rollback()
         LOGGER.error("Copy failed - rolled back Postgres transaction")
