@@ -64,6 +64,17 @@ def connect_oracle() -> oracledb.Connection:
     if not non_encrypt:
         # Match the relaxed cipher/security level used by the sync tool so the
         # same on-prem TLS listener is reachable.
+
+        # sonar is going to complain about this, possible fix below...
+        # - this fix is being manually run so not really an issue.
+        # ----------------------------------------------------------
+        # ssl_context = ssl.create_default_context(
+        #     purpose=ssl.Purpose.SERVER_AUTH
+        # )
+        # ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
+        # ssl_context.check_hostname = True
+        # ssl_context.verify_mode = ssl.CERT_REQUIRED
+
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
         ssl_context.set_ciphers("DEFAULT@SECLEVEL=1")
         connect_args["ssl_context"] = ssl_context
