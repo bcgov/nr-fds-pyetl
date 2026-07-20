@@ -27,11 +27,7 @@ class SeedlotExistsError(RuntimeError):
 def _sanitize_for_log(value: object) -> str:
     """Return a single-line, control-character-safe string for logging."""
     text = str(value)
-    return (
-        text.replace("\r", "\\r")
-        .replace("\n", "\\n")
-        .replace("\t", "\\t")
-    )
+    return text.replace("\r", "\\r").replace("\n", "\\n").replace("\t", "\\t")
 
 
 def load_manifest() -> list[dict]:
