@@ -630,8 +630,14 @@ def process_seedlots(
                         if row:
                             original_seed_qty = row[0]
 
+                    # Per seedlot copy of the batch level process list. Appending
+                    # to the shared list would leave the ownership process in it
+                    # for every later seedlot in the run, so the lock below would
+                    # be logged but not applied.
+                    seedlot_processes = list(processes)
+
                     if original_seed_qty is None or original_seed_qty == 0:
-                        processes.append([
+                        seedlot_processes.append([
                             {
                                 "interface_id": "SEEDLOT_OWNER_QUANTITY_EXTRACT",
                                 "execution_id": "102",
@@ -662,13 +668,13 @@ def process_seedlots(
                         track_db_conn=track_db_conn,
                         track_db_schema=track_config["schema"],
                         target_db_conn=target_db_conn,
-                        processes=processes,
+                        processes=seedlot_processes,
                     )
                     seedlot_metrics["delete_stats"] = delete_metrics
 
                     processlst = []
                     # All processes to be executed from configuration
-                    for processrow in processes:
+                    for processrow in seedlot_processes:
                         try:
                             process = processrow[0]
 
