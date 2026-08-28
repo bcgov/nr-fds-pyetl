@@ -40,6 +40,9 @@ parameters:
   - name: JOB_HISTORY_SUCCESS
     description: "The number of successful jobs that will be retained"
     value: "5"
+  - name: JOB_TTL_SECONDS
+    description: "Seconds a finished job is retained before the TTL controller deletes it"
+    value: "604800"
   - name: REGISTRY
     description: Source container registry
     value: ghcr.io
@@ -67,6 +70,12 @@ objects:
             cronjob: ${REPO}-${ZONE}
         spec:
           backoffLimit: ${{JOB_BACKOFF_LIMIT}}
+          # Jobs are created by GitHub Actions with `oc create job --from=cronjob`,
+          # which sets an ownerReference without `controller: true`. The CronJob
+          # controller's history GC ignores those, so successfulJobsHistoryLimit /
+          # failedJobsHistoryLimit never apply and finished jobs accumulate forever.
+          # The TTL controller is not owner-aware, so it does clean them up.
+          ttlSecondsAfterFinished: ${{JOB_TTL_SECONDS}}
           template:
             metadata:
               labels:
