@@ -43,10 +43,12 @@ class database_connection(object):
 
     def connect_with_retry(self):
         """Opens a connection, retrying a refused or unavailable database."""
-        for attempt in range(1, CONNECT_ATTEMPTS):
+        for attempt in range(1, CONNECT_ATTEMPTS + 1):
             try:
                 return self.engine.connect().execution_options(autocommit=False)
             except OperationalError:
+                if attempt >= CONNECT_ATTEMPTS:
+                    raise
                 delay = CONNECT_BACKOFF_SECONDS * attempt
                 LOGGER.warning(
                     "%s connection attempt %s/%s failed, retrying in %ss",
@@ -57,10 +59,6 @@ class database_connection(object):
                     exc_info=True,
                 )
                 time.sleep(delay)
-
-        # Final attempt: let the failure propagate so the run fails with the
-        # original database error.
-        return self.engine.connect().execution_options(autocommit=False)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.engine.dispose()
