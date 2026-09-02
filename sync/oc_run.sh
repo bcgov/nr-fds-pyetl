@@ -29,7 +29,12 @@ oc create job ${RUN_JOB} --from=cronjob/${CRONJOB}
 # resources found" if the pod has not been scheduled yet, which killed the script
 # (and left the job running unmonitored) on a slow scheduler.
 ATTEMPTS=90
-while [ ${ATTEMPTS} -gt 0 ] && [ -z "$(oc get pods -l job-name=${RUN_JOB} -o name)" ]; do
+while [ ${ATTEMPTS} -gt 0 ]; do
+  PODS=$(oc get pods -l job-name=${RUN_JOB} -o name) || {
+    echo "Failed to query pods for ${RUN_JOB}."
+    exit 1
+  }
+  [ -n "${PODS}" ] && break
   ATTEMPTS=$((ATTEMPTS - 1))
   sleep 2
 done
