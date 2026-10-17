@@ -55,3 +55,4 @@ COPY domains/ /app/domains/
 RUN chown -R derek:derek /app
 USER derek
 CMD ["python", "/app/main.py"]
+
