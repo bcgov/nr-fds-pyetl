@@ -9,8 +9,16 @@ import numpy
 import oracledb
 import pandas as pd
 from sqlalchemy import create_engine, text
+from sqlalchemy.exc import OperationalError
 
 LOGGER = logging.getLogger(__name__)
+
+# A refused connection (e.g. a database listener being restarted) used to
+# fail the whole ETL run in under a second, because the job runs with
+# backoffLimit 0. The next scheduled run is 2 hours away, so waiting a
+# couple of minutes here is far cheaper than losing the run.
+CONNECT_ATTEMPTS = 5
+CONNECT_BACKOFF_SECONDS = 15
 
 
 class database_connection(object):
@@ -29,9 +37,28 @@ class database_connection(object):
         else:
             self.engine = create_engine(self.conn_string)
         if self.conn is None:
-            self.conn = self.engine.connect().execution_options(autocommit=False)
+            self.conn = self.connect_with_retry()
 
         return self
+
+    def connect_with_retry(self):
+        """Opens a connection, retrying a refused or unavailable database."""
+        for attempt in range(1, CONNECT_ATTEMPTS + 1):
+            try:
+                return self.engine.connect().execution_options(autocommit=False)
+            except OperationalError:
+                if attempt >= CONNECT_ATTEMPTS:
+                    raise
+                delay = CONNECT_BACKOFF_SECONDS * attempt
+                LOGGER.warning(
+                    "%s connection attempt %s/%s failed, retrying in %ss",
+                    self.database_type,
+                    attempt,
+                    CONNECT_ATTEMPTS,
+                    delay,
+                    exc_info=True,
+                )
+                time.sleep(delay)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.engine.dispose()
