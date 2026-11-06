@@ -30,8 +30,6 @@ jobs:
     with:
       run-etl: true
       test-mode: true
-      # target: ${{ github.event.number }}
-      target: test
       triggers: ('sync/')
 
   # ==========================================================================
