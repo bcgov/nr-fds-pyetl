@@ -343,6 +343,11 @@ class database_connection(object):
                                             OR (:s_seedlot_status_code='APP' AND seedlot_status_code IN ('INC','PND','SUB','APP'))
                                             OR (:s_seedlot_status_code='COM' AND seedlot_status_code IN ('INC','PND','SUB','APP','COM')) THEN :s_seedlot_status_code
                                             ELSE seedlot_status_code END """
+                    # Extraction dates are entered at registration, after the row was
+                    # first inserted, so they must reach Oracle on update. Fill them
+                    # only while blank, so dates TSC keyed into SPR09 are kept (#132).
+                    onconflictstatement += """, extraction_st_date = NVL(extraction_st_date, :s_extraction_st_date)
+                                            , extraction_end_date = NVL(extraction_end_date, :s_extraction_end_date) """
                     additionalprocessing += f"""UPDATE the.seedlot s
                                                     SET   (       s.bec_version_id, s.bgc_zone_code, s.bgc_subzone_code, s.variant)
                                                     = (SELECT o.bec_version_id, o.bec_zone,      o.bec_subzone,      o.variant
