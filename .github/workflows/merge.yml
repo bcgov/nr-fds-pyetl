@@ -19,7 +19,7 @@ jobs:
     name: Initialize
     outputs:
       pr: ${{ steps.pr.outputs.pr }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
         # Get PR number for squash merges to main
       - id: pr
@@ -51,9 +51,9 @@ jobs:
   promote:
     name: Promote Images
     needs: [init, deploys-prod]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
-      - uses: shrink/actions-docker-registry-tag@v4
+      - uses: shrink/actions-docker-registry-tag@v5
         with:
           registry: ghcr.io
           repository: ${{ github.repository }}/sync
