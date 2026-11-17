@@ -55,7 +55,7 @@ SELECT drft.seedlot_number
             ELSE NULL
        END AS spar_fund_srce_code
      , drft.revision_count
-  FROM spar.seedlot_registration_a_class_save drft
+  FROM spar.seedlot_registration_save drft
   LEFT JOIN spar.seedlot s ON drft.seedlot_number = s.seedlot_number
   , json_array_elements(cast(all_step_data->'ownershipStep' as json)) ownerdata
  WHERE drft.seedlot_number = %(p_seedlot_number)s
