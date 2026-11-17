@@ -116,7 +116,7 @@ services:
           condition: service_completed_successfully
 
   postgres-migrations:
-    image: flyway/flyway:10-alpine
+    image: flyway/flyway:12-alpine
     container_name: postgres-migrations
     command: info migrate info
     volumes:
@@ -182,7 +182,7 @@ services:
       - ./data_prep/ora_db_init/db_init/db_init.sql:/container-entrypoint-initdb.d/my-init.sql:ro
 
   oracle-spar-migrations:
-    image: flyway/flyway:10-alpine
+    image: flyway/flyway:12-alpine
     container_name: oracle-spar-migrations
     command: info migrate info
     volumes:
