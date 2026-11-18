@@ -32,7 +32,7 @@ jobs:
     steps:
       # PR number for the commit this run was started from
       - id: pr
-        uses: bcgov/action-get-pr@v0.3.1
+        uses: bcgov/action-get-pr@28b0adf8e4d40720d41f9c87356ce24b0a4bd6af # v0.3.1
 
   deploys-prod:
     name: PROD Deploys (${{ needs.vars.outputs.pr }})
@@ -55,7 +55,7 @@ jobs:
     permissions:
       packages: write
     steps:
-      - uses: shrink/actions-docker-registry-tag@v5
+      - uses: shrink/actions-docker-registry-tag@e6aaef25c595b6e0edd18bf4c7dbfea3abd43299 # v5
         with:
           registry: ghcr.io
           repository: ${{ github.repository }}/sync
