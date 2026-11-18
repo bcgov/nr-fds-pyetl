@@ -1,0 +1,63 @@
+name: Release
+
+# Deploys to PROD on demand. Merges to main only deploy to TEST (merge.yml).
+# Run from main to release the latest merged PR; run from another branch or tag
+# to deploy the PR behind that commit instead (e.g. for a rollback).
+
+on:
+  workflow_dispatch:
+    inputs:
+      run-etl:
+        description: Run the PROD ETL once after deploying
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  vars:
+    name: Set Variables
+    outputs:
+      pr: ${{ steps.pr.outputs.pr }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 1
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      # PR number for the commit this run was started from
+      - id: pr
+        uses: bcgov/action-get-pr@v0.3.1
+
+  deploys-prod:
+    name: PROD Deploys (${{ needs.vars.outputs.pr }})
+    needs: [vars]
+    secrets: inherit
+    uses: ./.github/workflows/.deploy.yml
+    with:
+      environment: prod
+      postgres-host: nr-spar-prod-database
+      secrets-from: nr-spar-prod
+      tag: ${{ needs.vars.outputs.pr }}
+      target: prod
+      test-mode: false
+      run-etl: ${{ inputs.run-etl }}
+
+  promote:
+    name: Promote Image
+    needs: [vars, deploys-prod]
+    runs-on: ubuntu-26.04
+    permissions:
+      packages: write
+    steps:
+      - uses: shrink/actions-docker-registry-tag@v5
+        with:
+          registry: ghcr.io
+          repository: ${{ github.repository }}/sync
+          target: ${{ needs.vars.outputs.pr }}
+          tags: prod
