@@ -73,7 +73,7 @@ WITH seedlot_coll_methods
             then NULLIF(all_step_data->'collectionStep'->'comments'->>'value','')
             else null
        end as seedlot_comment
-  from spar.seedlot_registration_save
+  from spar.seedlot_registration_a_class_save
  where seedlot_number = %(p_seedlot_number)s)
 SELECT
     s.applicant_client_number,
@@ -209,18 +209,6 @@ SELECT
     ,0          as utm_easting
     ,0          as utm_northing
     ,0          as utm_zone
-     --natural stand (class B) columns; NULL stays NULL for A-class lots
-    ,CASE s.superior_provenance_ind WHEN TRUE THEN 'Y' WHEN FALSE THEN 'N' END       as superior_prvnc_ind
-    ,s.org_unit_no
-    ,s.collection_location_desc                                                       as collection_locn_desc
-    ,s.provenance_id
-    ,CASE s.collection_standard_met_ind WHEN TRUE THEN 'Y' WHEN FALSE THEN 'N' END   as collection_standard_met_ind
-    ,s.collection_area_radius
-    ,s.seed_plan_zone_code
-    ,CASE s.collection_seed_plan_zone_ind WHEN TRUE THEN 'Y' WHEN FALSE THEN 'N' END as collection_seed_plan_zone_ind
-    ,s.seed_coast_area_code
-    ,CASE s.collection_bgc_validated_ind WHEN TRUE THEN 'Y' WHEN FALSE THEN 'N' END  as collection_bgc_ind
-    ,s.number_trees_from_code                                                         as nmbr_trees_from_code
 FROM spar.seedlot s
 LEFT OUTER JOIN seedlot_coll_methods scm1
              ON (scm1.seedlot_number = s.seedlot_number AND scm1.rown = 1)
