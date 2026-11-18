@@ -97,6 +97,7 @@ jobs:
     name: Run ETL
     if: inputs.run-etl == true
     needs: [deploy]
+    environment: ${{ inputs.environment }}
     runs-on: ubuntu-26.04
     steps:
       - uses: bcgov/action-oc-runner@111868d1fc50db0a40417ba321d865ef5c931bbd # v1.7.0

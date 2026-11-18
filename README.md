@@ -48,6 +48,14 @@ Engine to sync data for SPAR application (from Postgres to Oracle). The applicat
 ## Running the application
 The application has a **main.py** module with a main function that triggers the data synchronization process based on parameters/configurations described on the next session.
 
+## Releasing to PROD
+Merging a PR to `main` deploys it to TEST only. PROD is updated by hand:
+
+1. Merge the PR and confirm the scheduled **ETL TEST** runs succeed.
+2. Run **Actions → Release → Run workflow** on `main`. This deploys the latest merged PR's image to PROD and tags it `prod`. Tick **Run the PROD ETL** to run the ETL once straight after deploying.
+
+To roll back, revert the PR on `main` and run **Release** again. In an emergency, run **Release** on a branch or tag that points at a known-good commit; it deploys the PR behind that commit.
+
 ## Configuring each domain (source and target tables)
 A domain folder has to be created for each domain to be synced. For example, the seedlot domain will sync a few tables that are related, such as SEEDLOT, SEEDLOT_GENETIC_WORTH, and SEEDLOT_PARENT_TREE.
 
