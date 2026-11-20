@@ -453,7 +453,7 @@ def process_seedlots(
 
         query_sql = """SELECT s.seedlot_number
                          FROM spar.seedlot s
-                         FULL OUTER JOIN spar.seedlot_registration_a_class_save drft
+                         FULL OUTER JOIN spar.seedlot_registration_save drft
                          ON drft.seedlot_number = s.seedlot_number
                         WHERE s.update_timestamp between %(start_time)s AND %(end_time)s
                            OR drft.update_timestamp between %(start_time)s AND %(end_time)s

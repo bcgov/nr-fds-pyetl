@@ -12,6 +12,23 @@ from sqlalchemy import create_engine, text
 
 LOGGER = logging.getLogger(__name__)
 
+# Natural-stand (genetic class B) columns on the.seedlot, named as the SEEDLOT
+# extract outputs them. They are only inserted/updated for class B seedlots, so
+# the SQL for every other seedlot is unchanged.
+B_CLASS_SEEDLOT_COLUMNS = (
+    "superior_prvnc_ind",
+    "org_unit_no",
+    "collection_locn_desc",
+    "provenance_id",
+    "collection_standard_met_ind",
+    "collection_area_radius",
+    "seed_plan_zone_code",
+    "collection_seed_plan_zone_ind",
+    "seed_coast_area_code",
+    "collection_bgc_ind",
+    "nmbr_trees_from_code",
+)
+
 
 class database_connection(object):
     """Class used to control database connections."""
@@ -301,8 +318,13 @@ class database_connection(object):
         for row in dataframe.itertuples():
             i = i + 1
             LOGGER.debug(f"---Including row {i}")
+            # B-class columns are only written for class B seedlots; for any
+            # other seedlot they are left out of the INSERT and UPDATE entirely
+            row_columns = list(dataframe.columns.values)
+            if table_name == "the.seedlot" and getattr(row, "genetic_class_code", None) != "B":
+                row_columns = [c for c in row_columns if c not in B_CLASS_SEEDLOT_COLUMNS]
             params = {}
-            for column in dataframe.columns.values:
+            for column in row_columns:
                 params[column] = getattr(row, column)
             if table_pk != "":
                 columnspk = table_pk.split(",")
@@ -321,9 +343,10 @@ class database_connection(object):
                 # some tables will insert all columns in query but not update all. Find and remove them from the UPDATE col list
                 if ignore_columns_on_update:
                     insertonlycols = ignore_columns_on_update.split(",")
-                    df2 = df2.drop(columns=insertonlycols)
+                    df2 = df2.drop(columns=insertonlycols, errors="ignore")
+                set_columns = [c for c in df2.columns.values if c in row_columns]
 
-                for column in dataframe.columns.values:
+                for column in row_columns:
                     params["s_" + column] = getattr(row, column)
                     params["q_" + column] = getattr(row, column)
                 additionalprocessing = ""
@@ -331,7 +354,7 @@ class database_connection(object):
                 EXCEPTION
                 WHEN DUP_VAL_ON_INDEX THEN
                     UPDATE  {table_name}
-                    SET {' , '.join(df2.columns.values + '= :s_'+df2.columns.values)} """
+                    SET {' , '.join(c + '= :s_' + c for c in set_columns)} """
                 # special handling for seedlot_status_code
                 if table_name == "the.seedlot":
                     onconflictstatement += """, seedlot_status_code =
@@ -343,6 +366,7 @@ class database_connection(object):
                                             OR (:s_seedlot_status_code='APP' AND seedlot_status_code IN ('INC','PND','SUB','APP'))
                                             OR (:s_seedlot_status_code='COM' AND seedlot_status_code IN ('INC','PND','SUB','APP','COM')) THEN :s_seedlot_status_code
                                             ELSE seedlot_status_code END """
+                    # Orchard-derived BEC/SPZ does not apply to B-class (natural stand) lots
                     additionalprocessing += f"""UPDATE the.seedlot s
                                                     SET   (       s.bec_version_id, s.bgc_zone_code, s.bgc_subzone_code, s.variant)
                                                     = (SELECT o.bec_version_id, o.bec_zone,      o.bec_subzone,      o.variant
@@ -354,14 +378,15 @@ class database_connection(object):
                                                                                 ON spz.seed_plan_zone_id = spu.seed_plan_zone_id
                                                                             WHERE spu.seed_plan_unit_id = s.seed_plan_unit_id)
                                                 {whStatement}
-                                                AND s.seedlot_status_code = 'PND';"""
+                                                AND s.seedlot_status_code = 'PND'
+                                                AND NVL(s.genetic_class_code, 'A') <> 'B';"""
                     print(params)
                 onconflictstatement += f"{whStatement} {whStatement2};"
             sql_text = f"""
                         BEGIN
                             BEGIN
-                                INSERT INTO {table_name}({', '.join(dataframe.columns.values)})
-                                    VALUES(:{', :'.join(dataframe.columns.values)})   ;
+                                INSERT INTO {table_name}({', '.join(row_columns)})
+                                    VALUES(:{', :'.join(row_columns)})   ;
                             {onconflictstatement}
                             END;
                         {additionalprocessing}
