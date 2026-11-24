@@ -210,7 +210,10 @@ SELECT
     ,0          as utm_northing
     ,0          as utm_zone
      --natural stand (class B) columns; NULL stays NULL for A-class lots
-    ,CASE s.superior_provenance_ind WHEN TRUE THEN 'Y' WHEN FALSE THEN 'N' END       as superior_prvnc_ind
+     --superior_provenance_ind was dropped in SPAR V52; a seedlot is B+ exactly when provenance_id is set
+    ,CASE WHEN s.genetic_class_code = 'B'
+          THEN CASE WHEN s.provenance_id IS NOT NULL THEN 'Y' ELSE 'N' END
+     END                                                                              as superior_prvnc_ind
     ,s.org_unit_no
     ,s.collection_location_desc                                                       as collection_locn_desc
     ,s.provenance_id
